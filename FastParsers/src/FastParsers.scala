@@ -55,6 +55,9 @@ object FastParsers {
   @compileTimeOnly("can’t be used outside FastParser")
   def range[T](a:T,b:T):Parser[T] = ???
 
+  @compileTimeOnly("can’t be used outside FastParser")
+  def phrase[T](a:Parser[T]):Parser[T] = ???
+
   implicit def toElem[T](elem:T) = Elem(elem)
   case class Elem[T](elem:T) extends Parser[T]
 
@@ -268,6 +271,18 @@ object FastParsers {
         """
     }
 
+    def parsePhrase(a:c.Tree,results:ListBuffer[Result]): c.Tree = {
+      q"""
+        ${parseRuleContent(a,results)}
+        if (success) {
+          if (!input.atEnd){
+            success = false
+            msg = "not all the input is consummed, at pos " + input.pos
+          }
+        }
+      """
+    }
+
     def parseRuleContent(rule:c.Tree,results:ListBuffer[Result]):c.Tree = rule match{
       case q"FastParsers.toElem[$d]($a)" =>
         parseElem(a,d,results)
@@ -300,6 +315,8 @@ object FastParsers {
         parseMap(a,f,results)
       case q"$a ^^[$d]($f)" =>
         parseMap(a,f,results)
+      case q"FastParsers.phrase[$d]($a)" =>
+        parsePhrase(a,results)
       case _ => q"""println(show(reify("youhou")))"""
     }
 

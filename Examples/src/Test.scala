@@ -24,6 +24,8 @@ object Test {
       def rule9 = rep1(range('0','9'))
 
       def rule10 = range('0','9') ~> rep(range('a','z')) <~ '0'
+
+      def rule11 = phrase('a' ~ 'b' ~ 'c')
       //def rule1:Parser[Char] = /*'a' ~ */rule2
       /*def rule2 = 'e' ~ 'c' ~ 'c'
       def rule3 = 'a' ~ ('b' ~ 'c') // ~ rule5
@@ -43,7 +45,10 @@ object Test {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
-
+    parser.rule11(new CharSequenceReader("abcd")) match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
    /* parser.rule8(new CharSequenceReader("bbbbbba")) match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
