@@ -20,6 +20,10 @@ object FastParsers {
     @compileTimeOnly("can’t be used outside FastParser")
     def ~(parser2: Parser[T]):Parser[T] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
+    def ~>(parser2: Parser[T]):Parser[T] =  ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def <~(parser2: Parser[T]):Parser[T] =  ???
+    @compileTimeOnly("can’t be used outside FastParser")
     def ||(parser2: Parser[T]):Parser[T] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
     def `?`:Parser[T] =  ???
@@ -201,6 +205,30 @@ object FastParsers {
        """
     }
 
+    def parseThenRight(a:c.Tree,b:c.Tree,results:ListBuffer[Result]): c.Tree = {
+      val results_tmp = new ListBuffer[Result]()
+      val tree = q"""
+          ${parseRuleContent(a,results_tmp)}
+          if (success) {
+            ${parseRuleContent(b,results)}
+          }
+       """
+      results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
+      tree
+    }
+
+    def parseThenLeft(a:c.Tree,b:c.Tree,results:ListBuffer[Result]): c.Tree = {
+      val results_tmp = new ListBuffer[Result]()
+      val tree = q"""
+          ${parseRuleContent(a,results)}
+          if (success) {
+            ${parseRuleContent(b,results_tmp)}
+          }
+       """
+      results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
+      tree
+    }
+
     def parseOr(a:c.Tree,b:c.Tree,results:ListBuffer[Result]): c.Tree = {
       val input_tmp = TermName(c.freshName)
       val result = TermName(c.freshName)
@@ -247,6 +275,10 @@ object FastParsers {
         parseRange(a,b,d,results)
       case q"$a ~ $b" =>
         parseThen(a,b,results)
+      case q"$a ~> $b" =>
+        parseThenRight(a,b,results)
+      case q"$a <~ $b" =>
+        parseThenLeft(a,b,results)
       case q"$a || $b" =>
         parseOr(a,b,results)
       case q"$a.rep($min,$max)" =>
