@@ -29,6 +29,8 @@ object Test {
 
       def rule12 = guard('a' ~ 'b' ~ 'c') ~ rep(range('a','z'))
       def rule13 = not('a' ~ 'b' ~ 'c') ~ rep(range('a','z'))
+
+      def rule14:Parser[Char] = rule1 ~ 'c'
       //def rule1:Parser[Char] = /*'a' ~ */rule2
       /*def rule2 = 'e' ~ 'c' ~ 'c'
       def rule3 = 'a' ~ ('b' ~ 'c') // ~ rule5
@@ -59,6 +61,11 @@ object Test {
     }
 
     parser.rule13(new CharSequenceReader("dbcdefgha")) match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+
+    parser.rule14(new CharSequenceReader("bac")) match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }

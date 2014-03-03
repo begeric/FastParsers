@@ -12,6 +12,7 @@ import scala.reflect.api.Universe
 import scala.reflect.internal.annotations.compileTimeOnly
 import scala.reflect.macros.whitebox.Context
 import scala.collection.mutable.ListBuffer
+//import scala.util.parsing.input._
 
 object FastParsers {
 
@@ -67,7 +68,7 @@ object FastParsers {
   case class Elem[T](elem:T) extends Parser[T]
 
 
-  case class ParseResult[+T](success:Boolean,msg:String,result:T)
+  case class ParseResult[+T](success:Boolean,msg:String,result:T, inputPos:Int)
 
   object Success {
     def unapply[T](p:ParseResult[T]):Option[T] =
@@ -94,7 +95,7 @@ object FastParsers {
       val initMsg = q"""var msg = "" """
       val initResults = results.map(x => q"var ${x._1}:Option[${x._2}] = None")
       val tupledResults = q"(..${results.filter(_._3).map(x => q"${x._1}.get")})"  //lol ?
-      val result = q"""ParseResult(success,msg,if (success) $tupledResults else null)"""
+      val result = q"""ParseResult(success,msg,if (success) $tupledResults else null,input.offset)"""
 
       val tree = q"""
         $initSuccess
@@ -269,8 +270,10 @@ object FastParsers {
       q"""
         val $callResult:ParseResult[Any] = ${ruleCall}(input)
         success = $callResult.success
-        if (success)
-          $result = $callResult.result
+        if (success){
+          input = input.drop($callResult.inputPos)
+          $result = Some($callResult.result)
+         }
         else
           msg = $callResult.msg
         """
