@@ -46,7 +46,7 @@ object Test {
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule10(new CharSequenceReader("5safdgh0")) match {
+    parser.rule10(new CharSequenceReader("5safdggh0")) match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
@@ -55,7 +55,7 @@ object Test {
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule12(new CharSequenceReader("abcdefgha")) match {
+    parser.rule12(new CharSequenceReader("abcdfgha")) match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
@@ -65,7 +65,7 @@ object Test {
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule14(new CharSequenceReader("bac")) match {
+    parser.rule14(new CharSequenceReader("bacc")) match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }

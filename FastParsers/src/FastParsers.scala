@@ -352,7 +352,7 @@ object FastParsers {
       case q"""${ruleCall : TermName}""" =>  parseRuleCall(ruleCall,results)
       case q"$a map[$d] ($f)" =>
         parseMap(a,f,results)
-      case q"$a ^^[$d]($f)" =>
+      case q"$a ^^ [$d]($f)" =>
         parseMap(a,f,results)
       case q"FastParsers.phrase[$d]($a)" =>
         parsePhrase(a,results)
@@ -414,7 +414,5 @@ object FastParsers {
     val finalRulesMap = replaceInRules(rulesMap)
     val tree = createFastParser(finalRulesMap)
     c.Expr(tree)
-    //c.Expr(q"""println(show(reify($tree).tree))""")
-   // c.Expr(q"new {def rule1(input:String) = println(input)}")
   }
 }
