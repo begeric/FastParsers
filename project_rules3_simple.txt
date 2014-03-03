@@ -1,0 +1,114 @@
+success = false
+msg = ""
+
+rules : 
+
+Elem(a) => 
+if (input.first == a)
+	$result = input.first
+	input = input.rest
+	success = true
+else {
+	success = false
+	msg = "expected " + a + ", got " + input.first  
+}
+
+a ~ b => 
+parseRule(a) 
+if (success)
+	parseRule(b) 
+	
+a ~> b => 
+parseRule(a) 
+<forget results from a>
+if (success)
+	parseRule(b) 
+	
+a <~ b => 
+parseRule(a) 
+if (success){
+	parseRule(b) 
+	<forget results from b>
+}
+	
+a | b => 
+val input_tmp = input
+parseRule(a) 
+if (!success){
+	input = input_tmp
+	parseRule(b)
+	$result = <Combine results from b>
+}	
+else {
+	$result = <Combine results from a>
+}
+	
+rep(in,a,b) => 
+val counter = 0
+val cont = true
+val input_tmp = input
+
+while (cont) {
+	parseRule(in)
+	if (success){
+		$result = $result ++ <combine results from in>
+		if (counter + 1 == max)
+			cont = false
+	}
+	else {
+		success = counter >= a
+		cont = false
+	}
+	counter++
+}
+
+range(Elem(a),x,y) => 
+if (input.first >= x && input.first <= y)
+	$result = input.first
+	input = input.rest
+	success = true
+else
+	success = false
+	
+not(a) => 
+val input_tmp = input
+parseRule(a)
+if (success) {
+	success = false
+	msg = "not parser expected failure at " + input.pos
+}
+else {
+	success = true
+}
+input = input_tmp
+
+guard(a) => 
+val input_tmp = input
+parseRule(a)
+input = input_tmp
+
+phrase(a) => 
+parseRule(a)
+if (success) {
+  if (!input.atEnd){
+	success = false
+	msg = "not all the input is consummed, at pos " + input.pos
+  }
+}
+
+map(in,f) => 
+parseRule(a)
+if (success)
+	$result = f(<combine results from in>)
+
+ruleCall(ruleName) => 
+val callResult:ParseResult[Any] = ${ruleName}(input)
+success = callResult.success
+if (success){
+	input = input.drop(callResult.inputPos)
+	$result = callResult.result
+}
+else
+	msg = $callResult.msg
+
+

@@ -1,0 +1,209 @@
+FastParser {
+	def rule1:Parser[(Char,Char)] = 'a' ~ 'b'
+	def rule2 = ('a' | 'b') ~ 'c'
+	def rule3 = ('a' ~ 'b') | 'c'
+	def rule4 = rule1 ~ (rule2 | rule3) ~ rule1
+	def rule5 = ('a' | 'b').rep(2,5)
+}
+
+======>
+
+def rule1(i:Reader[Char]){
+	var input = i
+	var success = false
+	
+	var result1:Char
+	var result2:Char
+	
+	if (input.first == 'a')
+		result1 = input.first
+		input = input.rest
+		success = true
+	else
+		success = false
+	
+	if (success) {
+		if (input.first == 'b')
+			result2 = input.first
+			input = input.rest
+			success = true
+		else
+			success = false
+	}
+	
+	ParserResult(success,(result1,result2))
+}
+
+def rule2(i:Reader[Char]) {
+	var input = i
+	var success = false
+	val input_tmp = input
+	
+	var result1:Char
+	var result2:Char
+	var result3:Char
+	var result4:Char
+	
+	/////////////////////////////
+	if (input.first == 'a')
+		result1 = input.first
+		input = input.rest
+		success = true
+	else
+		success = false
+		
+	if (!success){
+		input = input_tmp
+		if (input.first == 'b')
+			result2 = input.first
+			input = input.rest
+			success = true
+		else
+			success = false
+		result3 = result2
+	}	
+	else {
+		result3 = result1
+	}
+	
+	/////////////////////////////
+	if (success) {
+		if (input.first == 'c')
+			result4 = input.first
+			input = input.rest
+			success = true
+		else
+			success = false
+	}
+	ParserResult(success,(result3,result4))
+}
+
+def rule3(i:Reader[Char]) {
+	var input = i
+	var success = false
+	
+	var result1:Char
+	var result2:Char
+	var result3:Char
+	var result4:Any
+	
+	val input_tmp = input
+	
+	if (input.first == 'a')
+		result1 = input.first
+		input = input.rest
+		success = true
+	else
+		success = false
+	
+	if (success) {
+		if (input.first == 'b')
+			result2 = input.first
+			input = input.rest
+			success = true
+		else
+			success = false
+	}
+	
+	if (!success){
+		input = input_tmp
+		if (input.first == 'c')
+			result3 = input.first
+			input = input.rest
+			success = true
+		else
+			success = false
+		result4 = result3
+	}	
+	else 
+		result4 = (result1,result2)
+	
+}
+
+
+def rule4(i:Reader[Char]) {
+	var input = i
+	var success = false
+	
+	var result1:Any
+	var result2:Any
+	var result3:Any
+	var result4:Any
+	var result5:Any
+	
+	val ruleResult1 = rule1(input)
+	success = ruleResult1.success
+	result1 = ruleResult1.result 
+	if (success) {
+		val input_tmp = input
+		
+		val ruleResult2 = rule2(input)
+		success = ruleResult2.success
+		result2 = ruleResult2.result
+		
+		if (!success){
+			input = input_tmp
+			
+			val ruleResult3 = rule3(input)
+			success = ruleResult3.success
+			result3 = ruleResult3.result
+			
+			result4 = result3
+		}	
+		else
+			result4 = result2
+	}
+	if (success) {
+		val ruleResult4 = rule1(input)
+		success = ruleResult4.success
+		result5 = ruleResult4.result 
+	}
+	
+	ParserResult(success,(result1,result4,result5))
+}
+
+def rule4(i:Reader[Char]) {
+	var input = i
+	var success = false
+	val counter = 0
+	
+	val cont = true
+	val input_tmp = input
+	while (cont) {
+		/////////////////////////////
+		if (input.first == 'a')
+			result1 = input.first
+			input = input.rest
+			success = true
+		else
+			success = false
+			
+		if (!success){
+			input = input_tmp
+			if (input.first == 'b')
+				result2 = input.first
+				input = input.rest
+				success = true
+			else
+				success = false
+			result3 = result2
+		}	
+		else {
+			result3 = result1
+		}
+		/////////////////////////////
+		if (success){
+			if (counter == b)
+				cont = false
+			result4 = result4 ++ result3
+		}
+		else {
+			success = counter >= a
+			cont = false
+			input = input_tmp
+		}
+		counter++
+	}
+	
+	ParseResult(success,result4)
+}
