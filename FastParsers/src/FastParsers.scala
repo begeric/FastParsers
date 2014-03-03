@@ -58,6 +58,11 @@ object FastParsers {
   @compileTimeOnly("can’t be used outside FastParser")
   def phrase[T](a:Parser[T]):Parser[T] = ???
 
+  @compileTimeOnly("can’t be used outside FastParser")
+  def not[T](a:Parser[T]):Parser[T] = ???
+  @compileTimeOnly("can’t be used outside FastParser")
+  def guard[T](a:Parser[T]):Parser[T] = ???
+
   implicit def toElem[T](elem:T) = Elem(elem)
   case class Elem[T](elem:T) extends Parser[T]
 
@@ -283,6 +288,37 @@ object FastParsers {
       """
     }
 
+    def parseNot(a:c.Tree,results:ListBuffer[Result]): c.Tree = {
+      val input_tmp = TermName(c.freshName)
+      var results_tmp = new ListBuffer[Result]()
+      val tree =  q"""
+         val input_tmp = input
+         ${parseRuleContent(a,results_tmp)}
+         if (success) {
+          success = false
+          msg = "not parser expected failure at " + input.pos
+         }
+         else {
+          success = true
+         }
+         input = input_tmp
+       """
+      results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
+      tree
+    }
+
+    def parseGuard(a:c.Tree,results:ListBuffer[Result]): c.Tree = {
+      val input_tmp = TermName(c.freshName)
+      var results_tmp = new ListBuffer[Result]()
+      val tree =  q"""
+         val input_tmp = input
+         ${parseRuleContent(a,results_tmp)}
+         input = input_tmp
+       """
+      results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
+      tree
+    }
+
     def parseRuleContent(rule:c.Tree,results:ListBuffer[Result]):c.Tree = rule match{
       case q"FastParsers.toElem[$d]($a)" =>
         parseElem(a,d,results)
@@ -317,6 +353,10 @@ object FastParsers {
         parseMap(a,f,results)
       case q"FastParsers.phrase[$d]($a)" =>
         parsePhrase(a,results)
+      case q"FastParsers.not[$d]($a)" =>
+        parseNot(a,results)
+      case q"FastParsers.guard[$d]($a)" =>
+        parseGuard(a,results)
       case _ => q"""println(show(reify("youhou")))"""
     }
 
