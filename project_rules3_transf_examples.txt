@@ -12,7 +12,7 @@ def rule1(i:Reader[Char]){
 	var input = i
 	var success = false
 	
-	var result1:Char
+	var result1:Char = _
 	var result2:Char
 	
 	if (input.first == 'a')

@@ -19,21 +19,21 @@ object FastParsers {
 
   trait Parser[T]{
     @compileTimeOnly("can’t be used outside FastParser")
-    def ~(parser2: Parser[T]):Parser[T] =  ???
+    def ~[U](parser2: Parser[U]):Parser[T] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def ~>(parser2: Parser[T]):Parser[T] =  ???
+    def ~>[U](parser2: Parser[U]):Parser[U] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def <~(parser2: Parser[T]):Parser[T] =  ???
+    def <~[U](parser2: Parser[U]):Parser[T] =  ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def |(parser2: Parser[T]):Parser[T] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
     def ||(parser2: Parser[T]):Parser[T] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def `?`:Parser[T] =  ???
+    def `?`:Parser[List[T]] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def `+`:Parser[T] =  ???
+    def `+`:Parser[List[T]] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def `*`:Parser[T] =  ???
-    @compileTimeOnly("can’t be used outside FastParser")
-    def apply(r:Range):Parser[T] = ???
+    def `*`:Parser[List[T]] =  ???
 
     //HOW TO DO THAT ?
     @compileTimeOnly("can’t be used outside FastParser")
@@ -46,12 +46,14 @@ object FastParsers {
   }
 
   @compileTimeOnly("can’t be used outside FastParser")
-  def rep[T](p:Parser[T],min:Int = 0,max:Int = -1):Parser[T] = ???
+  def rep[T](p:Parser[T],min:Int = 0,max:Int = -1):Parser[List[T]] = ???
   @compileTimeOnly("can’t be used outside FastParser")
   def rep1[T](p:Parser[T]):Parser[T] = ???
   @compileTimeOnly("can’t be used outside FastParser")
   def opt[T](p:Parser[T]):Parser[T] = ???
 
+  def seq[T](elem:T*):Parser[T] = ???
+  def alt[T](elem:T*):Parser[T] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
   def range[T](a:T,b:T):Parser[T] = ???
@@ -86,15 +88,26 @@ object FastParsers {
   def FastParser_impl(c: Context)(rules: c.Tree)= {
     import c.universe._
 
-    type Result = (TermName,TypeName,Boolean)
+    type Result = (TermName,c.Tree,Boolean)
+	
+	def zeroValue(typ:c.Tree):c.Tree = typ match {
+    case Ident(TypeName(name)) => name match {
+      case "Char" => q"' '"
+      case "Int" => q"0"
+      case "String" => q""
+      case _ => q"null"
+    }
+    case AppliedTypeTree(Ident(TypeName("List")),_) => q"Nil"
+		case _ => q"null"
+	}
 
     def parseRule(rule:c.Tree):c.Tree = {
       val results = new ListBuffer[Result]()
       val transform = parseRuleContent(rule,results)
       val initSuccess = q"var success = false"
       val initMsg = q"""var msg = "" """
-      val initResults = results.map(x => q"var ${x._1}:Option[${x._2}] = None")
-      val tupledResults = q"(..${results.filter(_._3).map(x => q"${x._1}.get")})"  //lol ?
+      val initResults = results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
+      val tupledResults = q"(..${results.filter(_._3).map(x => q"${x._1}")})"  //lol ?
       val result = q"""ParseResult(success,msg,if (success) $tupledResults else null,input.offset)"""
 
       val tree = q"""
@@ -110,17 +123,12 @@ object FastParsers {
 
     def makeTuple(results:ListBuffer[Result]):c.Tree = {
       if (results.size > 1)
-          q"(..${results.filter(_._3).map(x => q"${x._1}.get")})"
+          q"(..${results.filter(_._3).map(x => q"${x._1}")})"
       else if (results.size == 1 && results(0)._3)
-          q"${results(0)._1}.get"
+          q"${results(0)._1}"
       else
          q""
     }
-
-    /*def getUnionType(r1:ListBuffer[Result],r2:ListBuffer[Result]):TypeName = {
-      val t1 = r1.filter(_._3)
-      val t2 = r2.filter(_._3)
-    } */
 
     def parseRep(a:c.Tree,min:c.Tree,max:c.Tree,results:ListBuffer[Result]):c.Tree = {
       val counter =  TermName(c.freshName)
@@ -128,16 +136,14 @@ object FastParsers {
       val cont = TermName(c.freshName)
       var results_tmp = new ListBuffer[Result]()
       val result = TermName(c.freshName)
-      var tmp_result = TermName(c.freshName)
       val tree = q"""
           var $counter = 0
           var $cont = true
           var $input_tmp = input
-          var $tmp_result:List[Any] = Nil
           while($cont){
             ${parseRuleContent(a,results_tmp)}
             if (success) {
-                $tmp_result = $tmp_result ++ List(${makeTuple(results_tmp)})
+                $result = $result ++ List(${makeTuple(results_tmp)})
                 if ($counter + 1 == $max)
                   $cont = false
             }
@@ -147,15 +153,12 @@ object FastParsers {
             }
             $counter = $counter + 1
           }
-          if (success) {
-            $result = Some($tmp_result)
-          }
-          else {
+          if (!success) {
             input = $input_tmp
           }
         """
       results_tmp = results_tmp.map(x => (x._1,x._2,false))
-      results.append((result,TypeName("Any"),true))
+      results.append((result,AppliedTypeTree(Ident(TypeName("List")),Ident(TypeName("Any"))::Nil),true))
       results.appendAll(results_tmp)
       tree
     }
@@ -165,22 +168,22 @@ object FastParsers {
       val tree = q"""
           ${parseRuleContent(a,results)}
            if (success)
-             $result = Some($f(${makeTuple(results)}))
+             $result = $f(${makeTuple(results)})
         """
       val tmp = results.map(x => (x._1,x._2,false))
       results.clear()
       results.appendAll(tmp)
-      results.append((result,TypeName("Any"),true))
+      results.append((result,Ident(TypeName("Any")),true))
       tree
     }
 
 
     def parseElem(a:c.Tree,d:c.Tree,results:ListBuffer[Result]):c.Tree = {
       val result = TermName(c.freshName)
-      results.append((result,TypeName(d.toString),true))  //TODO check d.toString
+      results.append((result,Ident(TypeName(d.toString)),true))  //TODO check d.toString
       q"""
         if (input.first == $a){
-          $result = Some(input.first)
+          $result = input.first
           input = input.rest
           success = true
          }
@@ -192,10 +195,10 @@ object FastParsers {
 
     def parseRange(a:c.Tree,b:c.Tree,d:c.Tree,results:ListBuffer[Result]): c.Tree = {
       val result = TermName(c.freshName)
-      results.append((result,TypeName(d.toString),true))  //TODO check d.toString
+      results.append((result,Ident(TypeName(d.toString)),true))  //TODO check d.toString
       q"""
         if (input.first >= $a && input.first <= $b){
-          $result = Some(input.first)
+          $result = input.first
           input = input.rest
           success = true
          }
@@ -249,15 +252,15 @@ object FastParsers {
           if (!success) {
             input = $input_tmp
             ${parseRuleContent(b,results_tmp2)}
-            $result = if (success) Some(${makeTuple(results_tmp2)}) else None
+            if (success) $result =  ${makeTuple(results_tmp2)}
           }
           else {
-            $result = Some(${makeTuple(results_tmp1)})
+            $result = ${makeTuple(results_tmp1)}
           }
         """
       results_tmp1 = results_tmp1.map(x => (x._1,x._2,false))
       results_tmp2 = results_tmp2.map(x => (x._1,x._2,false))
-      results.append((result,TypeName("Any"),true))
+      results.append((result,Ident(TypeName("Any")),true))
       results.appendAll(results_tmp1)
       results.appendAll(results_tmp2)
       tree
@@ -266,13 +269,13 @@ object FastParsers {
     def parseRuleCall(ruleCall:TermName,results:ListBuffer[Result]): c.Tree = {
       val callResult = TermName(c.freshName)
       val result = TermName(c.freshName)
-      results.append((result,TypeName("Any"),true))
+      results.append((result,Ident(TypeName("Any")),true))
       q"""
         val $callResult:ParseResult[Any] = ${ruleCall}(input)
         success = $callResult.success
         if (success){
           input = input.drop($callResult.inputPos)
-          $result = Some($callResult.result)
+          $result = $callResult.result
          }
         else
           msg = $callResult.msg
@@ -327,11 +330,11 @@ object FastParsers {
         parseElem(a,d,results)
       case q"FastParsers.range[$d]($a,$b)" =>
         parseRange(a,b,d,results)
-      case q"$a ~ $b" =>
+      case q"$a ~[$d] $b" =>
         parseThen(a,b,results)
-      case q"$a ~> $b" =>
+      case q"$a ~>[$d] $b" =>
         parseThenRight(a,b,results)
-      case q"$a <~ $b" =>
+      case q"$a <~[$d] $b" =>
         parseThenLeft(a,b,results)
       case q"$a || $b" =>
         parseOr(a,b,results)
