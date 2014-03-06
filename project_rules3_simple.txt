@@ -18,6 +18,11 @@ parseRule(a)
 if (success)
 	parseRule(b) 
 	
+Seq(a,b,c,d...) => useless ?
+	
+alt(a,b,c,d,e..) =>
+if (input.next == a || input.next == b ||..}
+
 a ~> b => 
 parseRule(a) 
 <forget results from a>

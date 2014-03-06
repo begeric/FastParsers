@@ -31,6 +31,11 @@ object Test {
       def rule13 = not('a' ~ 'b' ~ 'c') ~ rep(range('a','z'))
 
       def rule14 = rule1 ~ 'c'
+
+      def rule15 = 'a' ~ 'b' ~ 'c' ^^^ 1
+
+      def rule16 = 'a' ~ ('b' ^^^ 2) ~ 'c'
+      def rule17 = 'a' ~ ('b' ^^ {_ => 2}) ~ 'c'
       //def rule1:Parser[Char] = /*'a' ~ */rule2
       /*def rule2 = 'e' ~ 'c' ~ 'c'
       def rule3 = 'a' ~ ('b' ~ 'c') // ~ rule5
@@ -41,12 +46,17 @@ object Test {
       //def rule3 = (Elem('b')*) ~ (Elem('b')(1 to 10))
     }
 
-    parser.rule9(new CharSequenceReader("065613486")) match {
+    parser.rule8(new CharSequenceReader("bbbbbc")) match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule10(new CharSequenceReader("5sdawdpdggh0")) match {
+    parser.rule9(new CharSequenceReader("06561486")) match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+
+    parser.rule10(new CharSequenceReader("5sdawddggh0")) match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
@@ -60,12 +70,27 @@ object Test {
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule13(new CharSequenceReader("dbcefgha")) match {
+    parser.rule13(new CharSequenceReader("dbcgha")) match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
 
     parser.rule14(new CharSequenceReader("baccc")) match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+
+    parser.rule15(new CharSequenceReader("abc")) match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+
+    parser.rule16(new CharSequenceReader("abc")) match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+
+    parser.rule17(new CharSequenceReader("abc")) match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
