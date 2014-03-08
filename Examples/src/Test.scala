@@ -30,12 +30,16 @@ object Test {
       def rule12 = guard('a' ~ 'b' ~ 'c') ~ rep(range('a','z'))
       def rule13 = not('a' ~ 'b' ~ 'c') ~ rep(range('a','z'))
 
-      def rule14 = rule1 ~ 'c'
+      def rule14 = rule1 ~ ('c' || 'd')
 
       def rule15 = 'a' ~ 'b' ~ 'c' ^^^ 1
 
       def rule16 = 'a' ~ ('b' ^^^ 2) ~ 'c'
       def rule17 = 'a' ~ ('b' ^^ {_ => 2}) ~ 'c'
+
+      def rule18 = rep('a',3,3) | (rep('a',2,2) ~ 'b')
+      def rule19 = phrase(rep('a',0,3)) | rep('a',0,4)
+      def rule20 = (rep('a',0,3) ~ 'b') | rep('a' || 'b')
       //def rule1:Parser[Char] = /*'a' ~ */rule2
       /*def rule2 = 'e' ~ 'c' ~ 'c'
       def rule3 = 'a' ~ ('b' ~ 'c') // ~ rule5
@@ -46,51 +50,74 @@ object Test {
       //def rule3 = (Elem('b')*) ~ (Elem('b')(1 to 10))
     }
 
-    parser.rule8(new CharSequenceReader("bbbbbc")) match {
+    implicit def stringToCharSeqReader(s:String) = new CharSequenceReader(s)
+    implicit def stringToStreamMarkedArray(s:String) = new StreamMarkedArray(s.toCharArray)
+
+    parser.rule3("ababc") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule9(new CharSequenceReader("06561486")) match {
+    parser.rule8("bbbbbbc") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule10(new CharSequenceReader("5sdawddggh0")) match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
-    }
-    parser.rule11(new CharSequenceReader("abcd")) match {
+    parser.rule9("0656145486") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule12(new CharSequenceReader("abcdfgha")) match {
+    parser.rule10("5sdawddggh0") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+    parser.rule11("abcd") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule13(new CharSequenceReader("dbcgha")) match {
+    parser.rule12("abcdfgha") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule14(new CharSequenceReader("baccc")) match {
+    parser.rule13("dbcgha") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule15(new CharSequenceReader("abc")) match {
+    parser.rule14("bad") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule16(new CharSequenceReader("abc")) match {
+    parser.rule15("abc") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule17(new CharSequenceReader("abc")) match {
+    parser.rule16("abc") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+
+    parser.rule17("abc") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+
+    parser.rule18("aab") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+
+    parser.rule19("aaaa") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+
+    parser.rule20("aaabb") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
