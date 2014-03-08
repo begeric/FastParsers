@@ -37,11 +37,15 @@ object FastParsers {
 
     //HOW TO DO THAT ?
     @compileTimeOnly("can’t be used outside FastParser")
-    def ^^[U](f:Product => U):Parser[U] = ???
+    def ^^[U](f:Any => U):Parser[U] = ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def map[U](f:Product => U):Parser[U] = ???
+    def map[U](f:Any => U):Parser[U] = ???
     @compileTimeOnly("can’t be used outside FastParser")
     def ^^^[U](f:U):Parser[U] = ???
+
+    @compileTimeOnly("can’t be used outside FastParser")
+    def filter[U](f:Any => Boolean):Parser[T] = ???
+
 
     @compileTimeOnly("can’t be used outside FastParser")
     def rep(min:Int,max:Int):Parser[T] = ???
@@ -212,7 +216,7 @@ object FastParsers {
       else if (usedResults.size == 1)
           q"${usedResults(0)._1}"
       else
-         q""
+          q""
     }
 
 
@@ -239,6 +243,8 @@ object FastParsers {
             else {
                 success = $counter >= $min
                 $cont = false
+                if (!success)
+                  msg = "expected at least " + $min + " occurence(s) of 'rule' in rep('rule') at " + ${input.pos}
             }
             $counter = $counter + 1
           }
@@ -282,6 +288,25 @@ object FastParsers {
       tree
     }
 
+    def parseFilter(a:c.Tree, f:c.Tree,typ:c.Tree,results:ListBuffer[Result]) : c.Tree = {
+      val result = TermName(c.freshName)
+      val results_tmp = new ListBuffer[Result]()
+      val tree = input.mark{rollback =>
+        q"""
+          ${parseRuleContent(a,results_tmp)}
+           if (success && $f(${combineResults(results_tmp)}))
+             $result = ${combineResults(results_tmp)}
+           else {
+            success = false
+            msg = "incorrect result for 'rule' at filter('rule') at " + ${input.pos}
+            ${rollback}
+           }
+        """
+      }
+      results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
+      results.append((result,Ident(TypeName("Any")),true))
+      tree
+    }
 
 
     def parseElem(a:c.Tree,d:c.Tree,results:ListBuffer[Result]):c.Tree = {
@@ -474,6 +499,8 @@ object FastParsers {
         parseMap(a,f,results)
       case q"$a ^^^ [$d]($f)" =>
         parseValue(a,f,d,results)
+      case q"$a filter [$d]($f)" =>
+        parseFilter(a,f,d,results)
       case q"FastParsers.phrase[$d]($a)" =>
         parsePhrase(a,results)
       case q"FastParsers.not[$d]($a)" =>

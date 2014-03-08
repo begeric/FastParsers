@@ -102,9 +102,20 @@ if (success) {
 }
 
 map(in,f) => 
-parseRule(a)
+parseRule(in)
 if (success)
 	$result = f(<combine results from in>)
+
+filter(in,f) =>
+val input_tmp = input
+parseRule(in)
+if (success && f(<combine results from in>))
+	$result = <combine results from in>
+else {
+	success = false
+	input = input_tmp
+}
+	
 
 ruleCall(ruleName) => 
 val callResult:ParseResult[Any] = ${ruleName}(input)
@@ -115,5 +126,4 @@ if (success){
 }
 else
 	msg = $callResult.msg
-
 

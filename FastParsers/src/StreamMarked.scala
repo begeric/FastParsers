@@ -28,7 +28,7 @@ class StreamMarkedArray[T](in:Array[T]) extends StreamMarked[T]{
   def rollBack(newpos:Int) = pos = newpos //TODO check ?
   def offset = pos
 
-  def atEnd = pos + 1 >= in.size
+  def atEnd = pos >= in.size
 }
 
 //implicit def ArrayToStreamMarked[T](in:Array[T]) = new StreamMarkedArray(in)

@@ -40,6 +40,8 @@ object Test {
       def rule18 = rep('a',3,3) | (rep('a',2,2) ~ 'b')
       def rule19 = phrase(rep('a',0,3)) | rep('a',0,4)
       def rule20 = (rep('a',0,3) ~ 'b') | rep('a' || 'b')
+
+      def rule21 = ((rep(range('a','z'))) filter {case x:List[Char] => x.mkString == "salut" || x.mkString == "hello"})
       //def rule1:Parser[Char] = /*'a' ~ */rule2
       /*def rule2 = 'e' ~ 'c' ~ 'c'
       def rule3 = 'a' ~ ('b' ~ 'c') // ~ rule5
@@ -58,7 +60,7 @@ object Test {
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule8("bbbbbbc") match {
+    parser.rule8("bbbbbc") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
@@ -118,6 +120,11 @@ object Test {
     }
 
     parser.rule20("aaabb") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+
+    parser.rule21("salu") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
