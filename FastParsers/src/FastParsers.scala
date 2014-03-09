@@ -44,16 +44,17 @@ object FastParsers {
     def ^^^[U](f:U):Parser[U] = ???
 
     @compileTimeOnly("can’t be used outside FastParser")
-    def filter[U](f:Any => Boolean):Parser[T] = ???
+    def filter[U](f:Any => Boolean):Parser[T] = ???        //(==>)   ???
 
 
     @compileTimeOnly("can’t be used outside FastParser")
     def rep(min:Int,max:Int):Parser[T] = ???
 
     @compileTimeOnly("can’t be used outside FastParser")
-    def repFold[U](init:U, f:(U,T) => U):Parser[T] = ???        //TODO
+    def repfold(min:Int,max:Int):Parser[T] = ???
 
-    //filter (==>) TODO
+    @compileTimeOnly("can’t be used outside FastParser")
+    def repFold[U](init:U)(f:(U,T) => U):Parser[U] = ???
   }
 
   @compileTimeOnly("can’t be used outside FastParser")
@@ -62,6 +63,11 @@ object FastParsers {
   def rep1[T](p:Parser[T]):Parser[T] = ???
   @compileTimeOnly("can’t be used outside FastParser")
   def opt[T](p:Parser[T]):Parser[T] = ???
+
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  def repFold[T,U](p:Parser[T])(init:U)(f:(U,T)=> U):Parser[U] = ???
+
 
   def seq[T](elem:Parser[T]*):Parser[T] = ???
   def alt[T](elem:Parser[T]*):Parser[T] = ???
@@ -258,6 +264,30 @@ object FastParsers {
       }
       results_tmp = results_tmp.map(x => (x._1,x._2,false))
       results.append((result,AppliedTypeTree(Ident(TypeName("List")),Ident(TypeName("Any"))::Nil),true))
+      results.appendAll(results_tmp)
+      tree
+    }
+
+    def parseRepFold(a:c.Tree, init:c.Tree, f:c.Tree,results:ListBuffer[Result]) : c.Tree = {
+      val cont = TermName(c.freshName)
+      var results_tmp = new ListBuffer[Result]()
+      val result = TermName(c.freshName)
+      val last_result = TermName(c.freshName)
+      val tree = q"""
+        var $cont = true
+        var $last_result = $init
+        while ($cont &&  !${input.isEOI}){
+           ${parseRuleContent(a,results_tmp)}
+           if (success)
+            $last_result =  $f($last_result,${combineResults(results_tmp)})
+           else
+            $cont = false
+        }
+        $result = $last_result
+        success = true
+      """
+      results_tmp = results_tmp.map(x => (x._1,x._2,false))
+      results.append((result,Ident(TypeName("Any")),true))
       results.appendAll(results_tmp)
       tree
     }
@@ -480,6 +510,10 @@ object FastParsers {
         parseOr(a,b,results)
       case q"$a.rep($min,$max)" =>
         parseRep(a,min,max,results)
+      case q"$a.repFold[..$d]($init)($f)" =>
+        parseRepFold(a,init,f,results)
+      case q"FastParsers.repFold[..$d]($a)($init)($f)" =>
+        parseRepFold(a,init,f,results)
       case q"$a?" =>
         parseRep(a,q"0",q"1",results)
       case q"$a+" =>

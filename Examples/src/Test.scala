@@ -9,6 +9,10 @@
 import scala.reflect.runtime.universe._
 import scala.util.parsing.input._
 object Test {
+
+  implicit def stringToCharSeqReader(s:String) = new CharSequenceReader(s)
+  implicit def stringToStreamMarkedArray(s:String) = new StreamMarkedArray(s.toCharArray)
+
   def main(args: Array[String]) {
     import FastParsers._
     val parser = FastParser{
@@ -42,6 +46,10 @@ object Test {
       def rule20 = (rep('a',0,3) ~ 'b') | rep('a' || 'b')
 
       def rule21 = ((rep(range('a','z'))) filter {case x:List[Char] => x.mkString == "salut" || x.mkString == "hello"})
+
+      def rule22 = repFold(range('0','9'))(0){(y:Int,x:Any) => x.asInstanceOf[Char].toInt + 1 +y}
+      def rule23 = range('0','9').repFold(5){(y:Int,x:Any) => x.asInstanceOf[Char].toInt * y}
+      //def rule22 = repFold(range('1','9'))
       //def rule1:Parser[Char] = /*'a' ~ */rule2
       /*def rule2 = 'e' ~ 'c' ~ 'c'
       def rule3 = 'a' ~ ('b' ~ 'c') // ~ rule5
@@ -52,10 +60,8 @@ object Test {
       //def rule3 = (Elem('b')*) ~ (Elem('b')(1 to 10))
     }
 
-    implicit def stringToCharSeqReader(s:String) = new CharSequenceReader(s)
-    implicit def stringToStreamMarkedArray(s:String) = new StreamMarkedArray(s.toCharArray)
 
-    parser.rule3("ababc") match {
+   parser.rule3("ababcc") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
@@ -65,7 +71,7 @@ object Test {
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule9("0656145486") match {
+    parser.rule9("065614486") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
@@ -128,10 +134,22 @@ object Test {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
-   /* parser.rule8(new CharSequenceReader("bbbbbba")) match {
+
+    parser.rule22("5623") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
-    }*/
+    }
+
+    parser.rule23("5623") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
+
+
+    /* parser.rule8(new CharSequenceReader("bbbbbba")) match {
+       case Success(result) => println(result)
+       case Failure(msg) => println("error : " + msg)
+     }*/
 
     /*parser.rule6(new CharSequenceReader("c")) match {
       case Success(result) => println(result)
