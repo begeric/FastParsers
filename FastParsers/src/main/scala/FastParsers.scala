@@ -128,8 +128,8 @@ object FastParsers {
     }
 
     object ReaderInput extends Input {
-      def currentInput = q"""input.first"""
-      def advance = q"""input = input.rest"""
+      def currentInput = q"input.first"
+      def advance = q"input = input.rest"
       def advanceTo(offset:c.Tree) = q"input = input.drop($offset)"
 
       def mark(code:c.Tree => c.Tree):c.Tree = {
@@ -239,6 +239,7 @@ object FastParsers {
           var $counter = 0
           var $cont = true
           val $tmp_result = new ListBuffer[Any]()
+          success = $min == 0
           while($cont && !${input.isEOI}){
             ${parseRuleContent(a,results_tmp)}
             if (success) {

@@ -23,7 +23,7 @@ object Test {
       def rule5 = ('a' ~ 'b').* ~ 'c'
       def rule6 = ('a' ~ 'b').? ~ 'c'
       //def rule7 = rule1
-      def rule8 = (rep('b',0,-1) ~ ('a' || 'c')) ^^ {case (x:List[Char],y) => println(x.size);y}
+      def rule8 = (rep('b',0,-1) ~ ('a' || 'c')) ^^ {case (x:List[_],y) => println(x.size);y}
 
       def rule9 = rep1(range('0','9'))
 
@@ -45,19 +45,10 @@ object Test {
       def rule19 = phrase(rep('a',0,3)) | rep('a',0,4)
       def rule20 = (rep('a',0,3) ~ 'b') | rep('a' || 'b')
 
-      def rule21 = ((rep(range('a','z'))) filter {case x:List[Char] => x.mkString == "salut" || x.mkString == "hello"})
+      def rule21 = ((rep(range('a','z'))) filter {case x:List[_] => x.mkString == "salut" || x.mkString == "hello"})
 
-      def rule22 = repFold(range('0','9'))(0){(y:Int,x:Any) => x.asInstanceOf[Char].toInt + 1 +y}
-      def rule23 = range('0','9').repFold(5){(y:Int,x:Any) => x.asInstanceOf[Char].toInt * y}
-      //def rule22 = repFold(range('1','9'))
-      //def rule1:Parser[Char] = /*'a' ~ */rule2
-      /*def rule2 = 'e' ~ 'c' ~ 'c'
-      def rule3 = 'a' ~ ('b' ~ 'c') // ~ rule5
-      def rule5 = 'a' ~ (('b' ~ 'c') || 'b') ~ 'd'
-      def rule6 = 'b'.rep(1,10)  */
-      //def rule7 = ('a' || 'b').rep(3,3)
-      //def rule3 = 1 ~ 2 // problem?
-      //def rule3 = (Elem('b')*) ~ (Elem('b')(1 to 10))
+      def rule22 = repFold(range('0','9'))(0){(y:Int,x:Any) => x.asInstanceOf[Char].asDigit + 1 +y}
+      def rule23 = range('0','9').repFold(1){(y:Int,x:Char) => x.asDigit * y}
     }
 
 
@@ -140,36 +131,10 @@ object Test {
       case Failure(msg) => println("error : " + msg)
     }
 
-    parser.rule23("5623") match {
+    parser.rule23("56") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
-
-
-    /* parser.rule8(new CharSequenceReader("bbbbbba")) match {
-       case Success(result) => println(result)
-       case Failure(msg) => println("error : " + msg)
-     }*/
-
-    /*parser.rule6(new CharSequenceReader("c")) match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
-    }  */
-
-    /*parser.rule1(new CharSequenceReader("cb")) match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
-    }   */
-    /*parser.rule4(new CharSequenceReader("ba")) match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
-    }     */
-    /*parser.rule7(new CharSequenceReader("bac"))  match {
-      case Success() => println("yeah")
-      case Failure(msg) => println("sigh : " + msg)
-    }    */
-
-
 
   }
 }
