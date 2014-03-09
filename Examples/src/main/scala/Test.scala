@@ -5,6 +5,7 @@
  * Time: 15:57
  * To change this template use File | Settings | File Templates.
  */
+import scala.reflect.runtime.universe._
 
 import scala.util.parsing.input._
 object Test {
@@ -15,8 +16,9 @@ object Test {
   def main(args: Array[String]) {
     import FastParsers._
     val parser = FastParser{
-      def rule1 = 'b' ~ 'a'// ~ 'b' ~ 'l'
-      def rule2 = ('c' || ('a' ~ 'd')) ~ 'b'
+      def rule1 = 'b' ~ 'a' ~ rule2// ~ 'b' ~ 'l'
+      def rule2 = 'c' ~ 'b'
+
       def rule3 = ('a' ~ 'b').rep(2,3) ~ 'c'
       def rule4 = ('a' ~ 'b').+ ~ 'c'
       def rule5 = ('a' ~ 'b').* ~ 'c'
@@ -52,94 +54,98 @@ object Test {
       def rule24 = phrase(rep(range('a','z') || '?'))
     }
 
+    parser.rule1("bacb") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error 1: " + msg)
+    }
 
    parser.rule3("ababcc") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 3: " + msg)
     }
 
     parser.rule8("bbbbbc") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 8: " + msg)
     }
 
     parser.rule9("065614486") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 9: " + msg)
     }
 
     parser.rule10("5sdawddggh0") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 10: " + msg)
     }
     parser.rule11("abcd") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 11: " + msg)
     }
 
     parser.rule12("abcdfgha") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 12: " + msg)
     }
 
     parser.rule13("dbcgha") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 13: " + msg)
     }
 
-    parser.rule14("bad") match {
+    parser.rule14("bacbd") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 14: " + msg)
     }
 
     parser.rule15("abc") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 15: " + msg)
     }
 
     parser.rule16("abc") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 16: " + msg)
     }
 
     parser.rule17("abc") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 17: " + msg)
     }
 
     parser.rule18("aab") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 18: " + msg)
     }
 
     parser.rule19("aaaa") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 19: " + msg)
     }
 
     parser.rule20("aaabb") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 20: " + msg)
     }
 
     parser.rule21("salu") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 21: " + msg)
     }
 
     parser.rule22("5623") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 22: " + msg)
     }
 
-    parser.rule23("56") match {
+    parser.rule23("522") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 23: " + msg)
     }
 
     parser.rule24("") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error : " + msg)
+      case Failure(msg) => println("error 24: " + msg)
     }
   }
 }

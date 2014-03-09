@@ -195,7 +195,6 @@ object FastParsers {
       val initResults = results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
       val tupledResults = combineResults(results)  //lol ?
       val result = q"""ParseResult(success,msg,if (success) $tupledResults else null,${input.offset})"""
-
       val tree = q"""
         ..$initResults
         $transform
@@ -539,21 +538,21 @@ object FastParsers {
         parseNot(a,results)
       case q"FastParsers.guard[$d]($a)" =>
         parseGuard(a,results)
-      case _ => q"""println(show(reify("rule error")))"""
+      case _ => q"""println(show(reify($rule)))"""
     }
 
     /**
      * Expand each rule in a imperative style without considering other rules (i.e def rule2 = rule1 is not expanded to the code of rule1)
      * @return An HashMap containing (rulename, corresponging code)
      */
-    def createBasicStructure = {
+    def getBasicStructure = {
       val rulesMap = new HashMap[String,c.Tree]()
       rules match {
         case q"{..$body}" =>
           body.foreach (_ match {
             case q"def $name:$_ = $b" =>
               val TermName(nameString) = name
-              val in = (nameString, parseRule(b))
+              val in = (nameString, b)
               rulesMap += in
             //case q""  =>
             case q"()" =>
@@ -565,6 +564,44 @@ object FastParsers {
       }
       rulesMap
     }
+
+    def expandCallRule(ruleName:String,tree:c.Tree,rulesMap: HashMap[String,c.Tree],rulesPath:List[String]):c.Tree = tree match {
+      case q"${a:TermName}.$m[..$d](..$b)" =>
+        val args = b.map(expandCallRule(ruleName,_,rulesMap,rulesPath))
+        q"$a.$m[..$d](..$args)"
+      case q"$a.$m[..$d](..$b)" =>
+        val callee = expandCallRule(ruleName,a,rulesMap,rulesPath)
+        val args = b.map(expandCallRule(ruleName,_,rulesMap,rulesPath))
+        q"$callee.$m[..$d](..$args)"
+      case q"$f[..$d](..$b)" =>
+        val args = b.map(expandCallRule(ruleName,_,rulesMap,rulesPath))
+        q"$f[..$d](..$args)"
+      case q"${ruleCall : TermName}" =>
+        val name = ruleCall.toString
+        if (!rulesPath.contains(name))
+          expandCallRule(name,rulesMap(name),rulesMap,name::rulesPath)
+        else
+         q"$ruleCall"
+      case _ => tree
+    }
+
+    def expandRules(rulesMap: HashMap[String,c.Tree]): HashMap[String,c.Tree] = {
+      val expandedRulesMap = new HashMap[String,c.Tree]()
+      for (k <- rulesMap.keys)  {
+        val rule = expandCallRule(k,rulesMap(k),rulesMap,List(k))
+        expandedRulesMap += ((k,parseRule(rule)))
+      }
+      expandedRulesMap
+    }
+
+    /*def findReplaceRule(tree:c.Tree,rulesMap : HashMap[String,c.Tree]):c.Tree = tree match {
+      case q"..$body" =>
+        val tmp = body.map(x => findReplaceRule(x,rulesMap))
+        q"{..$tmp}"
+      /*case q"if ($cond) $thn else $els" => q"if ($cond) ${findReplaceRule(thn,rulesMap)} else ${findReplaceRule(els,rulesMap)}"
+      case q"while ($cond) $body" => q"while ($cond) ${findReplaceRule(body,rulesMap)}" */
+      case _ => tree
+    }  */
 
     def replaceInRules(rulesMap : HashMap[String,c.Tree]) = {
       val map = new HashMap[String,c.Tree]()
@@ -604,8 +641,9 @@ object FastParsers {
       """
     }
 
-    val rulesMap = createBasicStructure
-    val finalRulesMap = replaceInRules(rulesMap)
+    val rulesMap = getBasicStructure
+    val expandedMap = expandRules(rulesMap)
+    val finalRulesMap = replaceInRules(expandedMap)
     val tree = createFastParser(finalRulesMap)
     c.Expr(tree)
   }
