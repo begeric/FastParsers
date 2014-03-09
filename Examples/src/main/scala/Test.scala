@@ -6,7 +6,6 @@
  * To change this template use File | Settings | File Templates.
  */
 
-import scala.reflect.runtime.universe._
 import scala.util.parsing.input._
 object Test {
 
@@ -49,6 +48,8 @@ object Test {
 
       def rule22 = repFold(range('0','9'))(0){(y:Int,x:Any) => x.asInstanceOf[Char].asDigit + 1 +y}
       def rule23 = range('0','9').repFold(1){(y:Int,x:Char) => x.asDigit * y}
+
+      def rule24 = phrase(rep(range('a','z') || '?'))
     }
 
 
@@ -136,5 +137,9 @@ object Test {
       case Failure(msg) => println("error : " + msg)
     }
 
+    parser.rule24("") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error : " + msg)
+    }
   }
 }

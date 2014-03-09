@@ -35,7 +35,6 @@ object FastParsers {
     @compileTimeOnly("can’t be used outside FastParser")
     def `*`:Parser[List[T]] =  ???
 
-    //HOW TO DO THAT ?
     @compileTimeOnly("can’t be used outside FastParser")
     def ^^[U](f:Any => U):Parser[U] = ???
     @compileTimeOnly("can’t be used outside FastParser")
@@ -159,7 +158,7 @@ object FastParsers {
       def isEOI = q"input.atEnd"
       def pos = q"input.offset"
       def offset = q"input.offset"
-      def inputType = tq"StreamMarkedArray[Char]"
+      def inputType = tq"StreamMarked[Char]"
     }
 
     val input = StreamMarkedInput
@@ -193,15 +192,11 @@ object FastParsers {
     def parseRule(rule:c.Tree):c.Tree = {
       val results = new ListBuffer[Result]()
       val transform = parseRuleContent(rule,results)
-      val initSuccess = q"var success = false"
-      val initMsg = q"""var msg = "" """
       val initResults = results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
       val tupledResults = combineResults(results)  //lol ?
       val result = q"""ParseResult(success,msg,if (success) $tupledResults else null,${input.offset})"""
 
       val tree = q"""
-        $initSuccess
-        $initMsg
         ..$initResults
         $transform
         $result
@@ -413,7 +408,8 @@ object FastParsers {
           if (!success) {
             ${rollback}
             ${parseRuleContent(b,results_tmp2)}
-            if (success) $result =  ${combineResults(results_tmp2)}
+            if (success)
+              $result = ${combineResults(results_tmp2)}
           }
           else {
             $result = ${combineResults(results_tmp1)}
@@ -527,7 +523,8 @@ object FastParsers {
         parseRep(a,q"1",q"-1",results)
       case q"FastParsers.opt[$d]($a)" =>
         parseRep(a,q"0",q"1",results)
-      case q"""${ruleCall : TermName}""" =>  parseRuleCall(ruleCall,results)
+      case q"""${ruleCall : TermName}""" =>
+        parseRuleCall(ruleCall,results)
       case q"$a map[$d] ($f)" =>
         parseMap(a,f,results)
       case q"$a ^^ [$d]($f)" =>
@@ -573,7 +570,12 @@ object FastParsers {
       val map = new HashMap[String,c.Tree]()
       for (k <- rulesMap.keys)  {
         val term = TermName(k)
-        val ruleCode = q"var input = i; ${rulesMap(k)}"
+        val ruleCode = q"""
+        var input = i
+        var success = false
+        var msg = ""
+        ${rulesMap(k)}
+        """
         //map += ((k,q"def $term(i:Reader[Char]) = println(show(reify($ruleCode)))"))
         map += ((k,q"def $term(i:${input.inputType}) = $ruleCode"))
       }
