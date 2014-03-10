@@ -135,3 +135,7 @@ if (success){
 else
 	msg = $callResult.msg
 
+a withFailureMessage(error_msg) =>
+parseRule(a)
+if (!success)
+	msg = error_msg

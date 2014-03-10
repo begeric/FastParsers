@@ -54,6 +54,9 @@ object FastParsers {
 
     @compileTimeOnly("can’t be used outside FastParser")
     def repFold[U](init:U)(f:(U,T) => U):Parser[U] = ???
+
+    @compileTimeOnly("can’t be used outside FastParser")
+    def withFailureMessage(msg:String):Parser[T] = ???
   }
 
   @compileTimeOnly("can’t be used outside FastParser")
@@ -491,6 +494,14 @@ object FastParsers {
       tree
     }
 
+    def parseWithFailureMessage(a:c.Tree,msg:c.Tree,results:ListBuffer[Result]): c.Tree = {
+      q"""
+       ${parseRuleContent(a,results)}
+        if (!success)
+           msg = $msg
+      """
+    }
+
     /**
      * Switch function which transform a parser combinator style into an imperative style
      * @param rule The code to be transformed
@@ -546,6 +557,8 @@ object FastParsers {
         parseNot(a,results)
       case q"FastParsers.guard[$d]($a)" =>
         parseGuard(a,results)
+      case q"$a withFailureMessage($msg)" =>
+        parseWithFailureMessage(a,msg,results)
       case _ => q"""println(show(reify($rule)))"""
     }
 

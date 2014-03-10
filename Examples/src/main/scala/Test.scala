@@ -58,6 +58,10 @@ object Test {
 
       def rule27 = rep('a' ~ 'b') ~ rep('a')
       def rule28 = rep('a') ~ 'b'
+      /*def rule29 = seq(List('s','a','l','u','t'))
+      def rule30 = seq("salut")   */
+
+      def rule31 = 'a' ~ ('b' withFailureMessage("JE VEUX UN 'b' ICI")) ~ 'c'
     }
 
     parser.rule1("bacb") match {
@@ -156,15 +160,20 @@ object Test {
 
     parser.rule25("aaaaab") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error 24: " + msg)
+      case Failure(msg) => println("error 25: " + msg)
     }
     parser.rule27("ababaaa") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error 24: " + msg)
+      case Failure(msg) => println("error 27: " + msg)
     }
     parser.rule28("aaaaab") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error 24: " + msg)
+      case Failure(msg) => println("error 28: " + msg)
+    }
+
+    parser.rule31("acc") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error 31: " + msg)
     }
   }
 }
