@@ -614,7 +614,7 @@ object FastParsers {
         ${rulesMap(k)}
         """
         //map += ((k,q"def $term(i:Reader[Char]) = println(show(reify($ruleCode)))"))
-        map += ((k,q"def $term(i:${input.inputType}) = $ruleCode"))
+        map += ((k,q"def $term(i:${input.inputType}):ParseResult[Any] = $ruleCode"))
       }
       map
     }

@@ -52,6 +52,9 @@ object Test {
       def rule23 = range('0','9').repFold(1){(y:Int,x:Char) => x.asDigit * y}
 
       def rule24 = phrase(rep(range('a','z') || '?'))
+
+      def rule25:Parser[Char] = 'a' ~ rule26
+      def rule26:Parser[Char] = 'b' || rule25
     }
 
     parser.rule1("bacb") match {
@@ -64,7 +67,7 @@ object Test {
       case Failure(msg) => println("error 3: " + msg)
     }
 
-    parser.rule8("bbbbbc") match {
+    parser.rule8("bbbbbbc") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error 8: " + msg)
     }
@@ -138,12 +141,17 @@ object Test {
       case Failure(msg) => println("error 22: " + msg)
     }
 
-    parser.rule23("522") match {
+    parser.rule23("5226") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error 23: " + msg)
     }
 
     parser.rule24("") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error 24: " + msg)
+    }
+
+    parser.rule25("aaaaab") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error 24: " + msg)
     }
