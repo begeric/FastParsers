@@ -55,6 +55,9 @@ object Test {
 
       def rule25:Parser[Char] = 'a' ~ rule26
       def rule26:Parser[Char] = 'b' || rule25
+
+      def rule27 = rep('a' ~ 'b') ~ rep('a')
+      def rule28 = rep('a') ~ 'b'
     }
 
     parser.rule1("bacb") match {
@@ -152,6 +155,14 @@ object Test {
     }
 
     parser.rule25("aaaaab") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error 24: " + msg)
+    }
+    parser.rule27("ababaaa") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error 24: " + msg)
+    }
+    parser.rule28("aaaaab") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error 24: " + msg)
     }

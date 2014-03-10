@@ -228,6 +228,25 @@ object FastParsers {
       var results_tmp = new ListBuffer[Result]()
       val result = TermName(c.freshName)
       val tmp_result = TermName(c.freshName)
+      val innerWhileTree = input.mark {rollback =>
+        q"""
+          ${parseRuleContent(a,results_tmp)}
+          if (success) {
+              $tmp_result.append(${combineResults(results_tmp)})
+              if ($counter + 1 == $max)
+                $cont = false
+          }
+          else {
+              success = $counter >= $min
+              $cont = false
+              if (!success)
+                msg = "expected at least " + $min + " occurence(s) of 'rule' in rep('rule') at " + ${input.pos}
+              else
+                ${rollback}
+
+          }
+        """
+      }
       val tree = input.mark {rollback =>
         q"""
           var $counter = 0
@@ -235,18 +254,7 @@ object FastParsers {
           val $tmp_result = new ListBuffer[Any]()
           success = $min == 0
           while($cont && !${input.isEOI}){
-            ${parseRuleContent(a,results_tmp)}
-            if (success) {
-                $tmp_result.append(${combineResults(results_tmp)})
-                if ($counter + 1 == $max)
-                  $cont = false
-            }
-            else {
-                success = $counter >= $min
-                $cont = false
-                if (!success)
-                  msg = "expected at least " + $min + " occurence(s) of 'rule' in rep('rule') at " + ${input.pos}
-            }
+            $innerWhileTree
             $counter = $counter + 1
           }
           if (!success) {
@@ -581,7 +589,7 @@ object FastParsers {
         if (!rulesPath.contains(name))
           expandCallRule(name,rulesMap(name),rulesMap,name::rulesPath)
         else
-         q"$ruleCall"
+          q"$ruleCall"
       case _ => tree
     }
 
@@ -620,10 +628,10 @@ object FastParsers {
     }
 
     /**
-      *
-      * @param map Contain the rules name and their corresponding code
-      * @return An AnyRef class containing where all rules are transformed in their expanded form
-      */
+     *
+     * @param map Contain the rules name and their corresponding code
+     * @return An AnyRef class containing where all rules are transformed in their expanded form
+     */
     def createFastParser(map : HashMap[String,c.Tree]) = {
       val anon = TypeName(c.freshName)
       val dmmy = TermName(c.freshName)//no joke : see http://stackoverflow.com/questions/14370842/getting-a-structural-type-with-an-anonymous-classs-methods-from-a-macro

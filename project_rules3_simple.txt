@@ -54,6 +54,7 @@ val cont = true
 val input_tmp = input
 
 while (cont) {
+	val input_tmp2 = input
 	parseRule(in)
 	if (success){
 		$result = $result ++ <combine results from in>
@@ -63,9 +64,16 @@ while (cont) {
 	else {
 		success = counter >= a
 		cont = false
+		if (success)
+			input = input_tmp2
+		else 
+			<error msg>
 	}
 	counter++
 }
+
+if (!success)
+	input = input_tmp
 
 range(Elem(a),x,y) => 
 if (input.first >= x && input.first <= y)
