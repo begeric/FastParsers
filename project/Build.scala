@@ -5,7 +5,7 @@ object MacroBuild extends Build {
    lazy val Examples = project.in(file("Examples")) dependsOn(FastParsers) settings(
 	   // include the macro classes and resources in the main jar
 	   scalaVersion := "2.11.0-RC1" ,
-	   
+	   	
 	   mappings in (Compile, packageBin) ++= mappings.in(FastParsers, Compile, packageBin).value,
 	   // include the macro sources in the main source jar
 	   mappings in (Compile, packageSrc) ++= mappings.in(FastParsers, Compile, packageSrc).value
@@ -17,7 +17,9 @@ object MacroBuild extends Build {
 		  "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases",
 		  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 		),
-				
+			
+	   libraryDependencies += "org.scalatest"  % "scalatest_2.10"   % "1.9.1" % "test",
+		
 		libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
 		
 		libraryDependencies += "com.github.axel22" % "scalameter_2.11" % "0.5-SNAPSHOT" % "test",

@@ -467,7 +467,13 @@ object FastParsers {
       var results_tmp = new ListBuffer[Result]()
       val tree =  input.mark{ rollback =>
         q"""
+        try {
          ${parseRuleContent(a,results_tmp)}
+         }
+         catch {
+          case e:NoMoreInput => success = false
+          case e:Throwable => throw e
+         }
          if (success) {
           success = false
           msg = "not parser expected failure at " + ${input.pos}
@@ -632,7 +638,11 @@ object FastParsers {
         var input = i
         var success = false
         var msg = ""
+        try {
         ${rulesMap(k)}
+        } catch {
+          case e:Throwable => ParseResult(false,e.getMessage,null,${input.pos})
+        }
         """
         //map += ((k,q"def $term(i:Reader[Char]) = println(show(reify($ruleCode)))"))
         map += ((k,q"def $term(i:${input.inputType}):ParseResult[Any] = $ruleCode"))

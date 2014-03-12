@@ -10,13 +10,20 @@ object FastParsersSpecification extends Properties("FastParsers") {
   import Gen._
   
   val parser = FastParser{
-	  def rule = phrase((range('a','z') || range('A','Z'))*)
+	  def rule1 = phrase((range('a','z') || range('A','Z'))*)
+    def rule2 = phrase(rep1(range('0','9')))
   }
   
   property("rep range alpha str") = forAll (Gen.alphaStr){ (a: String) =>
-    parser.rule(a) match {
+    parser.rule1(a) match {
       case Success(result) => true
 	    case Failure(msg) => println(msg + " : " + a);false
-	}
+	  }
+  }
+  property("rep range num str") = forAll (Gen.numStr){ (a: String) =>
+    parser.rule2(a) match {
+      case Success(result) => a.size > 0
+      case Failure(msg) => a.size == 0
+    }
   }
 }

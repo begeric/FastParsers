@@ -23,6 +23,7 @@ object Test {
       def rule4 = ('a' ~ 'b').+ ~ 'c'
       def rule5 = ('a' ~ 'b').* ~ 'c'
       def rule6 = ('a' ~ 'b').? ~ 'c'
+
       //def rule7 = rule1
       def rule8 = (rep('b',0,-1) ~ ('a' || 'c')) ^^ {case (x:List[_],y) => println(x.size);y}
 

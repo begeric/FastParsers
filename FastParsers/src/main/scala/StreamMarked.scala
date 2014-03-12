@@ -1,6 +1,8 @@
 /**
  * Created by Eric on 07.03.14.
  */
+class NoMoreInput(msg:String,cause:Throwable = null) extends RuntimeException(msg,cause)
+
 trait StreamMarked[T] {
   def get:T
   def next:Unit
@@ -11,10 +13,15 @@ trait StreamMarked[T] {
   def atEnd:Boolean
 }
 
+
 class StreamMarkedArray[T](in:Array[T]) extends StreamMarked[T]{
   private var pos:Int = 0
 
-  def get = in(pos)
+  def get = try {
+    in(pos)
+  } catch {
+    case e:ArrayIndexOutOfBoundsException => throw new NoMoreInput(e.getMessage,e.getCause)
+  }
   def next = {
     if (pos < in.size)
       pos = pos + 1
