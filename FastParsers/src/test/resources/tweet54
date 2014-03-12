@@ -1,0 +1,8 @@
+HTTP/1.1 401 Unauthorized
+content-length: 63
+content-type: application/json; charset=utf-8
+date: Wed, 04 Sep 2013 13:35:00 UTC
+server: tfe
+set-cookie: guest_id=v1%3A137830170094703955; Domain=.twitter.com; Path=/; Expires=Fri, 04-Sep-2015 13:35:00 UTC
+
+{"errors":[{"message":"Could not authenticate you","code":32}]}
