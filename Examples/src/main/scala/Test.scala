@@ -43,7 +43,7 @@ object Test {
       def rule16 = 'a' ~ ('b' ^^^ 2) ~ 'c'
       def rule17 = 'a' ~ ('b' ^^ {_ => 2}) ~ 'c'
 
-      def rule18 = rep('a',3,3) | (rep('a',2,2) ~ 'b')
+      def rule18 = phrase(rep('a',2,2) ~ 'b')
       def rule19 = phrase(rep('a',0,3)) | rep('a',0,4)
       def rule20 = (rep('a',0,3) ~ 'b') | rep('a' || 'b')
 
@@ -65,71 +65,12 @@ object Test {
       def rule31 = 'a' ~ ('b' withFailureMessage("JE VEUX UN 'b' ICI")) ~ 'c'
     }
 
-    parser.rule1("bacb") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 1: " + msg)
-    }
-
-   parser.rule3("ababcc") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 3: " + msg)
-    }
-
-    parser.rule8("bbbbbbc") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 8: " + msg)
-    }
-
-    parser.rule9("065614486") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 9: " + msg)
-    }
-
-    parser.rule10("5sdawddggh0") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 10: " + msg)
-    }
-    parser.rule11("abcd") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 11: " + msg)
-    }
-
-    parser.rule12("abcdfgha") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 12: " + msg)
-    }
-
-    parser.rule13("dbcgha") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 13: " + msg)
-    }
-
-    parser.rule14("bacbd") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 14: " + msg)
-    }
-
-    parser.rule15("abc") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 15: " + msg)
-    }
-
-    parser.rule16("abc") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 16: " + msg)
-    }
-
-    parser.rule17("abc") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 17: " + msg)
-    }
-
     parser.rule18("aab") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error 18: " + msg)
     }
 
-    parser.rule19("aaaa") match {
+    /*parser.rule19("aaaa") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error 19: " + msg)
     }
@@ -175,6 +116,6 @@ object Test {
     parser.rule31("acc") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error 31: " + msg)
-    }
+    }  */
   }
 }

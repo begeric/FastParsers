@@ -20,7 +20,7 @@ class StreamMarkedArray[T](in:Array[T]) extends StreamMarked[T]{
   def get = try {
     in(pos)
   } catch {
-    case e:ArrayIndexOutOfBoundsException => throw new NoMoreInput(e.getMessage,e.getCause)
+    case e:ArrayIndexOutOfBoundsException => throw new NoMoreInput("No more input at " + e.getMessage,e.getCause)
   }
   def next = {
     if (pos < in.size)

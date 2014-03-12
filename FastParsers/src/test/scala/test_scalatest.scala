@@ -9,7 +9,7 @@ class BasicRulesSpec extends FunSuite {
     def rule2 = 'c' ~ 'b'
 
     def rule3 = ('a' ~ 'b').rep(2,3) ~ 'c'
-    def rule4 = ('a' ~ 'b').+
+    def rule4 = phrase(('a' ~ 'b').+)
     def rule5 = phrase(('a' ~ 'b').* ~ 'c')
     def rule6 = phrase(('a' ~ ('b' || 'c')).?)
 
@@ -18,16 +18,10 @@ class BasicRulesSpec extends FunSuite {
     def rule12 = guard('a' ~ 'b' ~ 'c') ~ rep(range('a','z'))
     def rule13 = not('a' ~ 'b' ~ 'c') ~ rep(range('a','z'))
 
-    def rule14 = rule1 ~ ('c' || 'd')
 
-    def rule15 = 'a' ~ 'b' ~ 'c' ^^^ 1
-
-    def rule16 = 'a' ~ ('b' ^^^ 2) ~ 'c'
-    def rule17 = 'a' ~ ('b' ^^ {_ => 2}) ~ 'c'
-
-    def rule18 = rep('a',3,3) | (rep('a',2,2) ~ 'b')
+    def rule18 = phrase(rep('a',3,3) | (rep('a',2,2) ~ 'b'))
     def rule19 = phrase(rep('a',0,3)) | rep('a',0,4)
-    def rule20 = (rep('a',0,3) ~ 'b') | rep('a' || 'b')
+    def rule20 = phrase((rep('a',0,3) ~ 'b') | rep('a' || 'b'))
 
     def rule21 = ((rep(range('a','z'))) filter {case x:List[_] => x.mkString == "salut" || x.mkString == "hello"})
 
@@ -147,6 +141,20 @@ class BasicRulesSpec extends FunSuite {
     )
     shouldFail(parser.rule13) (
       "abc", "abcadsdsaf","abca5435"
+    )
+  }
+  /*
+    def rule19 = phrase(rep('a',0,3)) | rep('a',0,4)
+    def rule20 = phrase((rep('a',0,3) ~ 'b') | rep('a' || 'b'))
+
+   */
+
+  test("Rule18 test") {  //phrase(rep('a',3,3) | (rep('a',2,2) ~ 'b'))
+    shouldSucced(parser.rule18)(
+      "aaa" gives List('a','a','a'),"aab" gives (List('a','a'),'b')
+    )
+    shouldFail(parser.rule18) (
+      "aa", "aaaa"
     )
   }
 }

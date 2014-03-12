@@ -233,7 +233,13 @@ object FastParsers {
       val tmp_result = TermName(c.freshName)
       val innerWhileTree = input.mark {rollback =>
         q"""
-          ${parseRuleContent(a,results_tmp)}
+          try {
+            ${parseRuleContent(a,results_tmp)}
+          }
+          catch {
+            case e:NoMoreInput => success = false; msg = e.getMessage
+            case e:Throwable => throw e
+          }
           if (success) {
               $tmp_result.append(${combineResults(results_tmp)})
               if ($counter + 1 == $max)
@@ -256,7 +262,7 @@ object FastParsers {
           var $cont = true
           val $tmp_result = new ListBuffer[Any]()
           success = $min == 0
-          while($cont && !${input.isEOI}){
+          while($cont){
             $innerWhileTree
             $counter = $counter + 1
           }
