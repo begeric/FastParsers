@@ -3,6 +3,7 @@ import org.scalatest._
 
 class BasicRulesSpec extends FunSuite {
   import FastParsers._
+  import StreamMarked._
 
   val parser = FastParser{
     def rule1 = 'b' ~ 'a' ~ rule2// ~ 'b' ~ 'l'
@@ -20,12 +21,12 @@ class BasicRulesSpec extends FunSuite {
 
 
     def rule18 = phrase(rep('a',3,3) | (rep('a',2,2) ~ 'b'))
-    def rule19 = phrase(rep('a',0,3)) | rep('a',0,4)
+    def rule19 = phrase(rep('a',0,3)) | phrase(rep('a',0,4))
     def rule20 = phrase((rep('a',0,3) ~ 'b') | rep('a' || 'b'))
 
     def rule21 = ((rep(range('a','z'))) filter {case x:List[_] => x.mkString == "salut" || x.mkString == "hello"})
 
-    def rule22 = repFold(range('0','9'))(0){(y:Int,x:Any) => x.asInstanceOf[Char].asDigit + 1 +y}
+    def rule22 = repFold(range('0','9'))(0){(y:Int,x:Char) => x.asDigit + 1 +y}
     def rule23 = range('0','9').repFold(1){(y:Int,x:Char) => x.asDigit * y}
 
     def rule24 = phrase(rep(range('a','z') || '?'))
@@ -54,7 +55,7 @@ class BasicRulesSpec extends FunSuite {
        tests.foreach{
           x => rule(x.in) match {
             case Success(result) => assert(result == x.res, "on " + x.in + " expected " + x.res + " got " + result)
-            case Failure(msg) => fail("Didn't succeed : " + msg + " on " + x.in)
+            case Failure(msg) => fail("Didn't succeed : " + msg + " on \"" + x.in+"\"")
           }
        }
   }
@@ -95,7 +96,7 @@ class BasicRulesSpec extends FunSuite {
       "ab" gives List(('a','b')),  "abab" gives repeat(('a','b'),2),  "ababab" gives repeat(('a','b'),3)
     )
     shouldFail(parser.rule4) (
-      "", "a","b","aba"
+      "", "a","b","aba","ababa"
     )
   }
 
@@ -143,11 +144,6 @@ class BasicRulesSpec extends FunSuite {
       "abc", "abcadsdsaf","abca5435"
     )
   }
-  /*
-    def rule19 = phrase(rep('a',0,3)) | rep('a',0,4)
-    def rule20 = phrase((rep('a',0,3) ~ 'b') | rep('a' || 'b'))
-
-   */
 
   test("Rule18 test") {  //phrase(rep('a',3,3) | (rep('a',2,2) ~ 'b'))
     shouldSucced(parser.rule18)(
@@ -155,6 +151,30 @@ class BasicRulesSpec extends FunSuite {
     )
     shouldFail(parser.rule18) (
       "aa", "aaaa"
+    )
+  }
+
+  test("Rule19 test") {  //phrase(rep('a',0,3)) | rep('a',0,4))
+    shouldSucced(parser.rule19)(
+      "" gives Nil, "a" gives List('a'), "aa" gives List('a','a'), "aaa" gives List('a','a','a'),"aaaa" gives List('a','a','a','a')
+    )
+    shouldFail(parser.rule19) (
+      "aaaaa"
+    )
+  }
+  test("Rule20 test") {  //phrase((rep('a',0,3) ~ 'b') | rep('a' || 'b'))
+    shouldSucced(parser.rule20)(
+      "b" gives (Nil,'b'),
+      "ab" gives (List('a'),'b'),
+      "aab" gives (List('a','a'),'b'),
+      "aaab" gives (List('a','a','a'),'b'),
+      "" gives Nil,
+      //"babba" gives List('b','a','b','b','a'),
+      "aaaab" gives List('a','a','a','a','b')
+
+    )
+    shouldFail(parser.rule20) (
+      "aba","cababds", "babba"
     )
   }
 }

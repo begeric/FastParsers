@@ -1,6 +1,8 @@
 import org.scalacheck.Prop.forAll
 import org.scalacheck._
 import scala.util.parsing.input._
+import StreamMarked._
+
 
 object FastParsersSpecification extends Properties("FastParsers") {
 

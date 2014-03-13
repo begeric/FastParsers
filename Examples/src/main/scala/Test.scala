@@ -6,15 +6,15 @@
  * To change this template use File | Settings | File Templates.
  */
 import scala.reflect.runtime.universe._
+import FastParsers._
+import StreamMarked._
 
 import scala.util.parsing.input._
 object Test {
-
   implicit def stringToCharSeqReader(s:String) = new CharSequenceReader(s)
   implicit def stringToStreamMarkedArray(s:String) = new StreamMarkedArray(s.toCharArray)
 
   def main(args: Array[String]) {
-    import FastParsers._
     val parser = FastParser{
       def rule1 = 'b' ~ 'a' ~ rule2// ~ 'b' ~ 'l'
       def rule2 = 'c' ~ 'b'
@@ -65,9 +65,9 @@ object Test {
       def rule31 = 'a' ~ ('b' withFailureMessage("JE VEUX UN 'b' ICI")) ~ 'c'
     }
 
-    parser.rule18("aab") match {
+    parser.rule19("aaaa") match {
       case Success(result) => println(result)
-      case Failure(msg) => println("error 18: " + msg)
+      case Failure(msg) => println("error 19: " + msg)
     }
 
     /*parser.rule19("aaaa") match {

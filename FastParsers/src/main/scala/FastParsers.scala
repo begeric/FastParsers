@@ -12,10 +12,8 @@ import scala.reflect.api.Universe
 import scala.reflect.internal.annotations.compileTimeOnly
 import scala.reflect.macros.whitebox.Context
 import scala.collection.mutable.ListBuffer
-//import scala.util.parsing.input._
 
 object FastParsers {
-
 
   trait Parser[T]{
     @compileTimeOnly("can’t be used outside FastParser")
@@ -420,7 +418,13 @@ object FastParsers {
       var results_tmp2 = new ListBuffer[Result]()
       val tree = input.mark{ rollback =>
         q"""
-          ${parseRuleContent(a,results_tmp1)}
+          try {
+            ${parseRuleContent(a,results_tmp1)}
+          }
+          catch {
+            case e:NoMoreInput => success = false; msg = e.getMessage
+            case e:Throwable => throw e
+          }
           if (!success) {
             ${rollback}
             ${parseRuleContent(b,results_tmp2)}
