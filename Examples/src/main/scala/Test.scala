@@ -14,6 +14,14 @@ object Test {
   implicit def stringToCharSeqReader(s:String) = new CharSequenceReader(s)
   implicit def stringToStreamMarkedArray(s:String) = new StreamMarkedArray(s.toCharArray)
 
+
+  def anyToCharList(a:Any):List[Char] = a match {
+    case (x:Char,y:List[Char]) => x::y
+  }
+
+  //val x = {case (x:Char,y:List[Char]) => x::y}.apply('a',Nil)
+  //val a = ((y:Any) => y match {case (x:Char,y:List[Char]) => x :: y})('a',Nil)
+
   def main(args: Array[String]) {
     val parser = FastParser{
       def rule1 = 'b' ~ 'a' ~ rule2// ~ 'b' ~ 'l'
@@ -45,7 +53,7 @@ object Test {
 
       def rule18 = phrase(rep('a',2,2) ~ 'b')
       def rule19 = phrase(rep('a',0,3)) | rep('a',0,4)
-      def rule20 = (rep('a',0,3) ~ 'b') | rep('a' || 'b')
+      def rule20 = (rep('a',0,3) ~ 'b') ^^ {case (a:List[Char],b:Char) => a ++ List(b)} | rep('a' || 'b')
 
       def rule21 = ((rep(range('a','z'))) filter {case x:List[_] => x.mkString == "salut" || x.mkString == "hello"})
 
@@ -54,21 +62,32 @@ object Test {
 
       def rule24 = phrase(rep(range('a','z') || '?'))
 
-      def rule25:Parser[Char] = 'a' ~ rule26
-      def rule26:Parser[Char] = 'b' || rule25
+      //def rule25:Parser[List[Char]] = ('a' ~ rule26) ^^ {case x:Tuple2[Char,List[Char]] => x._1 :: x._2}  //this is retarded
+      def rule25:Parser[List[Char]] = ('a' ~ rule26) ^^  {case x:Tuple2[Char,List[Char]] => List(x._1) ++ x._2}  //this is retarded
+      def rule26:Parser[List[Char]] = ('b' ^^ {case x:Char => List(x)}) || rule25
 
-      def rule27 = rep('a' ~ 'b') ~ rep('a')
+     /* def rule27 = rep('a' ~ 'b') ~ rep('a')
       def rule28 = rep('a') ~ 'b'
       /*def rule29 = seq(List('s','a','l','u','t'))
       def rule30 = seq("salut")   */
 
       def rule31 = 'a' ~ ('b' withFailureMessage("JE VEUX UN 'b' ICI")) ~ 'c'
-    }
+                */
+      def rule32 = phrase(rule25)
 
-    parser.rule19("aaaa") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 19: " + msg)
+     /* def rule33 = 'a' ~ 'b' | 'c' ~ 'd'
+      def rule34 = (rep('a') ~ 'b') | 'c' ^^ {case x:Char => (List(x),x)}
+      def rule26:Parser[List[Char]] = rep('a')
+      def rule25 = ('a' ~ rule26) ^^ {x => List('a')}  //this is retarded       */
     }
+    parser.rule32("aaab") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error 32: " + msg)
+    }
+    /*parser.rule32("aaaab") match {
+      case Success(result) => println(result)
+      case Failure(msg) => println("error 32: " + msg)
+    }    */
 
     /*parser.rule19("aaaa") match {
       case Success(result) => println(result)

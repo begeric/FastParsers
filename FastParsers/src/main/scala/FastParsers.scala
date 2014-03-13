@@ -17,7 +17,7 @@ object FastParsers {
 
   trait Parser[T]{
     @compileTimeOnly("can’t be used outside FastParser")
-    def ~[U](parser2: Parser[U]):Parser[T] =  ???
+    def ~[U](parser2: Parser[U]):Parser[(T,U)] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
     def ~>[U](parser2: Parser[U]):Parser[U] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
@@ -47,8 +47,8 @@ object FastParsers {
     @compileTimeOnly("can’t be used outside FastParser")
     def rep(min:Int,max:Int):Parser[T] = ???
 
-    @compileTimeOnly("can’t be used outside FastParser")
-    def repfold(min:Int,max:Int):Parser[T] = ???
+   /* @compileTimeOnly("can’t be used outside FastParser")
+    def repfold(min:Int,max:Int):Parser[T] = ???   */
 
     @compileTimeOnly("can’t be used outside FastParser")
     def repFold[U](init:U)(f:(U,T) => U):Parser[U] = ???

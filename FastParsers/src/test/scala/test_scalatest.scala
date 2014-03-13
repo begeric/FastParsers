@@ -20,19 +20,15 @@ class BasicRulesSpec extends FunSuite {
     def rule13 = not('a' ~ 'b' ~ 'c') ~ rep(range('a','z'))
 
 
-    def rule18 = phrase(rep('a',3,3) | (rep('a',2,2) ~ 'b'))
+    def rule18 = phrase(rep('a',3,3) | (rep('a',2,2) ~ 'b') ^^ {case (x:List[Char],y:Char) => x ++ List(y)})
     def rule19 = phrase(rep('a',0,3)) | phrase(rep('a',0,4))
-    def rule20 = phrase((rep('a',0,3) ~ 'b') | rep('a' || 'b'))
+    def rule20 = phrase((rep('a',0,3) ~ 'b') ^^ {case (x:List[Char],y:Char) => x ++ List(y)} | rep('a' || 'b'))
 
     def rule21 = ((rep(range('a','z'))) filter {case x:List[_] => x.mkString == "salut" || x.mkString == "hello"})
 
-    def rule22 = repFold(range('0','9'))(0){(y:Int,x:Char) => x.asDigit + 1 +y}
-    def rule23 = range('0','9').repFold(1){(y:Int,x:Char) => x.asDigit * y}
+    def rule22 = repFold(range('0','9'))(0){(y:Int,x:Char) => x.asDigit +y}
 
-    def rule24 = phrase(rep(range('a','z') || '?'))
 
-    def rule25:Parser[Char] = 'a' ~ rule26
-    def rule26:Parser[Char] = 'b' || rule25
 
     def rule27 = rep('a' ~ 'b') ~ rep('a')
     def rule28 = rep('a') ~ 'b'
@@ -145,9 +141,9 @@ class BasicRulesSpec extends FunSuite {
     )
   }
 
-  test("Rule18 test") {  //phrase(rep('a',3,3) | (rep('a',2,2) ~ 'b'))
+  test("Rule18 test") {  //phrase(rep('a',3,3) | (rep('a',2,2) ~ 'b') ^^ {case (x:List[Char],y:Char) => x ++ List(y)})
     shouldSucced(parser.rule18)(
-      "aaa" gives List('a','a','a'),"aab" gives (List('a','a'),'b')
+      "aaa" gives List('a','a','a'),"aab" gives List('a','a','b')
     )
     shouldFail(parser.rule18) (
       "aa", "aaaa"
@@ -162,12 +158,12 @@ class BasicRulesSpec extends FunSuite {
       "aaaaa"
     )
   }
-  test("Rule20 test") {  //phrase((rep('a',0,3) ~ 'b') | rep('a' || 'b'))
+  test("Rule20 test") {  //phrase((rep('a',0,3) ~ 'b') ^^ {case (x:List[Char],y:Char) => x ++ List(y)} | rep('a' || 'b'))
     shouldSucced(parser.rule20)(
-      "b" gives (Nil,'b'),
-      "ab" gives (List('a'),'b'),
-      "aab" gives (List('a','a'),'b'),
-      "aaab" gives (List('a','a','a'),'b'),
+      "b" gives List('b'),
+      "ab" gives List('a','b'),
+      "aab" gives List('a','a','b'),
+      "aaab" gives List('a','a','a','b'),
       "" gives Nil,
       //"babba" gives List('b','a','b','b','a'),
       "aaaab" gives List('a','a','a','a','b')
@@ -177,4 +173,23 @@ class BasicRulesSpec extends FunSuite {
       "aba","cababds", "babba"
     )
   }
+
+  test("Rule21 test") {  //((rep(range('a','z'))) filter {case x:List[_] => x.mkString == "salut" || x.mkString == "hello"})
+    shouldSucced(parser.rule21)(
+      "salut" gives List('s','a','l','u','t'),
+      "hello" gives List('h','e','l','l','o')
+
+    )
+    shouldFail(parser.rule21) (
+      "","salutt", "asalut","hellut"
+    )
+  }
+  //def rule23 = range('0','9').repFold(1){(y:Int,x:Char) => x.asDigit * y}
+
+  test("Rule22 test") {  //repFold(range('0','9'))(0){(y:Int,x:Char) => x.asDigit +y}
+    shouldSucced(parser.rule22)(
+      "123" gives 6,"" gives 0,"b" gives 0, "99" gives 18
+    )
+  }
+
 }
