@@ -5,7 +5,6 @@
  * Time: 15:57
  * To change this template use File | Settings | File Templates.
  */
-import scala.reflect.runtime.universe._
 import FastParsers._
 import StreamMarked._
 
@@ -75,13 +74,14 @@ object Test {
                 */
       def rule32 = phrase(rule25)
 
+
      /* def rule33 = 'a' ~ 'b' | 'c' ~ 'd'
       def rule34 = (rep('a') ~ 'b') | 'c' ^^ {case x:Char => (List(x),x)}
       def rule26:Parser[List[Char]] = rep('a')
       def rule25 = ('a' ~ rule26) ^^ {x => List('a')}  //this is retarded       */
     }
 
-    parser.rule20("aaaab") match {
+    parser.rule3("abbb") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error 32: " + msg)
     }

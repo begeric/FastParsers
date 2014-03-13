@@ -221,8 +221,6 @@ object FastParsers {
     }
 
 
-
-
     def parseRep(a:c.Tree,min:c.Tree,max:c.Tree,results:ListBuffer[Result]):c.Tree = {
       val counter =  TermName(c.freshName)
       val cont = TermName(c.freshName)
@@ -231,13 +229,7 @@ object FastParsers {
       val tmp_result = TermName(c.freshName)
       val innerWhileTree = input.mark {rollback =>
         q"""
-          try {
-            ${parseRuleContent(a,results_tmp)}
-          }
-          catch {
-            case e:NoMoreInput => success = false; msg = e.getMessage
-            case e:Throwable => throw e
-          }
+          ${parseRuleContent(a,results_tmp)}
           if (success) {
               $tmp_result.append(${combineResults(results_tmp)})
               if ($counter + 1 == $max)
@@ -247,7 +239,7 @@ object FastParsers {
               success = $counter >= $min
               $cont = false
               if (!success)
-                msg = "expected at least " + $min + " occurence(s) of 'rule' in rep('rule') at " + ${input.pos}
+                msg = "expected at least " + $min + " occurence(s) for rep(" + show(reify($a)) + ") at " + ${input.pos}
               else
                 ${rollback}
 
@@ -418,13 +410,7 @@ object FastParsers {
       var results_tmp2 = new ListBuffer[Result]()
       val tree = input.mark{ rollback =>
         q"""
-          try {
-            ${parseRuleContent(a,results_tmp1)}
-          }
-          catch {
-            case e:NoMoreInput => success = false; msg = e.getMessage
-            case e:Throwable => throw e
-          }
+          ${parseRuleContent(a,results_tmp1)}
           if (!success) {
             ${rollback}
             ${parseRuleContent(b,results_tmp2)}
@@ -477,13 +463,7 @@ object FastParsers {
       var results_tmp = new ListBuffer[Result]()
       val tree =  input.mark{ rollback =>
         q"""
-        try {
          ${parseRuleContent(a,results_tmp)}
-         }
-         catch {
-          case e:NoMoreInput => success = false
-          case e:Throwable => throw e
-         }
          if (success) {
           success = false
           msg = "not parser expected failure at " + ${input.pos}
@@ -649,7 +629,7 @@ object FastParsers {
         var success = false
         var msg = ""
         try {
-        ${rulesMap(k)}
+          ${rulesMap(k)}
         } catch {
           case e:Throwable => ParseResult(false,e.getMessage,null,${input.pos})
         }
@@ -675,6 +655,7 @@ object FastParsers {
       q"""
         class $anon {
             import scala.collection.mutable.ListBuffer
+            import scala.reflect.runtime.universe._
            ..$methods
         }
         val $dmmy = 0
