@@ -15,7 +15,7 @@ import scala.collection.mutable.ListBuffer
 
 object FastParsers {
 
-  trait Parser[T]{
+  trait Parser[+T]{
     @compileTimeOnly("can’t be used outside FastParser")
     def ~[U](parser2: Parser[U]):Parser[(T,U)] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
@@ -23,9 +23,9 @@ object FastParsers {
     @compileTimeOnly("can’t be used outside FastParser")
     def <~[U](parser2: Parser[U]):Parser[T] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def |(parser2: Parser[T]):Parser[T] =  ???
+    def |[U >: T](parser2: Parser[U]):Parser[U] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def ||(parser2: Parser[T]):Parser[T] =  ???
+    def ||[U >: T](parser2: Parser[U]):Parser[U] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
     def `?`:Parser[List[T]] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
@@ -535,9 +535,9 @@ object FastParsers {
         parseThenRight(a,b,results)
       case q"$a <~[$d] $b" =>
         parseThenLeft(a,b,results)
-      case q"$a || $b" =>
+      case q"$a ||[$d] $b" =>
         parseOr(a,b,results)
-      case q"$a | $b" =>
+      case q"$a |[$d] $b" =>
         parseOr(a,b,results)
       case q"$a.rep($min,$max)" =>
         parseRep(a,min,max,results)
