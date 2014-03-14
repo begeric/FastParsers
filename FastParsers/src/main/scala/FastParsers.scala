@@ -55,6 +55,9 @@ object FastParsers {
 
     @compileTimeOnly("can’t be used outside FastParser")
     def withFailureMessage(msg:String):Parser[T] = ???
+
+    @compileTimeOnly("can’t be used outside FastParser")
+    def unary_- :Parser[T] = ???
   }
 
   @compileTimeOnly("can’t be used outside FastParser")
@@ -85,6 +88,13 @@ object FastParsers {
   @compileTimeOnly("can’t be used outside FastParser")
   def guard[T](a:Parser[T]):Parser[T] = ???
   //& operator TODO
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  def wildcard[T] = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  def ignore[T](a:Parser[T]):Parser[T] = ???
+
 
   implicit def toElem[T](elem:T):Elem[T] = Elem(elem)
   case class Elem[T](elem:T) extends Parser[T]
@@ -210,14 +220,14 @@ object FastParsers {
      * @param results
      * @return
      */
-      def combineResults(results:ListBuffer[Result]):c.Tree = {
+     def combineResults(results:ListBuffer[Result]):c.Tree = {
       val usedResults = results.toList.filter(_._3)
       if (usedResults.size > 1)
           q"(..${usedResults.map(x => q"${x._1}")})"
       else if (usedResults.size == 1)
           q"${usedResults(0)._1}"
       else
-          q""
+          q"Nil"
     }
 
 
@@ -498,6 +508,29 @@ object FastParsers {
       """
     }
 
+    def parseWildcard(d:c.Tree,results:ListBuffer[Result]):c.Tree = {
+      val result = TermName(c.freshName)
+      results.append((result,Ident(TypeName(d.toString)),true))  //TODO check d.toString
+      q"""
+        if (!${input.isEOI}){
+          $result = ${input.currentInput}
+          ${input.advance}
+          success = true
+         }
+         else {
+            success = false
+            msg = "end of input at " + ${input.pos}  }
+       """
+    }
+
+
+    def parseIgnore(a:c.Tree,results:ListBuffer[Result]):c.Tree = {
+      val results_tmp = new ListBuffer[Result]()
+      val tree = q" ${parseRuleContent(a,results_tmp)}"
+      results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
+      tree
+    }
+
     /**
      * Switch function which transform a parser combinator style into an imperative style
      * @param rule The code to be transformed
@@ -509,6 +542,8 @@ object FastParsers {
         parseElem(a,d,results)
       case q"FastParsers.range[$d]($a,$b)" =>
         parseRange(a,b,d,results)
+      case q"FastParsers.wildcard[$d]" =>
+        parseWildcard(d,results)
       case q"$a ~[$d] $b" =>
         parseThen(a,b,results)
       case q"$a ~>[$d] $b" =>
@@ -555,6 +590,10 @@ object FastParsers {
         parseGuard(a,results)
       case q"$a withFailureMessage($msg)" =>
         parseWithFailureMessage(a,msg,results)
+      case q"FastParsers.ignore[$d]($a)" =>
+        parseIgnore(a,results)
+      case q"-$a" =>
+        parseIgnore(a,results)
       case _ => q"""println(show(reify($rule)))"""
     }
 
@@ -610,15 +649,6 @@ object FastParsers {
       }
       expandedRulesMap
     }
-
-    /*def findReplaceRule(tree:c.Tree,rulesMap : HashMap[String,c.Tree]):c.Tree = tree match {
-      case q"..$body" =>
-        val tmp = body.map(x => findReplaceRule(x,rulesMap))
-        q"{..$tmp}"
-      /*case q"if ($cond) $thn else $els" => q"if ($cond) ${findReplaceRule(thn,rulesMap)} else ${findReplaceRule(els,rulesMap)}"
-      case q"while ($cond) $body" => q"while ($cond) ${findReplaceRule(body,rulesMap)}" */
-      case _ => tree
-    }  */
 
     def replaceInRules(rulesMap : HashMap[String,c.Tree]) = {
       val map = new HashMap[String,c.Tree]()

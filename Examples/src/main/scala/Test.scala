@@ -23,65 +23,43 @@ object Test {
 
   def main(args: Array[String]) {
     val parser = FastParser{
-      def rule1 = 'b' ~ 'a' ~ rule2// ~ 'b' ~ 'l'
-      def rule2 = 'c' ~ 'b'
 
-      def rule3 = ('a' ~ 'b').rep(2,3) ~ 'c'
-      def rule4 = ('a' ~ 'b').+ ~ 'c'
-      def rule5 = ('a' ~ 'b').* ~ 'c'
-      def rule6 = ('a' ~ 'b').? ~ 'c'
-
-      //def rule7 = rule1
-      def rule8 = (rep('b',0,-1) ~ ('a' || 'c')) ^^ {case (x:List[_],y) => println(x.size);y}
-
-      def rule9 = rep1(range('0','9'))
-
-      def rule10 = range('0','9') ~> rep(range('a','z')) <~ '0'
-
-      def rule11 = phrase('a' ~ 'b' ~ 'c')
-
-      def rule12 = guard('a' ~ 'b' ~ 'c') ~ rep(range('a','z'))
-      def rule13 = not('a' ~ 'b' ~ 'c') ~ rep(range('a','z'))
-
-      def rule14 = rule1 ~ ('c' || 'd')
-
-      def rule15 = 'a' ~ 'b' ~ 'c' ^^^ 1
-
-      def rule16 = 'a' ~ ('b' ^^^ 2) ~ 'c'
-      def rule17 = 'a' ~ ('b' ^^ {_ => 2}) ~ 'c'
-
-      def rule18 = phrase(rep('a',2,2) ~ 'b')
-      def rule19 = phrase(rep('a',0,3)) | rep('a',0,4)
-      def rule20 = (rep('a',0,3) ~ 'b') | rep('a' || 'b')
-
-      def rule21 = ((rep(range('a','z'))) filter {case x:List[_] => x.mkString == "salut" || x.mkString == "hello"})
-
-      def rule22 = repFold(range('0','9'))(0){(y:Int,x:Any) => x.asInstanceOf[Char].asDigit + 1 +y}
-      def rule23 = range('0','9').repFold(1){(y:Int,x:Char) => x.asDigit * y}
-
-      def rule24 = phrase(rep(range('a','z') || '?'))
-
-      //def rule25:Parser[List[Char]] = ('a' ~ rule26) ^^ {case x:Tuple2[Char,List[Char]] => x._1 :: x._2}  //this is retarded
-      def rule25:Parser[List[Char]] = ('a' ~ rule26) ^^  {case x:Tuple2[Char,List[Char]] => List(x._1) ++ x._2}  //this is retarded
-      def rule26:Parser[List[Char]] = ('b' ^^ {case x:Char => List(x)}) || rule25
-
-     /* def rule27 = rep('a' ~ 'b') ~ rep('a')
-      def rule28 = rep('a') ~ 'b'
-      /*def rule29 = seq(List('s','a','l','u','t'))
-      def rule30 = seq("salut")   */
-
-      def rule31 = 'a' ~ ('b' withFailureMessage("JE VEUX UN 'b' ICI")) ~ 'c'
-                */
-      def rule32 = phrase(rule25)
-
-
-     /* def rule33 = 'a' ~ 'b' | 'c' ~ 'd'
-      def rule34 = (rep('a') ~ 'b') | 'c' ^^ {case x:Char => (List(x),x)}
-      def rule26:Parser[List[Char]] = rep('a')
-      def rule25 = ('a' ~ rule26) ^^ {x => List('a')}  //this is retarded       */
+      def rule32 = -('a' ~ 'b') ~ rep('b')
     }
+    val input =
+      """
+        1
+        00:00:00,004 --> 00:00:03,491
+        <i>Previously on AMC's
+        The Walking Dead...</i>
 
-    parser.rule3("abbb") match {
+        2
+        00:00:04,691 --> 00:00:06,425
+        Beth!
+        Where is Beth!?
+
+      """.stripMargin
+
+    case class srtTime(h:Int,m:Int,s:Int,ms:Int)
+    type srtTimeRange = (srtTime,srtTime)
+    case class srtText(range:srtTimeRange,text:String)
+
+
+    /*val srtParser = FastParser{
+      def clrf = ('\r' ~ opt('\n')) | '\n'
+      def int = range('0','9')
+      def num = rep1(int)
+      def num2 = rep(int,2,2)
+      def num3 = rep(int,3,3)
+      def time = num2 ~ ':' ~ num2 ~ ':' ~ num2 ~ ',' ~ num3
+      def wss = rep(' ')
+      def timeRange = time ~ -(wss ~ '-' ~ '-' ~ '>' ~ wss) ~ time
+      def anyText = rep(wildcard[Char])
+      def block = num ~ clrf ~ timeRange ~ clrf ~ anyText ~ rep(clrf,2,2)
+      def blocks = phrase(rep(block))
+    } */
+
+    parser.rule32("abbbbb") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error 32: " + msg)
     }
