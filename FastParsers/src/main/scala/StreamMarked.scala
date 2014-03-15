@@ -21,8 +21,12 @@ object StreamMarked {
     val value:T
   }
 
+  implicit val EOFChar:EOF[Char] = new EOF[Char] {val value = '\032'}
 
- implicit val EOFChar:EOF[Char] = new EOF[Char] {val value = '\032'}
+
+ /* object StreamMarkedArray{               //why doesn't work
+    implicit val EOFChar:EOF[Char] = new EOF[Char] {val value = '\032'}
+  }  */
 
   class StreamMarkedArray[T](in:Array[T])(implicit eof:EOF[T]) extends StreamMarked[T]{
     private var pos:Int = 0
@@ -47,6 +51,7 @@ object StreamMarked {
 
     def atEnd = pos >= in.size
   }
+
 
 }
 //implicit def ArrayToStreamMarked[T](in:Array[T]) = new StreamMarkedArray(in)

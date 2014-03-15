@@ -16,6 +16,7 @@ import scala.collection.mutable.ListBuffer
 object FastParsers {
 
   trait Parser[+T]{
+
     @compileTimeOnly("can’t be used outside FastParser")
     def ~[U](parser2: Parser[U]):Parser[(T,U)] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
@@ -36,7 +37,7 @@ object FastParsers {
     @compileTimeOnly("can’t be used outside FastParser")
     def ^^[U](f:Any => U):Parser[U] = ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def map[U](f:Any => U):Parser[U] = ???
+    def map[U](f:T => U):Parser[U] = ???
     @compileTimeOnly("can’t be used outside FastParser")
     def ^^^[U](f:U):Parser[U] = ???
 
@@ -58,14 +59,15 @@ object FastParsers {
 
     @compileTimeOnly("can’t be used outside FastParser")
     def unary_- :Parser[T] = ???
+
   }
 
   @compileTimeOnly("can’t be used outside FastParser")
   def rep[T](p:Parser[T],min:Int = 0,max:Int = -1):Parser[List[T]] = ???
   @compileTimeOnly("can’t be used outside FastParser")
-  def rep1[T](p:Parser[T]):Parser[T] = ???
+  def rep1[T](p:Parser[T]):Parser[List[T]] = ???
   @compileTimeOnly("can’t be used outside FastParser")
-  def opt[T](p:Parser[T]):Parser[T] = ???
+  def opt[T](p:Parser[T]):Parser[List[T]] = ???
 
 
   @compileTimeOnly("can’t be used outside FastParser")
@@ -184,15 +186,20 @@ object FastParsers {
      * @param typ
      * @return
      */
-    def zeroValue(typ:c.Tree):c.Tree = typ match {
-      case Ident(TypeName(name)) => name match {
+
+    def zeroValue(typ:c.Tree):c.Tree = {
+      def fromString(str:String) = str match {
         case "Char" => q"' '"
         case "Int" => q"0"
         case "String" => q""
         case _ => q"null"
       }
-      case AppliedTypeTree(Ident(TypeName("List")),_) => q"Nil"
-      case _ => q"null"
+      typ match {
+        case Ident(TypeName(name)) => fromString(name)
+        case AppliedTypeTree(Ident(TypeName("List")),_) => q"Nil"
+        case x:TypeTree => fromString(x.toString)
+        case _ => q"null"
+      }
     }
 
     /**
@@ -249,13 +256,14 @@ object FastParsers {
               success = $counter >= $min
               $cont = false
               if (!success)
-                msg = "expected at least " + $min + " occurence(s) for rep(" + show(reify($a)) + ") at " + ${input.pos}
+                msg = "expected at least " + $min + " occurence(s) for rep('rule') at " + ${input.pos}
               else
                 ${rollback}
 
           }
         """
       }
+      //cannot display : show(reify($a).tree
       val tree = input.mark {rollback =>
         q"""
           var $counter = 0
@@ -326,7 +334,7 @@ object FastParsers {
              $result = $value
         """
       results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
-      results.append((result,Ident(TypeName(typ.toString)),true))//TODO à modifier
+      results.append((result,typ,true))//TODO à modifier
       tree
     }
 
@@ -577,7 +585,7 @@ object FastParsers {
       case q"$a map[$d] ($f)" =>
         parseMap(a,f,results)
       case q"$a ^^ [$d]($f)" =>
-        parseMap(a,f,results)
+          parseMap(a,f,results)
       case q"$a ^^^ [$d]($f)" =>
         parseValue(a,f,d,results)
       case q"$a filter [$d]($f)" =>
@@ -594,7 +602,7 @@ object FastParsers {
         parseIgnore(a,results)
       case q"-$a" =>
         parseIgnore(a,results)
-      case _ => q"""println(show(reify($rule)))"""
+      case _ => q""//rule//q"""println(show(reify($rule)))"""
     }
 
     /**
@@ -621,27 +629,27 @@ object FastParsers {
       rulesMap
     }
 
-    def expandCallRule(ruleName:String,tree:c.Tree,rulesMap: HashMap[String,c.Tree],rulesPath:List[String]):c.Tree = tree match {
+    def expandCallRule(tree:c.Tree,rulesMap: HashMap[String,c.Tree],rulesPath:List[String]):c.Tree = tree match {
       case q"$a.$m[..$d](..$b)" =>
-        val callee = expandCallRule(ruleName,a,rulesMap,rulesPath)
-        val args = b.map(expandCallRule(ruleName,_,rulesMap,rulesPath))
+        val callee = expandCallRule(a,rulesMap,rulesPath)
+        val args = b.map(expandCallRule(_,rulesMap,rulesPath))
         q"$callee.$m[..$d](..$args)"
       case q"$f[..$d](..$b)" =>
-        val args = b.map(expandCallRule(ruleName,_,rulesMap,rulesPath))
+        val args = b.map(expandCallRule(_,rulesMap,rulesPath))
         q"$f[..$d](..$args)"
       case q"${ruleCall : TermName}" =>
         val name = ruleCall.toString
         if (rulesMap.keySet.contains(name) && !rulesPath.contains(name))
-          expandCallRule(name,rulesMap(name),rulesMap,name::rulesPath)
+          expandCallRule(rulesMap(name),rulesMap,name::rulesPath)
         else
-          q"$ruleCall"
+         tree
       case _ => tree
     }
 
     def expandRules(rulesMap: HashMap[String,c.Tree]): HashMap[String,c.Tree] = {
       val expandedRulesMap = new HashMap[String,c.Tree]()
       for (k <- rulesMap.keys)  {
-        val rule = expandCallRule(k,rulesMap(k),rulesMap,List(k))
+        val rule = expandCallRule(rulesMap(k),rulesMap,List(k))
         expandedRulesMap += ((k,parseRule(rule)))
       }
       expandedRulesMap
