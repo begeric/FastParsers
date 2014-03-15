@@ -6,6 +6,7 @@
  * To change this template use File | Settings | File Templates.
  */
 
+import scala.collection.{mutable, GenSeqLike}
 import scala.collection.mutable._
 import scala.language.experimental.macros
 import scala.reflect.api.Universe
@@ -74,7 +75,8 @@ object FastParsers {
   def repFold[T,U](p:Parser[T])(init:U)(f:(U,T)=> U):Parser[U] = ???
 
 
-  def seq[T](elem:Parser[T]*):Parser[T] = ???
+  def seq[T](elem:T):Parser[T] = ???
+  //def seq[T](elem:Parser[T]*):Parser[T] = ???
   def alt[T](elem:Parser[T]*):Parser[T] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
@@ -99,6 +101,7 @@ object FastParsers {
 
 
   implicit def toElem[T](elem:T):Elem[T] = Elem(elem)
+  implicit def toElemList[T](elem:List[T]):Parser[List[T]] = ???
   case class Elem[T](elem:T) extends Parser[T]
 
 
@@ -191,7 +194,7 @@ object FastParsers {
       def fromString(str:String) = str match {
         case "Char" => q"' '"
         case "Int" => q"0"
-        case "String" => q""
+        case "String" => q""""""""
         case _ => q"null"
       }
       typ match {
@@ -374,6 +377,31 @@ object FastParsers {
           """
     }
 
+    def parseElemList(a:c.Tree,typ:c.Tree,results:ListBuffer[Result]):c.Tree = {
+      val result = TermName(c.freshName)
+      val tmp = TermName(c.freshName)
+      val count = TermName(c.freshName)
+      val size = TermName(c.freshName)
+      results.append((result,typ,true))  //TODO check d.toString
+      q"""
+        val $tmp = $a
+        val $size = $tmp.size
+        var $count = 0
+        while ($count < $size && ${input.currentInput} == $tmp($count)){
+            ${input.advance}
+            $count = $count + 1
+        }
+        if ($count == $tmp.size){
+          $result = $tmp
+          success = true
+        }
+        else {
+            success = false
+            msg = "expected '" + $a($count) + "', got '" + ${input.currentInput} + "' at " + ${input.pos}
+        }
+       """
+    }
+
     def parseRange(a:c.Tree,b:c.Tree,d:c.Tree,results:ListBuffer[Result]): c.Tree = {
       val result = TermName(c.freshName)
       results.append((result,Ident(TypeName(d.toString)),true))  //TODO check d.toString
@@ -548,6 +576,10 @@ object FastParsers {
     def parseRuleContent(rule:c.Tree,results:ListBuffer[Result]):c.Tree = rule match{
       case q"FastParsers.toElem[$d]($a)" =>
         parseElem(a,d,results)
+      case q"FastParsers.toElemList[$d]($a)" =>
+        parseElemList(a,d,results)
+      case q"FastParsers.seq[$d]($a)" =>
+        parseElemList(a,d,results)
       case q"FastParsers.range[$d]($a,$b)" =>
         parseRange(a,b,d,results)
       case q"FastParsers.wildcard[$d]" =>
