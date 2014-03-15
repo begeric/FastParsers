@@ -37,7 +37,7 @@ object FastParsers {
     @compileTimeOnly("can’t be used outside FastParser")
     def ^^[U](f:Any => U):Parser[U] = ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def map[U](f:T => U):Parser[U] = ???
+    def map[U](f:Any => U):Parser[U] = ???
     @compileTimeOnly("can’t be used outside FastParser")
     def ^^^[U](f:U):Parser[U] = ???
 
@@ -92,7 +92,7 @@ object FastParsers {
   //& operator TODO
 
   @compileTimeOnly("can’t be used outside FastParser")
-  def wildcard[T] = ???
+  def wildcard[T]:Parser[T] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
   def ignore[T](a:Parser[T]):Parser[T] = ???
@@ -602,7 +602,7 @@ object FastParsers {
         parseIgnore(a,results)
       case q"-$a" =>
         parseIgnore(a,results)
-      case _ => q""//rule//q"""println(show(reify($rule)))"""
+      case _ => q"""println(show(reify($rule)))"""
     }
 
     /**
@@ -666,7 +666,7 @@ object FastParsers {
         try {
           ${rulesMap(k)}
         } catch {
-          case e:Throwable => ParseResult(false,e.getMessage,null,${input.pos})
+          case e:Throwable => println(e);ParseResult(false,"Exception : " + e.getMessage,null,${input.pos})
         }
         """
         //map += ((k,q"def $term(i:Reader[Char]) = println(show(reify($ruleCode)))"))

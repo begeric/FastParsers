@@ -22,49 +22,45 @@ object Test {
   //val a = ((y:Any) => y match {case (x:Char,y:List[Char]) => x :: y})('a',Nil)
 
   def main(args: Array[String]) {
-    val parser = FastParser{
+    /*val parser = FastParser{
       def int = range('0','9')
       //def num1 = not(int)
       def rule3 = int ~ 'c'
       def blocks = rep(rule3)
+
      // def rule32 = -('a' ~ 'b') ~ rep('b')
-    }
+    }  */
     val input =
-      """
-        1
-        00:00:00,004 --> 00:00:03,491
-        <i>Previously on AMC's
-        The Walking Dead...</i>
-
-        2
-        00:00:04,691 --> 00:00:06,425
-        Beth!
-        Where is Beth!?
-
+      """|1
+        |00:00:00,004 --> 00:00:03,491
+        |<i>Previously on AMC's
+        |The Walking Dead...</i>
+        |
+        |2
+        |00:00:04,691 --> 00:00:06,425
+        |Beth!
+        |Where is Beth!?
+        |
       """.stripMargin
 
-    case class srtTime(h:Int,m:Int,s:Int,ms:Int)
-    type srtTimeRange = (srtTime,srtTime)
-    case class srtText(range:srtTimeRange,text:String)
-
+    case class SrtTime(h:Int,m:Int,s:Int,ms:Int)
+    case class SrtTimeRange(begin:SrtTime,end:SrtTime)
+    case class SrtText(range:SrtTimeRange,text:String)
 
     val srtParser = FastParser{
       def clrf = ('\r' ~ opt('\n')) | '\n'
-      def int = range('0','9')
-      def num1 = rep1(int)
-      def num2 = rep(int,2,2)
-      def num3 = rep(int,3,3)
-      def time = num2 ~ ignore(':') ~ num2 ~ ignore(':') ~ num2 ~ ignore(',') ~ num3
+      def int = rep1(range('0','9')) ^^ {case x:List[Char] => x.mkString.toInt}
+      def time = int ~ ignore(':') ~ int ~ ignore(':') ~ int ~ ignore(',') ~ int ^^ {case x:Tuple4[Int,Int,Int,Int] => SrtTime(x._1,x._2,x._3,x._4)}
       def wss = rep(' ')
-      def timeRange = time ~ -(wss ~ '-' ~ '-' ~ '>' ~ wss) ~ time
-      def anyText = rep(wildcard[Char])
-      def block = num1 ~ -clrf ~ timeRange ~ -clrf ~ anyText ~ rep(clrf,2,2)
-      def blocks = phrase(rep(block))
+      def timeRange = time ~ -(wss ~ '-' ~ '-' ~ '>' ~ wss) ~ time ^^ {case x:Tuple2[SrtTime,SrtTime] => SrtTimeRange(x._1,x._2)}
+      def anyText = (not(clrf ~ clrf) ~> wildcard[Char]).repFold(""){(acc:String,v:Char) => acc + v}
+      def block = -(int ~ clrf) ~ timeRange ~ -clrf ~ anyText ~ -rep(clrf,1,2) ^^ {case x:Tuple2[SrtTimeRange,String] => SrtText(x._1,x._2)}
+      def blocks = (rep(block))
     }
 
-    parser.blocks("1c2c3c") match {
-      case Success(result) => println(result)
-      case Failure(msg) => println("error 32: " + msg)
+    srtParser.blocks(input) match {
+      case Success(result) => print(result)
+      case Failure(msg) => println("error : " + msg)
     }
   }
 }
