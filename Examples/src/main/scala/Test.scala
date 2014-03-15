@@ -23,8 +23,11 @@ object Test {
 
   def main(args: Array[String]) {
     val parser = FastParser{
-
-      def rule32 = -('a' ~ 'b') ~ rep('b')
+      def int = range('0','9')
+      //def num1 = not(int)
+      def rule3 = int ~ 'c'
+      def blocks = rep(rule3)
+     // def rule32 = -('a' ~ 'b') ~ rep('b')
     }
     val input =
       """
@@ -45,21 +48,21 @@ object Test {
     case class srtText(range:srtTimeRange,text:String)
 
 
-    /*val srtParser = FastParser{
+    val srtParser = FastParser{
       def clrf = ('\r' ~ opt('\n')) | '\n'
       def int = range('0','9')
-      def num = rep1(int)
+      def num1 = rep1(int)
       def num2 = rep(int,2,2)
       def num3 = rep(int,3,3)
-      def time = num2 ~ ':' ~ num2 ~ ':' ~ num2 ~ ',' ~ num3
+      def time = num2 ~ ignore(':') ~ num2 ~ ignore(':') ~ num2 ~ ignore(',') ~ num3
       def wss = rep(' ')
       def timeRange = time ~ -(wss ~ '-' ~ '-' ~ '>' ~ wss) ~ time
       def anyText = rep(wildcard[Char])
-      def block = num ~ clrf ~ timeRange ~ clrf ~ anyText ~ rep(clrf,2,2)
+      def block = num1 ~ -clrf ~ timeRange ~ -clrf ~ anyText ~ rep(clrf,2,2)
       def blocks = phrase(rep(block))
-    } */
+    }
 
-    parser.rule32("abbbbb") match {
+    parser.blocks("1c2c3c") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error 32: " + msg)
     }

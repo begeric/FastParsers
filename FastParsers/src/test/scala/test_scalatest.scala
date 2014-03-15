@@ -36,6 +36,14 @@ class BasicRulesSpec extends FunSuite {
     def rule30 = seq("salut")   */
 
     def rule31 = 'a' ~ ('b' withFailureMessage("JE VEUX UN 'b' ICI")) ~ 'c'
+
+    def rule32 = range('0','9')
+    def rule33 = rep(rule32,3,3)
+    def rule34 = rule33 ~ rule33
+
+    def rule35 = rep(wildcard[Char])
+
+    def rule36 = -('a' ~ 'b') ~ rule35
   }
 
   implicit def stringToStreamMarkedArray(s:String) = new StreamMarkedArray(s.toCharArray)
@@ -192,4 +200,21 @@ class BasicRulesSpec extends FunSuite {
     )
   }
 
+  test("Rule34 test") {  //rule33 ~ rule33  -> rep(rep(0 - 9,3),2)
+    shouldSucced(parser.rule34)(
+      "123321" gives (List('1','2','3'),List('3','2','1'))
+    )
+    shouldFail(parser.rule34) (
+      "1","12", "543","24334"
+    )
+  }
+
+  test("Rule36 test") {  // -('a' ~ 'b') ~ rule35
+    shouldSucced(parser.rule36)(
+      "absaf9.h" gives List('s','a','f','9','.','h')
+    )
+    shouldFail(parser.rule36) (
+      "ac","dfghjg",""
+    )
+  }
 }

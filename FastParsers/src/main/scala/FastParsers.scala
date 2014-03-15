@@ -622,9 +622,6 @@ object FastParsers {
     }
 
     def expandCallRule(ruleName:String,tree:c.Tree,rulesMap: HashMap[String,c.Tree],rulesPath:List[String]):c.Tree = tree match {
-      case q"${a:TermName}.$m[..$d](..$b)" =>
-        val args = b.map(expandCallRule(ruleName,_,rulesMap,rulesPath))
-        q"$a.$m[..$d](..$args)"
       case q"$a.$m[..$d](..$b)" =>
         val callee = expandCallRule(ruleName,a,rulesMap,rulesPath)
         val args = b.map(expandCallRule(ruleName,_,rulesMap,rulesPath))
@@ -634,7 +631,7 @@ object FastParsers {
         q"$f[..$d](..$args)"
       case q"${ruleCall : TermName}" =>
         val name = ruleCall.toString
-        if (!rulesPath.contains(name))
+        if (rulesMap.keySet.contains(name) && !rulesPath.contains(name))
           expandCallRule(name,rulesMap(name),rulesMap,name::rulesPath)
         else
           q"$ruleCall"
@@ -666,6 +663,7 @@ object FastParsers {
         """
         //map += ((k,q"def $term(i:Reader[Char]) = println(show(reify($ruleCode)))"))
         map += ((k,q"def $term(i:${input.inputType}):ParseResult[Any] = $ruleCode"))
+        //map += ((k,q"""def $term(i:${input.inputType}) = println(show(reify(${rulesMap(k)})))"""))
       }
       map
     }
