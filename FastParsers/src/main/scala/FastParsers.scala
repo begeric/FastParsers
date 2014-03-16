@@ -425,6 +425,9 @@ object FastParsers {
           }
         }
         success = $found
+        if (!$found){
+          msg = "expected on of " + show(reify($a).tree) + " but got '" + ${input.currentInput} + "' at " + ${input.pos}
+        }
        """
     }
 
