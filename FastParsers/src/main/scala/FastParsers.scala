@@ -77,7 +77,7 @@ object FastParsers {
 
   def seq[T](elem:T):Parser[T] = ???
   //def seq[T](elem:Parser[T]*):Parser[T] = ???
-  def alt[T](elem:Parser[T]*):Parser[T] = ???
+  def alt[T](elem:List[T]):Parser[T] = ???   //need a SeqLike
 
   @compileTimeOnly("can’t be used outside FastParser")
   def range[T](a:T,b:T):Parser[T] = ???
@@ -377,7 +377,7 @@ object FastParsers {
           """
     }
 
-    def parseElemList(a:c.Tree,typ:c.Tree,results:ListBuffer[Result]):c.Tree = {
+    def parseElemSeq(a:c.Tree,typ:c.Tree,results:ListBuffer[Result]):c.Tree = {
       val result = TermName(c.freshName)
       val tmp = TermName(c.freshName)
       val count = TermName(c.freshName)
@@ -399,6 +399,32 @@ object FastParsers {
             success = false
             msg = "expected '" + $a($count) + "', got '" + ${input.currentInput} + "' at " + ${input.pos}
         }
+       """
+    }
+
+    def parseElemAlt(a:c.Tree, typ:c.Tree,results:ListBuffer[Result]):c.Tree = {
+      val result = TermName(c.freshName)
+      val tmp = TermName(c.freshName)
+      val size = TermName(c.freshName)
+      val count = TermName(c.freshName)
+      val found = TermName(c.freshName)
+      results.append((result,typ,true))  //TODO check d.toString
+      q"""
+        val $tmp = $a
+        val $size = $tmp.size
+        var $found = false
+        var $count = 0
+        while(!$found && $count < $size) {
+          if  (${input.currentInput} != $tmp($count)){
+            $count = $count + 1
+          }
+          else {
+            $found = true
+            $result = ${input.currentInput}
+            ${input.advance}
+          }
+        }
+        success = $found
        """
     }
 
@@ -577,9 +603,11 @@ object FastParsers {
       case q"FastParsers.toElem[$d]($a)" =>
         parseElem(a,d,results)
       case q"FastParsers.toElemList[$d]($a)" =>
-        parseElemList(a,d,results)
+        parseElemSeq(a,d,results)
       case q"FastParsers.seq[$d]($a)" =>
-        parseElemList(a,d,results)
+        parseElemSeq(a,d,results)
+      case q"FastParsers.alt[$d]($a)" =>
+        parseElemAlt(a,d,results)
       case q"FastParsers.range[$d]($a,$b)" =>
         parseRange(a,b,d,results)
       case q"FastParsers.wildcard[$d]" =>

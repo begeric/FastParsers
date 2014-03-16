@@ -17,10 +17,14 @@ object Test {
   def main(args: Array[String]) {
 
     val parser = FastParser{
-      def rule1 = 'a' ~ seq("abc")
+      def rule1 = 'a' ~ alt("abc".toList)
     }
 
-    parser.rule1("aabc") match {
+    /*val httpResponParser = FastParser{
+
+    }*/
+
+    parser.rule1("ac") match {
       case Success(result) => println(result)
       case Failure(msg) => println("error : " + msg)
     }
