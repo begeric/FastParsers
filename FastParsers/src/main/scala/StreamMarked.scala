@@ -14,6 +14,7 @@ object StreamMarked {
     def rollBack(pos:Int)
     def offset:Int
     def atEnd:Boolean
+    def notAtEnd:Boolean
   }
 
 
@@ -30,6 +31,7 @@ object StreamMarked {
 
   class StreamMarkedArray[T](in:Array[T])(implicit eof:EOF[T]) extends StreamMarked[T]{
     private var pos:Int = 0
+    private val size = in.size
 
     def get = try {
       in(pos)
@@ -37,19 +39,20 @@ object StreamMarked {
       case e:ArrayIndexOutOfBoundsException => eof.value//throw new NoMoreInput("No more input at " + e.getMessage,e.getCause)
     }
     def next = {
-      if (pos < in.size)
+      //if (pos < in.size)
         pos = pos + 1
     }
     def nextAndGet = {
-      next
-      get
+      pos = pos + 1
+      in(pos)
     }
 
     def mark = offset
     def rollBack(newpos:Int) = pos = newpos
     def offset = pos
 
-    def atEnd = pos >= in.size
+    def atEnd = pos >= size
+    def notAtEnd = pos < size
   }
 
 

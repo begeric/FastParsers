@@ -52,8 +52,11 @@ object FastParsers {
    /* @compileTimeOnly("can’t be used outside FastParser")
     def repfold(min:Int,max:Int):Parser[T] = ???   */
 
+   /* @compileTimeOnly("can’t be used outside FastParser")
+    def repFold[U](init:U)(f:(U,T) => U):Parser[U] = ???   */
+
     @compileTimeOnly("can’t be used outside FastParser")
-    def repFold[U](init:U)(f:(U,T) => U):Parser[U] = ???
+    def repFold[U](init:U,f:(U,T) => U):Parser[U] = ???
 
     @compileTimeOnly("can’t be used outside FastParser")
     def withFailureMessage(msg:String):Parser[T] = ???
@@ -77,7 +80,7 @@ object FastParsers {
 
   def seq[T](elem:T):Parser[T] = ???
   //def seq[T](elem:Parser[T]*):Parser[T] = ???
-  def alt[T](elem:List[T]):Parser[T] = ???   //need a SeqLike
+  def alt[T](elem:Array[T]):Parser[T] = ???   //need a SeqLike //WAY TOO SLOW
 
   @compileTimeOnly("can’t be used outside FastParser")
   def range[T](a:T,b:T):Parser[T] = ???
@@ -132,17 +135,20 @@ object FastParsers {
     import c.universe._
 
     trait Input {
+      def init:c.Tree
       def currentInput:c.Tree
       def advance:c.Tree
       def advanceTo(offset:c.Tree):c.Tree
       def mark(code:c.Tree => c.Tree):c.Tree
       def isEOI:c.Tree
+      def isNEOI:c.Tree
       def pos:c.Tree
       def offset:c.Tree
       def inputType:c.Tree
     }
 
     object ReaderInput extends Input {
+      def init = q""
       def currentInput = q"input.first"
       def advance = q"input = input.rest"
       def advanceTo(offset:c.Tree) = q"input = input.drop($offset)"
@@ -155,12 +161,14 @@ object FastParsers {
       """
       }
       def isEOI = q"input.atEnd"
-      def pos = q"input.pos"
+      def isNEOI = q"!input.atEnd"
+      def pos = q"input.offset" //.pos
       def offset = q"input.offset"
       def inputType = tq"Reader[Char]"
     }
 
     object StreamMarkedInput extends Input {
+      def init = q""
       def currentInput = q"input.get"
       def advance = q"input.next"
       def advanceTo(offset:c.Tree) = q""
@@ -172,12 +180,36 @@ object FastParsers {
       """
       }
       def isEOI = q"input.atEnd"
+      def isNEOI = q"input.notAtEnd"
       def pos = q"input.offset"
       def offset = q"input.offset"
       def inputType = tq"StreamMarked[Char]"
     }
 
-    val input = StreamMarkedInput
+    object ArrayInput extends Input {
+      def init =
+        q"""
+        var inputpos = 0
+        val inputsize = input.size
+        """
+      def currentInput = q"input.charAt(inputpos)"
+      def advance = q"inputpos = inputpos + 1"
+      def advanceTo(offset:c.Tree) = q"inputpos += $offset"
+      def mark(code:c.Tree => c.Tree) = {
+        val input_tmp = TermName(c.freshName)
+        q"""
+          val $input_tmp = inputpos
+          ${code(q"inputpos = $input_tmp")}
+      """
+      }
+      def isEOI = q"inputpos >= inputsize"
+      def isNEOI = q"inputpos < inputsize"
+      def pos = q"inputpos"
+      def offset = q"inputpos"
+      def inputType = tq"String"
+    }
+
+    val input = ArrayInput
 
     /**
      * Define an individual result in a parser
@@ -215,6 +247,7 @@ object FastParsers {
       val transform = parseRuleContent(rule,results)
       val initResults = results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
       val tupledResults = combineResults(results)  //lol ?
+
       val result = q"""ParseResult(success,msg,if (success) $tupledResults else null,${input.offset})"""
       val tree = q"""
         ..$initResults
@@ -296,15 +329,25 @@ object FastParsers {
       var results_tmp = new ListBuffer[Result]()
       val result = TermName(c.freshName)
       val last_result = TermName(c.freshName)
+
+      //  $last_result =  $f($last_result,${combineResults(results_tmp)})
+      val innerTree = input.mark { rollback =>
+        q"""
+          ${parseRuleContent(a,results_tmp)}
+           if (success) {
+            $last_result =  $f($last_result,${combineResults(results_tmp)})
+           }
+           else  {
+            $rollback
+            $cont = false
+           }
+        """
+      }
       val tree = q"""
         var $cont = true
         var $last_result = $init
-        while ($cont &&  !${input.isEOI}){
-           ${parseRuleContent(a,results_tmp)}
-           if (success)
-            $last_result =  $f($last_result,${combineResults(results_tmp)})
-           else
-            $cont = false
+        while ($cont){
+           $innerTree
         }
         $result = $last_result
         success = true
@@ -366,14 +409,14 @@ object FastParsers {
       val result = TermName(c.freshName)
       results.append((result,Ident(TypeName(d.toString)),true))  //TODO check d.toString
       q"""
-        if (${input.currentInput} == $a){
-          $result = ${input.currentInput}
+        if (${input.isNEOI} && ${input.currentInput} == $a){
+          $result = $a
           ${input.advance}
           success = true
          }
          else {
             success = false
-            msg = "expected '" + $a + "', got '" + ${input.currentInput} + "' at " + ${input.pos}  }
+            msg = "expected '" + $a + " at " + ${input.pos}  }
           """
     }
 
@@ -387,7 +430,7 @@ object FastParsers {
         val $tmp = $a
         val $size = $tmp.size
         var $count = 0
-        while ($count < $size && ${input.currentInput} == $tmp($count)){
+        while (${input.isNEOI} && $count < $size && ${input.currentInput} == $tmp($count)){
             ${input.advance}
             $count = $count + 1
         }
@@ -435,14 +478,14 @@ object FastParsers {
       val result = TermName(c.freshName)
       results.append((result,Ident(TypeName(d.toString)),true))  //TODO check d.toString
       q"""
-        if (${input.currentInput} >= $a && ${input.currentInput} <= $b){
+        if (${input.isNEOI} && ${input.currentInput} >= $a && ${input.currentInput} <= $b){
           $result = ${input.currentInput}
           ${input.advance}
           success = true
          }
          else {
             success = false
-            msg = "expected in range ('" + $a + "', '" + $b + "'), got '" + ${input.currentInput} + "' at " + ${input.pos}  }
+            msg = "expected in range ('" + $a + "', '" + $b + "')  at " + ${input.pos}  }
           """
     }
 
@@ -479,7 +522,7 @@ object FastParsers {
       tree
     }
 
-    def parseOr(a:c.Tree,b:c.Tree,results:ListBuffer[Result]): c.Tree = {
+    def parseOr(a:c.Tree,b:c.Tree,typ:c.Tree,results:ListBuffer[Result]): c.Tree = {
       val result = TermName(c.freshName)
       var results_tmp1 = new ListBuffer[Result]()
       var results_tmp2 = new ListBuffer[Result]()
@@ -510,7 +553,7 @@ object FastParsers {
       val result = TermName(c.freshName)
       results.append((result,Ident(TypeName("Any")),true))
       q"""
-        val $callResult = ${ruleCall}(input)
+        val $callResult = ${ruleCall}(input.substring(${input.offset}))
         success = $callResult.success
         if (success){
           ${input.advanceTo(q"$callResult.inputPos")}
@@ -577,7 +620,7 @@ object FastParsers {
       val result = TermName(c.freshName)
       results.append((result,Ident(TypeName(d.toString)),true))  //TODO check d.toString
       q"""
-        if (!${input.isEOI}){
+        if (${input.isNEOI}){
           $result = ${input.currentInput}
           ${input.advance}
           success = true
@@ -622,12 +665,14 @@ object FastParsers {
       case q"$a <~[$d] $b" =>
         parseThenLeft(a,b,results)
       case q"$a ||[$d] $b" =>
-        parseOr(a,b,results)
+        parseOr(a,b,d,results)
       case q"$a |[$d] $b" =>
-        parseOr(a,b,results)
+        parseOr(a,b,d,results)
       case q"$a.rep($min,$max)" =>
         parseRep(a,min,max,results)
       case q"$a.repFold[..$d]($init)($f)" =>
+        parseRepFold(a,init,f,results)
+      case q"$a.repFold[..$d]($init,$f)" =>
         parseRepFold(a,init,f,results)
       case q"FastParsers.repFold[..$d]($a)($init)($f)" =>
         parseRepFold(a,init,f,results)
@@ -698,8 +743,9 @@ object FastParsers {
         val args = b.map(expandCallRule(_,rulesMap,rulesPath))
         q"$callee.$m[..$d](..$args)"
       case q"$f[..$d](..$b)" =>
+        val callee = expandCallRule(f,rulesMap,rulesPath)  //because of repFold and al curried stuff
         val args = b.map(expandCallRule(_,rulesMap,rulesPath))
-        q"$f[..$d](..$args)"
+        q"$callee[..$d](..$args)"
       case q"${ruleCall : TermName}" =>
         val name = ruleCall.toString
         if (rulesMap.keySet.contains(name) && !rulesPath.contains(name))
@@ -722,19 +768,29 @@ object FastParsers {
       val map = new HashMap[String,c.Tree]()
       for (k <- rulesMap.keys)  {
         val term = TermName(k)
-        val ruleCode = q"""
+        /*
+
         var input = i
+        var inputpos = 0
+        val inputsize = input.size
+
+         */
+        val ruleCode = q"""
         var success = false
         var msg = ""
+
+        var inputpos = 0
+        val inputsize = input.size
+
         try {
           ${rulesMap(k)}
         } catch {
-          case e:Throwable => println(e);ParseResult(false,"Exception : " + e.getMessage,null,${input.pos})
+          case e:Throwable => ParseResult(false,"Exception : " + e.getMessage,null,${input.pos})
         }
         """
         //map += ((k,q"def $term(i:Reader[Char]) = println(show(reify($ruleCode)))"))
-        map += ((k,q"def $term(i:${input.inputType}):ParseResult[Any] = $ruleCode"))
-        //map += ((k,q"""def $term(i:${input.inputType}) = println(show(reify(${rulesMap(k)})))"""))
+        map += ((k,q"def $term(input:${input.inputType}):ParseResult[Any] = $ruleCode"))
+        //map += ((k,q"""def $term(i:${input.inputType}) = println(show(reify(${ruleCode}).tree))"""))
       }
       map
     }

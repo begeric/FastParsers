@@ -8,7 +8,7 @@ import UnitTests._
 
 class SRTTests extends FunSuite {
 
-  def testFileParsing(fileName:String, parser:StreamMarked[Char] => ParseResult[Any]){
+  def testFileParsing(fileName:String, parser:String => ParseResult[Any]){
 
     def compare(s1:String, s2:String) = {
       s1.zip(s2).zipWithIndex.foreach{case ((a1,a2),i) =>
@@ -41,7 +41,7 @@ class SRTTests extends FunSuite {
     def time = int ~ FastParsers.ignore(':') ~ int ~ FastParsers.ignore(':') ~ int ~ FastParsers.ignore(',') ~ int ^^ {case x:Tuple4[Int,Int,Int,Int] => SrtTime(x._1,x._2,x._3,x._4)}
     def wss = rep(' ')
     def timeRange = time ~ -(wss ~ '-' ~ '-' ~ '>' ~ wss) ~ time ^^ {case x:Tuple2[SrtTime,SrtTime] => SrtTimeRange(x._1,x._2)}
-    def anyText = (not(clrf ~ clrf) ~> wildcard[Char]).repFold(""){(acc:String,v:Char) => acc + v}
+    def anyText = (not(clrf ~ clrf) ~> wildcard[Char]).repFold[String]("",(acc:String,v:Char) => acc + v)
     def block = int ~ -clrf ~ timeRange ~ -clrf ~ anyText ~ -rep(clrf,0,2) ^^ {case x:Tuple3[Int,SrtTimeRange,String] => SrtText(x._1,x._2,x._3)}
     def blocks = (rep(block))
   }

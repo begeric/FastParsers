@@ -15,7 +15,7 @@ object FastParsersSpecification extends Properties("FastParsers") {
 	  def rule1 = phrase((range('a','z') || range('A','Z'))*)
     def rule2 = phrase(rep1(range('0','9')))
     def rule22 = repFold(range('0','9'))(0){(y:Int,x:Char) => x.asDigit +y}
-    def rule23 = range('0','9').repFold(1){(y:Int,x:Char) => x.asDigit * y}
+    def rule23 = range('0','9').repFold(1,(y:Int,x:Char) => x.asDigit * y)
 
     def rule25:Parser[List[Char]] = ('a' ~ rule26) ^^ {case x:Tuple2[Char,List[Char]] => List(x._1) ++ x._2}
     def rule26:Parser[List[Char]] = ('b' ^^ {case x:Char => List(x)}) || rule25

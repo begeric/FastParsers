@@ -18,7 +18,7 @@ object UnitTests extends FunSpec{
 
   case class InputAndResult(in:String, res:Any)
 
-  def shouldSucced(rule:StreamMarked[Char] => ParseResult[Any])(tests:InputAndResult*) = {
+  def shouldSucced[T](rule:String => ParseResult[Any])(tests:InputAndResult*) = {
     tests.foreach{
       x => rule(x.in) match {
         case Success(result) => assert(result == x.res, "on " + x.in + " expected " + x.res + " got " + result)
@@ -27,7 +27,7 @@ object UnitTests extends FunSpec{
     }
   }
 
-  def shouldFail(rule:StreamMarked[Char] => ParseResult[Any])(tests:String*) = {
+  def shouldFail(rule:String => ParseResult[Any])(tests:String*) = {
     tests.foreach{
       str => rule(str) match {
         case Success(result) => fail("Wasn't supposed to succeed, result : " + result)
