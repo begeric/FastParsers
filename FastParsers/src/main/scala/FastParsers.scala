@@ -73,6 +73,8 @@ object FastParsers {
   @compileTimeOnly("can’t be used outside FastParser")
   def opt[T](p:Parser[T]):Parser[List[T]] = ???
 
+  @compileTimeOnly("can’t be used outside FastParser")
+  def repsep[T](p:Parser[T],sep:Parser[T]):Parser[List[T]] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
   def repFold[T,U](p:Parser[T])(init:U)(f:(U,T)=> U):Parser[U] = ???
@@ -249,7 +251,7 @@ object FastParsers {
      */
     type Result = (TermName,c.Tree,Boolean)
 
-    type RuleType = c.Tree
+    type RuleType = c.Type
     type RuleCode = c.Tree
     type RuleInfo = (RuleType,RuleCode)
 
@@ -395,6 +397,52 @@ object FastParsers {
       tree
     }
 
+    def parseRepsep(a:c.Tree,b:c.Tree,typ:c.Tree,results:ListBuffer[Result]) : c.Tree = {
+      var results_tmp = new ListBuffer[Result]()
+      var results_tmp2 = new ListBuffer[Result]()
+      val cont = TermName(c.freshName)
+      val tmp_result = TermName(c.freshName)
+      val result = TermName(c.freshName)
+
+      val innertree2 = input.mark{rollback =>
+        q"""
+          ${parseRuleContent(b,results_tmp2)}
+           if (!success) {
+            $cont = false
+            $rollback
+           }
+        """
+      }
+
+      val innertree1 = input.mark{rollback =>
+         q"""
+          ${parseRuleContent(a,results_tmp)}
+          if (success) {
+             $tmp_result.append(${combineResults(results_tmp)})
+             $innertree2
+          }
+          else {
+            $cont = false
+            $rollback
+          }
+         """
+       }
+
+       val tree = q"""
+       var $cont = true
+       val $tmp_result = new ListBuffer[Any]()
+       while($cont) {
+          $innertree1
+       }
+       $result = $tmp_result.toList
+       success = true
+       """
+      results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
+      results.appendAll(results_tmp2.map(x => (x._1,x._2,false)))
+      results.append((result,AppliedTypeTree(Ident(TypeName("List")),Ident(TypeName("Any"))::Nil),true))
+      tree
+    }
+
     def parseMap(a:c.Tree,f:c.Tree,results:ListBuffer[Result]) : c.Tree = {
       val result = TermName(c.freshName)
       val results_tmp = new ListBuffer[Result]()
@@ -513,6 +561,7 @@ object FastParsers {
 
     def parseElemTakeWhile(f:c.Tree, typ:c.Tree,results:ListBuffer[Result]):c.Tree = {
       val result = TermName(c.freshName)
+      val tmp_f = TermName(c.freshName)
       results.append((result,tq"Array[$typ]",true))
       val tree = input.getChunk(typ,{ addInput:c.Tree =>
         q"""
@@ -744,10 +793,12 @@ object FastParsers {
         parseRep(a,q"1",q"-1",results)
       case q"FastParsers.opt[$d]($a)" =>
         parseRep(a,q"0",q"1",results)
+      case q"FastParsers.repsep[$d]($a,$b)" =>
+        parseRepsep(a,b,d,results)
       /*case q"""${ruleCall : TermName}""" =>
         parseRuleCall(ruleCall,results)*/
       case q"""call[$d](${ruleCall : TermName})""" =>
-        parseRuleCall(ruleCall,d,results)
+        parseRuleCall(ruleCall,tq"Any",results)
       case q"$a map[$d] ($f)" =>
         parseMap(a,f,results)
       case q"$a ^^ [$d]($f)" =>
@@ -777,13 +828,37 @@ object FastParsers {
      */
     def getBasicStructure = {
       val rulesMap = new HashMap[String,RuleInfo]()
+      /*rules match {
+        case Block(stats,expr) =>
+           stats.foreach(_  match {
+             case DefDef(_,_,_,_,typ,_) =>
+               typ match {
+                 case AppliedTypeTree(t,args) =>
+                   c.abort(c.enclosingPosition,"AppliedTypeTree " + show(args) )
+                 case TypeApply(t,args) =>
+                   c.abort(c.enclosingPosition,"TypeApply " + show(args) )
+                 case x:TypeTree =>
+                   x.tpe match {
+                     case TypeRef(x,y,z) => c.abort(c.enclosingPosition,"TypeRef(" + show(x) + "," + show(y) + "," + show(z) + ")")
+                     case _ =>
+                       c.abort(c.enclosingPosition,"perdu")
+                   }
+                 case _ =>
+               }
+           })
+      }*/
+
       rules match {
         case q"{..$body}" =>
           body.foreach (_ match {
-            case q"def $name:$d = $b" =>
+            case q"def $name:${d:TypeTree} = $b" =>
               /*val tq"$f[$typ]" = d    */
+              val x = d.tpe match {
+                case TypeRef(_,_,z) => q"Any".tpe//z.head//q"var x:${d.tpe}" //check it is a parser
+                case _ => c.abort(c.enclosingPosition,"incorrect parser type")
+              }
               val TermName(nameString) = name
-              val in = (nameString,(Ident(TypeName("Any")), b))
+              val in = (nameString,(x, b))
               rulesMap += in
             //case q""  =>
             case q"()" =>
@@ -836,7 +911,6 @@ object FastParsers {
         val term = TermName(k)
         /*
 
-        var input = i
         var inputpos = 0
         val inputsize = input.size
 

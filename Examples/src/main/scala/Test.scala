@@ -17,126 +17,76 @@ object Test {
 
 
  def main(args: Array[String]) {
+   val addressbook =
+   """{
+    "address book": {
+    "name": "John Smith",
+    "address": {
+      "street": "10 Market Street",
+      "city" : "San Francisco, CA",
+      "zip" : 94111
+      },
+    "phone Nums": [
+      "408 338-4238",
+      "408 111-6892"
+    ]
+    }
+    }
+    """
 
-   case class Response(
-    status: Int,
-    contentLength: Int,
-    connection: String,
-    chunked: Boolean = false,
-    upgrade: Boolean = false // keep alive is kept in the connection field
-   )
+   val smallBook =
+     """{
+        "address book": {
+           "name": "John Smith",
+           "address": {
+                 "street": "10 Market Street",
+                 "city" : "San Francisco, CA",
+                 "zip" : 94111
+             },
+            "phone Nums": [
+             "408 338-4238",
+             "408 111-6892"
+           ]
+         }
 
-   def collect2(v:(String,String)) = collect(v._1.toLowerCase,v._2)
+         }
+     """
 
-   def collect(hName: String, prop: String): Option[(String, Any)] = hName match {
-     case "connection" | "proxy-connection" if (prop == "keep-alive" || prop == "close") => Some((hName, prop))
-     case "content-length" => Some((hName, prop.toInt)) //TODO: deal with numformatexception
-     case "transfer-encoding" if (prop == "chunked") => Some(("chunked", true))
-     case "upgrade" => Some((hName, true))
-     case _ => None
+   def toFloat(x:List[Char],y:List[List[Char]]) = (y match {
+     case Nil => x.mkString
+     case List(num) => x.mkString + "." + num.mkString
+   }).toFloat
+
+   def flattenRep(x:List[Tuple3[_,_,List[_]]]) = x.flatMap(y => (y._1,y._2) :: y._3)
+   def flattenRep2(x:List[Tuple2[_,List[_]]]) = x.flatMap(y => y._1 :: y._2)
+
+   val JSonParser = FastParser{
+     def value:Parser[Any] = obj | arr | stringLit | float | seq("null") | seq("true") | seq("false")
+     def stringLit = '\"' ~> (not('\"') ~> wildcard[Char]).repFold[StringBuilder](new StringBuilder(),(acc, c) => acc.append(c)) <~ '\"'
+     def float = rep1(range('0','9')) ~ opt('.' ~> rep(range('0','9'))) ^^ {case x:Tuple2[List[Char],List[List[Char]]] => toFloat(x._1,x._2)}
+     def wss = rep(' ' || '\t' || '\n' || '\r')
+     def obj:Parser[Any] = wss ~ '{' ~ wss ~> repsep(member,wss ~ ',' ~ wss) <~ wss ~ '}'
+     def arr:Parser[Any] = wss ~ '[' ~ wss ~> repsep(value,wss ~ ',' ~ wss) <~ wss ~ ']'
+     //def obj:Parser[Any] = wss ~ '{' ~ wss ~> opt(member ~ rep(wss ~ ',' ~ wss ~> member)) <~ wss ~ '}' ^^ {case x:List[Tuple3[_,_,List[_]]] => flattenRep(x)}
+     //def arr:Parser[Any] = wss ~ '[' ~ wss ~> opt(value ~ rep(wss ~ ',' ~ wss ~> value)) <~ wss ~ ']' ^^ {case x:List[Tuple2[_,List[_]]] => flattenRep2(x)}
+     def member:Parser[Any] = stringLit ~ -(wss ~ ':' ~ wss) ~ value
    }
 
-   def headersMap(map: Map[String, Any],v:Any) = collect2(v.asInstanceOf[(String,String)])  match {
-     case Some((name,value)) => map + (name -> value)
-     case None => map
-   }
-
-   def processResp(x:Any) = x match {
-     case (st:Int,hds:Map[String, Any]) => Response(
-       status = st,
-       contentLength = hds("content-length").asInstanceOf[Int],
-       connection = hds.getOrElse("connection", "").asInstanceOf[String],
-       chunked = hds.getOrElse("chunked", false).asInstanceOf[Boolean],
-       upgrade = hds.getOrElse("upgrade", false).asInstanceOf[Boolean]
-     )
-   }
-
-   /*val httpResponParser = FastParser{
-     def int = rep1(range('0','9'))
-     def intparse = int ^^ {case x:List[Char] => x.mkString.toInt}
-     def decimal = int ~ '.' ~ int
-     def clrf = seq("\r\n") | '\n'
-     def wss = rep(' ' || '\t' || '\f')//rep(alt(Array(' ','\t','\f'))) // x0B ??
-     def wild = (not(clrf) ~> wildcard[Char]).repFold[StringBuilder](new StringBuilder(""),(acc,c) => acc.append(c)) ^^ {case x:StringBuilder => x.result}
-     def status = seq("HTTP/") ~ decimal ~ wss ~> intparse <~ wss ~ wild
-     def data = (wildcard[Char]).repFold[StringBuilder](new StringBuilder(""),(acc,c) => acc.append(c))
-     def headerName = (range('a','z') || range('A','Z') || '-').repFold[StringBuilder](new StringBuilder(""),(acc,c:Any) => acc.append(c)) ^^ {case x:StringBuilder => x.result}
-     def header = headerName ~ -(':' ~ wss) ~ wild
-     def headers = (header <~ clrf).repFold[Map[String, Any]](Map[String, Any](),headersMap)
-
-     //def response = status ~ -clrf ~ headers <~ clrf ^^  processResp
-     def response = status ~ -(clrf) ~ headers <~ clrf ^^  processResp
-
-     def respAndMessage = response ~ data
+   /*val testRepSep = FastParser{
+     def wss = rep(' ' || '\t' || '\n' || '\r')
+     def parse = repsep('a',wss)
    }  */
 
-   def buildString(acc:StringBuilder,c:Char) = acc.append(c)
+   val lines = (scala.io.Source.fromFile("FastParsers\\src\\test\\resources\\tweet75").getLines mkString "\n")
+   val tmp = new StreamMarkedArray("dsf   hf".toCharArray)
 
-   val httpResponParser = FastParser{
-     def int = rep1(range('0','9'))
-     def intparse = int
-     def decimal = int ~ '.' ~ int
-     def clrf = seq("\r\n") | '\n'
-     def wss = rep(' ' || '\t' || '\f')
-     def wild = rep(not(clrf) ~> wildcard[Char])
-     def status = seq("HTTP/") ~ decimal ~ wss ~> intparse <~ wss ~ wild
-     //def data = wildcard[Char].repFold[StringBuilder](new StringBuilder(),buildString)
-    // def data = wildcard[Char].repFold[java.lang.StringBuilder](new java.lang.StringBuilder(),(acc,c) => acc.append(c)) ^^ {case x:java.lang.StringBuilder => x.toString}
-     //def data = wildcard[Char].repFold[StringBuilder](new StringBuilder(),(acc,c) => acc.append(c))  ^^ {case x:StringBuilder => x.toString}
-     def data = takeWhile[Char](_ => true) ^^ {case x:Array[Char] => x.toString}
-     def headerName = rep(range('a','z') || range('A','Z') || '-')
-     def header = headerName ~ -(':' ~ wss) ~ wild
-     def headers = rep(header <~ clrf)
-
-     //def data = takeWhile(_ => true)
-     //def response = status ~ -clrf ~ headers <~ clrf ^^  processResp
-     def response = status ~ -(clrf) ~ headers <~ clrf
-
-     def respAndMessage = response ~ data
-
-   }
-
-   val lines = (scala.io.Source.fromFile("FastParsers\\src\\test\\resources\\tweet1").getLines mkString "\n")
-
-   val tmp = new StreamMarkedArray("dsfhkgodkghf".toCharArray)
-
-
-   /*var now = System.nanoTime
-   var inputpos = 0
-   val inputsize = lines.size
-   var builder = new StringBuilder()
-   while (inputpos < inputsize){
-     //builder = builder.append(lines(inputpos))
-     //takeWhile(lines(inputpos))
-     takeWhile(lines(inputpos))
-     inputpos = inputpos + 1
-   }
-   val r = lines.substring(0,inputsize - 1).toCharArray.toString
-   //println(r)
-   var micros = (System.nanoTime - now) /1e6
-   println("%f ms".format(micros))   */
-
-   val now2 = System.nanoTime
-   httpResponParser.data(lines) match {
-     case Success(result) =>
-       val micros2 = (System.nanoTime - now2) /1e6
-       //println(result)
-       println("%f ms ".format(micros2))
-     case Failure(msg) => println("error : " + msg)
-   }
+    val now2 = System.nanoTime
+   JSonParser.value(addressbook) match {
+    case Success(result) =>
+      val micros2 = (System.nanoTime - now2) /1e6
+      println(result)
+      println("%f ms".format(micros2))
+    case Failure(msg) => println("error : " + msg)
+    }
  }
-
 }
-/*
-var now = System.nanoTime
-var inputpos = 0
-val inputsize = lines.size
-var builder = new StringBuilder()
-while (inputpos < inputsize){
-builder = builder.append(lines(inputpos))
-inputpos = inputpos + 1
-}
-//println(r)
-var micros = (System.nanoTime - now) /1e6
-println("%f ms".format(micros))
-                                       */
