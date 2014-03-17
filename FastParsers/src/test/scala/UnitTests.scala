@@ -36,6 +36,13 @@ object UnitTests extends FunSpec{
     }
   }
 
+  def compare(s1:String, s2:String) = {
+    s1.zip(s2).zipWithIndex.foreach{case ((a1,a2),i) =>
+      if (a1 != a2)
+        fail("error at " + i + " : " + s1.substring(i,i + 10) + " != " + s2.substring(i,i + 10))
+    }
+  }
+
   def repeat[T](x:T,n:Int):List[T] = n match {
     case a if a <= 0 => Nil
     case _ => x::repeat(x,n - 1)

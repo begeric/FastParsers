@@ -10,12 +10,6 @@ class SRTTests extends FunSuite {
 
   def testFileParsing(fileName:String, parser:String => ParseResult[Any]){
 
-    def compare(s1:String, s2:String) = {
-      s1.zip(s2).zipWithIndex.foreach{case ((a1,a2),i) =>
-        if (a1 != a2)
-          fail("error at " + i + " : " + s1.substring(i,i + 10) + " != " + s2.substring(i,i + 10))
-      }
-    }
 
     val lines = (scala.io.Source.fromFile(fileName).getLines mkString "\n").substring(3)  //because bugs
     parser(lines) match {

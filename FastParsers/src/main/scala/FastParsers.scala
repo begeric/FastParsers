@@ -102,6 +102,8 @@ object FastParsers {
   @compileTimeOnly("can’t be used outside FastParser")
   def ignore[T](a:Parser[T]):Parser[T] = ???
 
+  @compileTimeOnly("can’t be used outside FastParser")
+  def call[T](a:Parser[T]):Parser[T] = ???
 
   implicit def toElem[T](elem:T):Elem[T] = Elem(elem)
   implicit def toElemList[T](elem:List[T]):Parser[List[T]] = ???
@@ -116,7 +118,7 @@ object FastParsers {
    * @param inputPos The position in the input at which the parser has finished to read
    * @tparam T Type of the result
    */
-  case class ParseResult[+T](success:Boolean,msg:String,result:T, inputPos:Int)
+  case class ParseResult[T](success:Boolean,msg:String,result:T, inputPos:Int)
 
   object Success {
     def unapply[T](p:ParseResult[T]):Option[T] =
@@ -215,6 +217,10 @@ object FastParsers {
      * Define an individual result in a parser
      */
     type Result = (TermName,c.Tree,Boolean)
+
+    type RuleType = c.Tree
+    type RuleCode = c.Tree
+    type RuleInfo = (RuleType,RuleCode)
 
     /**
      * Get the "zero" value of a certain type
@@ -548,11 +554,11 @@ object FastParsers {
       tree
     }
 
-    def parseRuleCall(ruleCall:TermName,results:ListBuffer[Result]): c.Tree = {
+    def parseRuleCall(ruleCall:TermName,typ:c.Tree,results:ListBuffer[Result]): c.Tree = {
       val callResult = TermName(c.freshName)
       val result = TermName(c.freshName)
-      results.append((result,Ident(TypeName("Any")),true))
-      q"""
+
+      val tree = q"""
         val $callResult = ${ruleCall}(input.substring(${input.offset}))
         success = $callResult.success
         if (success){
@@ -562,6 +568,8 @@ object FastParsers {
         else
           msg = $callResult.msg
         """
+      results.append((result,typ,true))
+      tree
     }
 
 
@@ -688,8 +696,10 @@ object FastParsers {
         parseRep(a,q"1",q"-1",results)
       case q"FastParsers.opt[$d]($a)" =>
         parseRep(a,q"0",q"1",results)
-      case q"""${ruleCall : TermName}""" =>
-        parseRuleCall(ruleCall,results)
+      /*case q"""${ruleCall : TermName}""" =>
+        parseRuleCall(ruleCall,results)*/
+      case q"""call[$d](${ruleCall : TermName})""" =>
+        parseRuleCall(ruleCall,d,results)
       case q"$a map[$d] ($f)" =>
         parseMap(a,f,results)
       case q"$a ^^ [$d]($f)" =>
@@ -718,13 +728,14 @@ object FastParsers {
      * @return An HashMap containing (rulename, corresponging code)
      */
     def getBasicStructure = {
-      val rulesMap = new HashMap[String,c.Tree]()
+      val rulesMap = new HashMap[String,RuleInfo]()
       rules match {
         case q"{..$body}" =>
           body.foreach (_ match {
-            case q"def $name:$_ = $b" =>
+            case q"def $name:$d = $b" =>
+              /*val tq"$f[$typ]" = d    */
               val TermName(nameString) = name
-              val in = (nameString, b)
+              val in = (nameString,(Ident(TypeName("Any")), b))
               rulesMap += in
             //case q""  =>
             case q"()" =>
@@ -737,7 +748,7 @@ object FastParsers {
       rulesMap
     }
 
-    def expandCallRule(tree:c.Tree,rulesMap: HashMap[String,c.Tree],rulesPath:List[String]):c.Tree = tree match {
+    def expandCallRule(tree:c.Tree,rulesMap: HashMap[String,RuleInfo],rulesPath:List[String]):c.Tree = tree match {
       case q"$a.$m[..$d](..$b)" =>
         val callee = expandCallRule(a,rulesMap,rulesPath)
         val args = b.map(expandCallRule(_,rulesMap,rulesPath))
@@ -746,26 +757,33 @@ object FastParsers {
         val callee = expandCallRule(f,rulesMap,rulesPath)  //because of repFold and al curried stuff
         val args = b.map(expandCallRule(_,rulesMap,rulesPath))
         q"$callee[..$d](..$args)"
+      case q"$a.${f:TermName}" =>
+        val callee = expandCallRule(a,rulesMap,rulesPath)
+        q"$callee.$f"
       case q"${ruleCall : TermName}" =>
         val name = ruleCall.toString
-        if (rulesMap.keySet.contains(name) && !rulesPath.contains(name))
-          expandCallRule(rulesMap(name),rulesMap,name::rulesPath)
+        if (rulesMap.keySet.contains(name)){
+          if(!rulesPath.contains(name))
+            expandCallRule(rulesMap(name)._2,rulesMap,name::rulesPath)
+          else
+            q"call[${rulesMap(name)._1}]($tree)"
+        }
         else
-         tree
+          tree
       case _ => tree
     }
 
-    def expandRules(rulesMap: HashMap[String,c.Tree]): HashMap[String,c.Tree] = {
-      val expandedRulesMap = new HashMap[String,c.Tree]()
+    def expandRules(rulesMap: HashMap[String,RuleInfo]) = {
+      val expandedRulesMap = new HashMap[String,RuleInfo]()
       for (k <- rulesMap.keys)  {
-        val rule = expandCallRule(rulesMap(k),rulesMap,List(k))
-        expandedRulesMap += ((k,parseRule(rule)))
+        val rule = expandCallRule(rulesMap(k)._2,rulesMap,List(k))
+        expandedRulesMap += ((k,(rulesMap(k)._1,parseRule(rule))))
       }
       expandedRulesMap
     }
 
-    def replaceInRules(rulesMap : HashMap[String,c.Tree]) = {
-      val map = new HashMap[String,c.Tree]()
+    def replaceInRules(rulesMap : HashMap[String,RuleInfo]) = {
+      val map = new HashMap[String,RuleCode]()
       for (k <- rulesMap.keys)  {
         val term = TermName(k)
         /*
@@ -783,13 +801,13 @@ object FastParsers {
         val inputsize = input.size
 
         try {
-          ${rulesMap(k)}
+          ${rulesMap(k)._2}
         } catch {
           case e:Throwable => ParseResult(false,"Exception : " + e.getMessage,null,${input.pos})
         }
         """
         //map += ((k,q"def $term(i:Reader[Char]) = println(show(reify($ruleCode)))"))
-        map += ((k,q"def $term(input:${input.inputType}):ParseResult[Any] = $ruleCode"))
+        map += ((k,q"def $term(input:${input.inputType}):ParseResult[${rulesMap(k)._1}] = $ruleCode"))
         //map += ((k,q"""def $term(i:${input.inputType}) = println(show(reify(${ruleCode}).tree))"""))
       }
       map
@@ -800,7 +818,7 @@ object FastParsers {
      * @param map Contain the rules name and their corresponding code
      * @return An AnyRef class containing where all rules are transformed in their expanded form
      */
-    def createFastParser(map : HashMap[String,c.Tree]) = {
+    def createFastParser(map : HashMap[String,RuleCode]) = {
       val anon = TypeName(c.freshName)
       val dmmy = TermName(c.freshName)//no joke : see http://stackoverflow.com/questions/14370842/getting-a-structural-type-with-an-anonymous-classs-methods-from-a-macro
 
