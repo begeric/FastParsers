@@ -105,6 +105,9 @@ object FastParsers {
   @compileTimeOnly("can’t be used outside FastParser")
   def call[T](a:Parser[T]):Parser[T] = ???
 
+  @compileTimeOnly("can’t be used outside FastParser")
+  def takeWhile[T](f:T => Boolean):Parser[Array[T]] = ???
+
   implicit def toElem[T](elem:T):Elem[T] = Elem(elem)
   implicit def toElemList[T](elem:List[T]):Parser[List[T]] = ???
   case class Elem[T](elem:T) extends Parser[T]
@@ -147,6 +150,7 @@ object FastParsers {
       def pos:c.Tree
       def offset:c.Tree
       def inputType:c.Tree
+      def getChunk(typ:c.Tree,code:c.Tree => c.Tree):c.Tree
     }
 
     object ReaderInput extends Input {
@@ -167,6 +171,14 @@ object FastParsers {
       def pos = q"input.offset" //.pos
       def offset = q"input.offset"
       def inputType = tq"Reader[Char]"
+      def getChunk(typ:c.Tree,code:c.Tree => c.Tree) = {
+        val tmp = TermName(c.freshName)
+        q"""
+        val $tmp = new ArrayBuffer[$typ]()
+        ${code(q"$tmp.append($currentInput)")}
+        $tmp
+        """
+      }
     }
 
     object StreamMarkedInput extends Input {
@@ -186,6 +198,14 @@ object FastParsers {
       def pos = q"input.offset"
       def offset = q"input.offset"
       def inputType = tq"StreamMarked[Char]"
+      def getChunk(typ:c.Tree,code:c.Tree => c.Tree) = {
+        val tmp = TermName(c.freshName)
+        q"""
+        val $tmp = new ArrayBuffer[$typ]()
+        ${code(q"$tmp.append($currentInput)")}
+        $tmp
+        """
+      }
     }
 
     object ArrayInput extends Input {
@@ -209,6 +229,17 @@ object FastParsers {
       def pos = q"inputpos"
       def offset = q"inputpos"
       def inputType = tq"String"
+      def getChunk(typ:c.Tree,code:c.Tree => c.Tree) = {
+        val beginPos = TermName(c.freshName)
+        q"""
+        val $beginPos = $pos
+        ${code(q"")}
+        if ($isEOI)
+          input.substring($beginPos,$pos - 1).toCharArray
+        else
+          input.substring($beginPos,$pos).toCharArray
+        """
+      }
     }
 
     val input = ArrayInput
@@ -480,6 +511,21 @@ object FastParsers {
        """
     }
 
+    def parseElemTakeWhile(f:c.Tree, typ:c.Tree,results:ListBuffer[Result]):c.Tree = {
+      val result = TermName(c.freshName)
+      results.append((result,tq"Array[$typ]",true))
+      val tree = input.getChunk(typ,{ addInput:c.Tree =>
+        q"""
+        while(${input.isNEOI} && $f(${input.currentInput})) {
+          $addInput
+          ${input.advance}
+        }
+        success = true
+       """
+      })
+      q"$result = $tree"
+    }
+
     def parseRange(a:c.Tree,b:c.Tree,d:c.Tree,results:ListBuffer[Result]): c.Tree = {
       val result = TermName(c.freshName)
       results.append((result,Ident(TypeName(d.toString)),true))  //TODO check d.toString
@@ -662,6 +708,8 @@ object FastParsers {
         parseElemSeq(a,d,results)
       case q"FastParsers.alt[$d]($a)" =>
         parseElemAlt(a,d,results)
+      case q"FastParsers.takeWhile[$d]($f)" =>
+        parseElemTakeWhile(f,d,results)
       case q"FastParsers.range[$d]($a,$b)" =>
         parseRange(a,b,d,results)
       case q"FastParsers.wildcard[$d]" =>
