@@ -110,6 +110,9 @@ object FastParsers {
   @compileTimeOnly("can’t be used outside FastParser")
   def takeWhile[T](f:T => Boolean):Parser[Array[T]] = ???
 
+  @compileTimeOnly("can’t be used outside FastParser")
+  def except[T](elems:T*):Parser[T] = ???
+
   implicit def toElem[T](elem:T):Elem[T] = Elem(elem)
   implicit def toElemList[T](elem:List[T]):Parser[List[T]] = ???
   case class Elem[T](elem:T) extends Parser[T]
@@ -575,6 +578,23 @@ object FastParsers {
       q"$result = $tree"
     }
 
+    def parseElemExcept(a:List[c.Tree],typ:c.Tree,results:ListBuffer[Result]):c.Tree = {
+      val result = TermName(c.freshName)
+      results.append((result,typ,true))  //TODO check d.toString
+      val inIf = a.foldLeft(q"${input.currentInput} != ${a.head}")((acc,c) => q"$acc && ${input.currentInput} != ${c}")
+      q"""
+        if (${input.isNEOI} && $inIf){
+          $result = ${input.currentInput}
+          ${input.advance}
+          success = true
+        }
+        else {
+            success = false
+            msg = "error in except at " + ${input.pos}
+        }
+      """
+    }
+
     def parseRange(a:c.Tree,b:c.Tree,d:c.Tree,results:ListBuffer[Result]): c.Tree = {
       val result = TermName(c.freshName)
       results.append((result,Ident(TypeName(d.toString)),true))  //TODO check d.toString
@@ -761,6 +781,8 @@ object FastParsers {
         parseElemTakeWhile(f,d,results)
       case q"FastParsers.range[$d]($a,$b)" =>
         parseRange(a,b,d,results)
+      case q"FastParsers.except[$d](..$a)" =>
+        parseElemExcept(a,d,results)
       case q"FastParsers.wildcard[$d]" =>
         parseWildcard(d,results)
       case q"$a ~[$d] $b" =>
