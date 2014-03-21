@@ -368,6 +368,7 @@ object FastParsers {
 
     def parseRepFold(a:c.Tree, init:c.Tree, f:c.Tree,results:ListBuffer[Result]) : c.Tree = {
       val cont = TermName(c.freshName)
+      val tmp_f = TermName(c.freshName)
       var results_tmp = new ListBuffer[Result]()
       val result = TermName(c.freshName)
       val last_result = TermName(c.freshName)
@@ -377,7 +378,7 @@ object FastParsers {
         q"""
           ${parseRuleContent(a,results_tmp)}
            if (success) {
-            $last_result =  $f($last_result,${combineResults(results_tmp)})
+            $last_result =  $tmp_f($last_result,${combineResults(results_tmp)})
            }
            else  {
             $rollback
@@ -388,6 +389,7 @@ object FastParsers {
       val tree = q"""
         var $cont = true
         var $last_result = $init
+        val $tmp_f = $f
         while ($cont){
            $innerTree
         }
@@ -448,11 +450,13 @@ object FastParsers {
 
     def parseMap(a:c.Tree,f:c.Tree,results:ListBuffer[Result]) : c.Tree = {
       val result = TermName(c.freshName)
+      val tmp_f = TermName(c.freshName)
       val results_tmp = new ListBuffer[Result]()
       val tree = q"""
+          val $tmp_f = $f
           ${parseRuleContent(a,results_tmp)}
            if (success)
-             $result = $f(${combineResults(results_tmp)})
+             $result = $tmp_f(${combineResults(results_tmp)})
         """
       results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
       results.append((result,Ident(TypeName("Any")),true))
@@ -474,11 +478,13 @@ object FastParsers {
 
     def parseFilter(a:c.Tree, f:c.Tree,typ:c.Tree,results:ListBuffer[Result]) : c.Tree = {
       val result = TermName(c.freshName)
+      val tmp_f = TermName(c.freshName)
       val results_tmp = new ListBuffer[Result]()
       val tree = input.mark{rollback =>
         q"""
+          val $tmp_f = $f
           ${parseRuleContent(a,results_tmp)}
-           if (success && $f(${combineResults(results_tmp)}))
+           if (success && $tmp_f(${combineResults(results_tmp)}))
              $result = ${combineResults(results_tmp)}
            else {
             success = false
@@ -568,7 +574,8 @@ object FastParsers {
       results.append((result,tq"Array[$typ]",true))
       val tree = input.getChunk(typ,{ addInput:c.Tree =>
         q"""
-        while(${input.isNEOI} && $f(${input.currentInput})) {
+        val $tmp_f = $f
+        while(${input.isNEOI} && $tmp_f(${input.currentInput})) {
           $addInput
           ${input.advance}
         }
@@ -935,6 +942,8 @@ object FastParsers {
 
         var inputpos = 0
         val inputsize = input.size
+        val input = i
+        val input = i
 
          */
         val ruleCode = q"""

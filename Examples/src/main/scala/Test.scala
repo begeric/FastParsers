@@ -32,18 +32,66 @@ object Test {
       "408 111-6892"
     ]
     },
-       "address book2": {
-           "name": "John Smith",
-           "address": {
-             "street": "10 Market Street",
-             "city" : "San Francisco, CA",
-             "zip" : 94111
-             },
-           "phone Nums": [
-             "408 338-4238",
-             "408 111-6892"
-           ]
-           }
+   "address book2": {
+     "name": "John Smith",
+     "address": {
+       "street": "10 Market Street",
+       "city" : "San Francisco, CA",
+       "zip" : 94111
+       },
+     "phone Nums": [
+       "408 338-4238",
+       "408 111-6892"
+     ]
+     },
+     "address book3": {
+      "name": "John Smith",
+      "address": {
+        "street": "10 Market Street",
+        "city" : "San Francisco, CA",
+        "zip" : 94111
+        },
+      "phone Nums": [
+        "408 338-4238",
+        "408 111-6892"
+      ]
+      },
+       "address book": {
+       "name": "John Smith",
+       "address": {
+         "street": "10 Market Street",
+         "city" : "San Francisco, CA",
+         "zip" : 94111
+         },
+       "phone Nums": [
+         "408 338-4238",
+         "408 111-6892"
+       ]
+       },
+      "address book2": {
+        "name": "John Smith",
+        "address": {
+          "street": "10 Market Street",
+          "city" : "San Francisco, CA",
+          "zip" : 94111
+          },
+        "phone Nums": [
+          "408 338-4238",
+          "408 111-6892"
+        ]
+        },
+        "address book3": {
+         "name": "John Smith",
+         "address": {
+           "street": "10 Market Street",
+          "city" : "San Francisco, CA",
+           "zip" : 94111
+           },
+         "phone Nums": [
+           "408 338-4238",
+           "408 111-6892"
+        ]
+       }
     }
      """
 
@@ -70,10 +118,11 @@ object Test {
 
    val JSonParser = FastParser{
      def value:Parser[Any] = obj | arr | stringLit | float | seq("null") | seq("true") | seq("false")
-     def stringLit = '\"' ~> (except('\"')).repFold[java.lang.StringBuilder](new java.lang.StringBuilder(),(acc, c) => acc.append(c)) <~ '\"'
-     //def stringLit = '\"' ~> (takeWhile[Char](_ != '\"') ^^ {case x:Array[Char] => x.mkString})  <~ '\"'
+     //def stringLit = '\"' ~> (except('\"')).repFold[java.lang.StringBuilder](new java.lang.StringBuilder(),(acc, c) => acc.append(c)) <~ '\"'
+     def stringLit = '\"' ~> (takeWhile[Char](_ != '\"') ^^ {case x:Array[Char] => x.mkString})  <~ '\"'
      def float = rep1(range('0','9')) ~ opt('.' ~> rep(range('0','9'))) ^^ {case x:Tuple2[List[Char],List[List[Char]]] => toFloat(x._1,x._2)}
-     def wss = rep(' ' || ('\r' ~ '\n'))
+     def wss = takeWhile[Char](c => c == ' ' || c == '\n' || c == '\r')//rep(' ' || ('\r' ~ '\n'))
+     //def wss = rep(' ' || '\r' || '\n')
      def obj:Parser[Any] = wss ~ '{' ~ wss ~> repsep(member,wss ~ ',' ~ wss) <~ wss ~ '}'
      def arr:Parser[Any] = wss ~ '[' ~ wss ~> repsep(value,wss ~ ',' ~ wss) <~ wss ~ ']'
      def member:Parser[Any] = stringLit ~ -(wss ~ ':' ~ wss) ~ value
@@ -83,24 +132,34 @@ object Test {
 
    val tmp = new StreamMarkedArray(addressbook.toCharArray)
 
-   (1 to 10).foreach{_=>
-     val now2 = System.nanoTime
-     JSonParser.value(addressbook) match {
-      case Success(result) =>
-        val micros2 = (System.nanoTime - now2) /1e6
-        //println(result)
-        println("FastParser : %f ms".format(micros2))
-      case Failure(msg) => println("error : " + msg)
-     }
+   (1 to 20).foreach{_=>
 
      val now = System.nanoTime
      JSON.parseAll(JSON.value,addressbook) match {
        case JSON.Success(result,_) =>
          val micros = (System.nanoTime - now) /1e6
-        // println(result)
-         println("Combinator : %f ms".format(micros))
+         //println(result)
+         println("Combinator : %fms".format(micros))
        case JSON.Failure(msg,_) => println("error : " + msg)
      }
+
+     val now2 = System.nanoTime
+     JSonParser.value(addressbook) match {
+       case Success(result) =>
+         val micros2 = (System.nanoTime - now2) /1e6
+         //println(result)
+         println("FastParser : %fms".format(micros2))
+       case Failure(msg) => println("error : " + msg)
+     }
+
    }
+
+   /* val parser = FastParser {
+         def test = takeWhile[Char](_ != '7') ^^ {case x:Array[Char] => x.mkString}
+   }
+   parser.test("aaadsafasfb897546") match {
+     case Success(result) => println(result)
+     case Failure(msg) => println("error : " + msg)
+   } */
  }
 }
