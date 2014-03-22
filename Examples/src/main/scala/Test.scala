@@ -116,13 +116,23 @@ object Test {
      case List(num) => x.mkString + "." + num.mkString
    }).toFloat
 
-   val JSonParser = FastParser{
+   /*val JSonParser = FastParser{
      def value:Parser[Any] = obj | arr | stringLit | float | seq("null") | seq("true") | seq("false")
      //def stringLit = '\"' ~> (except('\"')).repFold[java.lang.StringBuilder](new java.lang.StringBuilder(),(acc, c) => acc.append(c)) <~ '\"'
      def stringLit = '\"' ~> (takeWhile[Char](_ != '\"') ^^ {case x:Array[Char] => x.mkString})  <~ '\"'
      def float = rep1(range('0','9')) ~ opt('.' ~> rep(range('0','9'))) ^^ {case x:Tuple2[List[Char],List[List[Char]]] => toFloat(x._1,x._2)}
-     def wss = takeWhile[Char](c => c == ' ' || c == '\n' || c == '\r')//rep(' ' || ('\r' ~ '\n'))
-     //def wss = rep(' ' || '\r' || '\n')
+     def wss = takeWhile[Char](c => c == ' ' || c == '\n' || c == '\r')
+     def obj:Parser[Any] = wss ~ '{' ~ wss ~> repsep(member,wss ~ ',' ~ wss) <~ wss ~ '}'
+     def arr:Parser[Any] = wss ~ '[' ~ wss ~> repsep(value,wss ~ ',' ~ wss) <~ wss ~ ']'
+     def member:Parser[Any] = stringLit ~ -(wss ~ ':' ~ wss) ~ value
+   } */
+
+   val JSonParser = FastParser{
+     def value:Parser[Any] = obj | arr | stringLit | float | seq("null") | seq("true") | seq("false")
+     //def stringLit = '\"' ~> (takeWhile[Char](_ != '\"') ^^ (_.mkString))  <~ '\"'
+     def stringLit = '\"' ~> (except('\"')).repFold[java.lang.StringBuilder](new java.lang.StringBuilder(),(acc, c) => acc.append(c)) <~ '\"'
+     def float = rep1(range('0','9')) ~ opt('.' ~> rep(range('0','9'))) ^^ {x => toFloat(x._1,x._2)}
+     def wss = takeWhile[Char](c => c == ' ' || c == '\n' || c == '\r')
      def obj:Parser[Any] = wss ~ '{' ~ wss ~> repsep(member,wss ~ ',' ~ wss) <~ wss ~ '}'
      def arr:Parser[Any] = wss ~ '[' ~ wss ~> repsep(value,wss ~ ',' ~ wss) <~ wss ~ ']'
      def member:Parser[Any] = stringLit ~ -(wss ~ ':' ~ wss) ~ value
@@ -132,7 +142,7 @@ object Test {
 
    val tmp = new StreamMarkedArray(addressbook.toCharArray)
 
-   (1 to 20).foreach{_=>
+   (1 to 30).foreach{_=>
 
      val now = System.nanoTime
      JSON.parseAll(JSON.value,addressbook) match {
@@ -154,12 +164,18 @@ object Test {
 
    }
 
-   /* val parser = FastParser {
-         def test = takeWhile[Char](_ != '7') ^^ {case x:Array[Char] => x.mkString}
+   /*val parser = FastParser {
+      //def test = takeWhile[Char](_ != '7') ^^ {case x:Array[Char] => x.mkString}
+      def test2:Parser[Any] = ('b' ~ 'c') | test
+      def test:Parser[Any] = 'a' ~ test2
+
+      def test3 = range('0','9').repFold(0,(acc:Int,c) => acc * 10 + c.asDigit)
+
    }
-   parser.test("aaadsafasfb897546") match {
+
+   parser.test3("4527") match {
      case Success(result) => println(result)
      case Failure(msg) => println("error : " + msg)
-   } */
+   }  */
  }
 }

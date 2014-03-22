@@ -28,26 +28,28 @@ object FastParsers {
     def |[U >: T](parser2: Parser[U]):Parser[U] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
     def ||[U >: T](parser2: Parser[U]):Parser[U] =  ???
+
+    //deprecated
+   /* @compileTimeOnly("can’t be used outside FastParser")
+    def `?`[X >: T]:Parser[List[T]] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def `?`:Parser[List[T]] =  ???
+    def `+`[X >: T]:Parser[List[T]] =  ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def `+`:Parser[List[T]] =  ???
-    @compileTimeOnly("can’t be used outside FastParser")
-    def `*`:Parser[List[T]] =  ???
+    def `*`[X >: T]:Parser[List[T]] =  ???         */
 
     @compileTimeOnly("can’t be used outside FastParser")
-    def ^^[U](f:Any => U):Parser[U] = ???
+    def ^^[U](f:T => U):Parser[U] = ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def map[U](f:Any => U):Parser[U] = ???
+    def map[U](f:T => U):Parser[U] = ???
     @compileTimeOnly("can’t be used outside FastParser")
     def ^^^[U](f:U):Parser[U] = ???
 
     @compileTimeOnly("can’t be used outside FastParser")
-    def filter[U](f:Any => Boolean):Parser[T] = ???        //(==>)   ???
+    def filter[U](f:T => Boolean):Parser[T] = ???        //(==>)   ???
 
 
     @compileTimeOnly("can’t be used outside FastParser")
-    def rep(min:Int,max:Int):Parser[T] = ???
+    def rep[X >: T](min:Int,max:Int):Parser[T] = ???
 
    /* @compileTimeOnly("can’t be used outside FastParser")
     def repfold(min:Int,max:Int):Parser[T] = ???   */
@@ -126,7 +128,7 @@ object FastParsers {
    * @param inputPos The position in the input at which the parser has finished to read
    * @tparam T Type of the result
    */
-  case class ParseResult[T](success:Boolean,msg:String,result:T, inputPos:Int)
+  case class ParseResult[+T](success:Boolean,msg:String,result:T, inputPos:Int)
 
   object Success {
     def unapply[T](p:ParseResult[T]):Option[T] =
@@ -268,14 +270,19 @@ object FastParsers {
       def fromString(str:String) = str match {
         case "Char" => q"' '"
         case "Int" => q"0"
+        case "Float" => q"0"
+        case "Double" => q"0.0D"
         case "String" => q""""""""
+        case x if x.startsWith("List") => q"Nil"
         case _ => q"null"
       }
+
       typ match {
         case Ident(TypeName(name)) => fromString(name)
-        case AppliedTypeTree(Ident(TypeName("List")),_) => q"Nil"
-        case x:TypeTree => fromString(x.toString)
-        case _ => q"null"
+        case AppliedTypeTree(Ident(TypeName("List")),_) =>  q"Nil"
+        //case x:TypeTree => fromString(x.toString)
+        case x => fromString(x.toString)
+        //case _ => q"null"
       }
     }
 
@@ -284,13 +291,13 @@ object FastParsers {
      * @param rule The code to be transformed
      * @return The transformed code
      */
-    def parseRule(rule:c.Tree):c.Tree = {
+    def parseRule(rule:c.Tree,returnType:c.Tree):c.Tree = {
       val results = new ListBuffer[Result]()
       val transform = parseRuleContent(rule,results)
       val initResults = results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
       val tupledResults = combineResults(results)  //lol ?
 
-      val result = q"""ParseResult(success,msg,if (success) $tupledResults else null,${input.offset})"""
+      val result = q"""ParseResult(success,msg,if (success) $tupledResults else ${zeroValue(returnType)},${input.offset})"""
       val tree = q"""
         ..$initResults
         $transform
@@ -316,7 +323,7 @@ object FastParsers {
     }
 
 
-    def parseRep(a:c.Tree,min:c.Tree,max:c.Tree,results:ListBuffer[Result]):c.Tree = {
+    def parseRep(a:c.Tree,typ:c.Tree,min:c.Tree,max:c.Tree,results:ListBuffer[Result]):c.Tree = {
       val counter =  TermName(c.freshName)
       val cont = TermName(c.freshName)
       var results_tmp = new ListBuffer[Result]()
@@ -346,7 +353,7 @@ object FastParsers {
         q"""
           var $counter = 0
           var $cont = true
-          val $tmp_result = new ListBuffer[Any]()
+          val $tmp_result = new ListBuffer[$typ]()
           success = $min == 0
           while($cont){
             $innerWhileTree
@@ -361,12 +368,13 @@ object FastParsers {
         """
       }
       results_tmp = results_tmp.map(x => (x._1,x._2,false))
-      results.append((result,AppliedTypeTree(Ident(TypeName("List")),Ident(TypeName("Any"))::Nil),true))
+      //results.append((result,AppliedTypeTree(Ident(TypeName("List")),Ident(TypeName("Any"))::Nil),true))
+      results.append((result,tq"List[$typ]",true))
       results.appendAll(results_tmp)
       tree
     }
 
-    def parseRepFold(a:c.Tree, init:c.Tree, f:c.Tree,results:ListBuffer[Result]) : c.Tree = {
+    def parseRepFold(a:c.Tree, init:c.Tree, f:c.Tree, typ:c.Tree,results:ListBuffer[Result]) : c.Tree = {
       val cont = TermName(c.freshName)
       val tmp_f = TermName(c.freshName)
       var results_tmp = new ListBuffer[Result]()
@@ -397,7 +405,7 @@ object FastParsers {
         success = true
       """
       results_tmp = results_tmp.map(x => (x._1,x._2,false))
-      results.append((result,Ident(TypeName("Any")),true))
+      results.append((result,typ,true))
       results.appendAll(results_tmp)
       tree
     }
@@ -448,7 +456,7 @@ object FastParsers {
       tree
     }
 
-    def parseMap(a:c.Tree,f:c.Tree,results:ListBuffer[Result]) : c.Tree = {
+    def parseMap(a:c.Tree,typ:c.Tree,f:c.Tree,results:ListBuffer[Result]) : c.Tree = {
       val result = TermName(c.freshName)
       val tmp_f = TermName(c.freshName)
       val results_tmp = new ListBuffer[Result]()
@@ -459,7 +467,7 @@ object FastParsers {
              $result = $tmp_f(${combineResults(results_tmp)})
         """
       results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
-      results.append((result,Ident(TypeName("Any")),true))
+      results.append((result,typ,true))
       tree
     }
 
@@ -476,7 +484,7 @@ object FastParsers {
       tree
     }
 
-    def parseFilter(a:c.Tree, f:c.Tree,typ:c.Tree,results:ListBuffer[Result]) : c.Tree = {
+    def parseFilter(a:c.Tree,typ:c.Tree, f:c.Tree,results:ListBuffer[Result]) : c.Tree = {
       val result = TermName(c.freshName)
       val tmp_f = TermName(c.freshName)
       val results_tmp = new ListBuffer[Result]()
@@ -494,7 +502,7 @@ object FastParsers {
         """
       }
       results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
-      results.append((result,Ident(TypeName("Any")),true))
+      results.append((result,typ,true))
       tree
     }
 
@@ -694,6 +702,19 @@ object FastParsers {
       tree
     }
 
+    def parseCompound(a:c.Tree,typ:c.Tree,results:ListBuffer[Result]):c.Tree = {
+      val result = TermName(c.freshName)
+      val results_tmp = new ListBuffer[Result]()
+      val tree =
+      q"""
+        ${parseRuleContent(a,results_tmp)}
+        $result = ${combineResults(results_tmp)}
+      """
+      results.append((result,typ,true))
+      results.appendAll(results_tmp.map(x => (x._1,x._2,false)))
+      tree
+    }
+
 
     def parsePhrase(a:c.Tree,results:ListBuffer[Result]): c.Tree = {
       q"""
@@ -802,40 +823,40 @@ object FastParsers {
         parseOr(a,b,d,results)
       case q"$a |[$d] $b" =>
         parseOr(a,b,d,results)
-      case q"$a.rep($min,$max)" =>
-        parseRep(a,min,max,results)
-      case q"$a.repFold[..$d]($init)($f)" =>
-        parseRepFold(a,init,f,results)
-      case q"$a.repFold[..$d]($init,$f)" =>
-        parseRepFold(a,init,f,results)
-      case q"FastParsers.repFold[..$d]($a)($init)($f)" =>
-        parseRepFold(a,init,f,results)
-      case q"$a?" =>
-        parseRep(a,q"0",q"1",results)
-      case q"$a+" =>
-        parseRep(a,q"1",q"-1",results)
-      case q"$a*" =>
-        parseRep(a,q"0",q"-1",results)
+      case q"$a.rep[$d]($min,$max)" =>
+        parseRep(a,d,min,max,results)
+      /*case q"$a.repFold[..$d]($init)($f)" =>
+        parseRepFold(a,init,f,results) */
+      case q"$a.repFold[$d]($init,$f)" =>
+        parseRepFold(a,init,f,d,results)
+      case q"FastParsers.repFold[$d]($a)($init)($f)" =>
+        parseRepFold(a,init,f,d,results)
+      /*case q"$a?[$d]" =>
+        parseRep(a,d,q"0",q"1",results)
+      case q"$a+[$d]" =>
+        parseRep(a,d,q"1",q"-1",results)
+      case q"$a*[$d]" =>
+        parseRep(a,d,q"0",q"-1",results)*/
       case q"FastParsers.rep[$d]($a,$min,$max)" =>
-        parseRep(a,min,max,results)
+        parseRep(a,d,min,max,results)
       case q"FastParsers.rep1[$d]($a)" =>
-        parseRep(a,q"1",q"-1",results)
+        parseRep(a,d,q"1",q"-1",results)
       case q"FastParsers.opt[$d]($a)" =>
-        parseRep(a,q"0",q"1",results)
+        parseRep(a,d,q"0",q"1",results)
       case q"FastParsers.repsep[$d]($a,$b)" =>
         parseRepsep(a,b,d,results)
-      /*case q"""${ruleCall : TermName}""" =>
-        parseRuleCall(ruleCall,results)*/
       case q"""call[$d](${ruleCall : TermName})""" =>
-        parseRuleCall(ruleCall,tq"Any",results)
+        parseRuleCall(ruleCall,d,results)
+      case q"""compound[$d]($a)""" =>
+        parseCompound(a,d,results)
       case q"$a map[$d] ($f)" =>
-        parseMap(a,f,results)
+        parseMap(a,d,f,results)
       case q"$a ^^ [$d]($f)" =>
-          parseMap(a,f,results)
+        parseMap(a,d,f,results)
       case q"$a ^^^ [$d]($f)" =>
         parseValue(a,f,d,results)
       case q"$a filter [$d]($f)" =>
-        parseFilter(a,f,d,results)
+        parseFilter(a,d,f,results)
       case q"FastParsers.phrase[$d]($a)" =>
         parsePhrase(a,results)
       case q"FastParsers.not[$d]($a)" =>
@@ -857,33 +878,13 @@ object FastParsers {
      */
     def getBasicStructure = {
       val rulesMap = new HashMap[String,RuleInfo]()
-      /*rules match {
-        case Block(stats,expr) =>
-           stats.foreach(_  match {
-             case DefDef(_,_,_,_,typ,_) =>
-               typ match {
-                 case AppliedTypeTree(t,args) =>
-                   c.abort(c.enclosingPosition,"AppliedTypeTree " + show(args) )
-                 case TypeApply(t,args) =>
-                   c.abort(c.enclosingPosition,"TypeApply " + show(args) )
-                 case x:TypeTree =>
-                   x.tpe match {
-                     case TypeRef(x,y,z) => c.abort(c.enclosingPosition,"TypeRef(" + show(x) + "," + show(y) + "," + show(z) + ")")
-                     case _ =>
-                       c.abort(c.enclosingPosition,"perdu")
-                   }
-                 case _ =>
-               }
-           })
-      }*/
-
       rules match {
         case q"{..$body}" =>
           body.foreach (_ match {
             case q"def $name:${d:TypeTree} = $b" =>
               /*val tq"$f[$typ]" = d    */
               val x = d.tpe match {
-                case TypeRef(_,_,z) => q"Any".tpe//z.head//q"var x:${d.tpe}" //check it is a parser
+                case TypeRef(_,_,z) => z.head//q"Any".tpe//q"var x:${d.tpe}" //check it is a parser
                 case _ => c.abort(c.enclosingPosition,"incorrect parser type")
               }
               val TermName(nameString) = name
@@ -916,7 +917,7 @@ object FastParsers {
         val name = ruleCall.toString
         if (rulesMap.keySet.contains(name)){
           if(!rulesPath.contains(name))
-            expandCallRule(rulesMap(name)._2,rulesMap,name::rulesPath)
+            q"compound[${rulesMap(name)._1}](${expandCallRule(rulesMap(name)._2,rulesMap,name::rulesPath)})"
           else
             q"call[${rulesMap(name)._1}]($tree)"
         }
@@ -928,8 +929,10 @@ object FastParsers {
     def expandRules(rulesMap: HashMap[String,RuleInfo]) = {
       val expandedRulesMap = new HashMap[String,RuleInfo]()
       for (k <- rulesMap.keys)  {
-        val rule = expandCallRule(rulesMap(k)._2,rulesMap,List(k))
-        expandedRulesMap += ((k,(rulesMap(k)._1,parseRule(rule))))
+        val ruleCode = rulesMap(k)._2
+        val ruleType = rulesMap(k)._1
+        val rule = expandCallRule(ruleCode,rulesMap,List(k))
+        expandedRulesMap += ((k,(ruleType,parseRule(rule,tq"$ruleType"))))
       }
       expandedRulesMap
     }
@@ -956,7 +959,7 @@ object FastParsers {
         try {
           ${rulesMap(k)._2}
         } catch {
-          case e:Throwable => ParseResult(false,"Exception : " + e.getMessage,null,${input.pos})
+          case e:Throwable => ParseResult(false,"Exception : " + e.getMessage,${zeroValue(tq"${rulesMap(k)._1}")},${input.pos})
         }
         """
         //map += ((k,q"def $term(i:Reader[Char]) = println(show(reify($ruleCode)))"))
