@@ -334,13 +334,16 @@ object FastParsers {
       var results_tmp = new ListBuffer[Result]()
       val result = TermName(c.freshName)
       val tmp_result = TermName(c.freshName)
+
+      //val checkMaxCounter = if (maxValue < 0) q"""if ($counter + 1 == $max) $cont = false""" else q""
+      val checkMaxCounter = q"""if ($counter + 1 == $max) $cont = false"""
+
       val innerWhileTree = input.mark {rollback =>
         q"""
           ${parseRuleContent(a,results_tmp)}
           if (success) {
               $tmp_result.append(${combineResults(results_tmp)})
-              if ($counter + 1 == $max)
-                $cont = false
+              $checkMaxCounter
           }
           else {
               success = $counter >= $min
@@ -373,7 +376,6 @@ object FastParsers {
         """
       }
       results_tmp = results_tmp.map(x => (x._1,x._2,false))
-      //results.append((result,AppliedTypeTree(Ident(TypeName("List")),Ident(TypeName("Any"))::Nil),true))
       results.append((result,tq"List[$typ]",true))
       results.appendAll(results_tmp)
       tree

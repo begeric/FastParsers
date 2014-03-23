@@ -121,6 +121,8 @@ object Test {
      def value:Parser[Any] = obj | arr | stringLit | float | seq("null") | seq("true") | seq("false")
      //def stringLit = '\"' ~> (except('\"')).repFold[java.lang.StringBuilder](new java.lang.StringBuilder(),(acc, c) => acc.append(c)) <~ '\"'
      def stringLit = '\"' ~> (takeWhile[Char](_ != '\"') ^^ {case x:Array[Char] => x.mkString})  <~ '\"'
+     //def stringLit = '\"' ~> (takeWhile[Char](_ != '\"') ^^ (_.mkString))  <~ '\"'
+     //def stringLit = '\"' ~> (except('\"')).repFold[java.lang.StringBuilder](new java.lang.StringBuilder(),(acc, c) => acc.append(c)) <~ '\"'
      def float = rep1(range('0','9')) ~ opt('.' ~> rep(range('0','9'))) ^^ {case x:Tuple2[List[Char],List[List[Char]]] => toFloat(x._1,x._2)}
      def wss = takeWhile[Char](c => c == ' ' || c == '\n' || c == '\r')
      def obj:Parser[Any] = wss ~ '{' ~ wss ~> repsep(member,wss ~ ',' ~ wss) <~ wss ~ '}'
@@ -129,22 +131,20 @@ object Test {
    } */
 
    val JSonParser = FastParser{
-     def value:Parser[Any] = obj | arr | stringLit | float | seq("null") | seq("true") | seq("false")
-     //def stringLit = '\"' ~> (takeWhile[Char](_ != '\"') ^^ (_.mkString))  <~ '\"'
+     def value:Parser[Any] = wss ~> (obj | arr | stringLit | float | seq("null") | seq("true") | seq("false"))
      def stringLit = '\"' ~> (takeWhile2[Char,String](_ != '\"') ^^ (x => x.input.substring(x.begin,x.end)))  <~ '\"'
-     //def stringLit = '\"' ~> (except('\"')).repFold[java.lang.StringBuilder](new java.lang.StringBuilder(),(acc, c) => acc.append(c)) <~ '\"'
      def float = rep1(range('0','9')) ~ opt('.' ~> rep(range('0','9'))) ^^ toFloat
      def wss = takeWhile[Char](c => c == ' ' || c == '\n' || c == '\r')
-     def obj:Parser[Any] = wss ~ '{' ~ wss ~> repsep(member,wss ~ ',' ~ wss) <~ wss ~ '}'
-     def arr:Parser[Any] = wss ~ '[' ~ wss ~> repsep(value,wss ~ ',' ~ wss) <~ wss ~ ']'
-     def member:Parser[Any] = stringLit ~ -(wss ~ ':' ~ wss) ~ value
+     def obj:Parser[Any] = '{' ~> repsep(member,wss ~ ',') <~ wss ~ '}'
+     def arr:Parser[Any] = '[' ~> repsep(value,wss ~ ',') <~ wss ~ ']'
+     def member:Parser[Any] = wss ~> stringLit ~ -(wss ~ ':') ~ value
    }
 
    val lines = (scala.io.Source.fromFile("FastParsers\\src\\test\\resources\\tweet75").getLines mkString "\n")
 
    //val tmp = new StreamMarkedArray(addressbook.toCharArray)
 
-   (1 to 30).foreach{_=>
+   (1 to 50).foreach{_=>
 
      val now = System.nanoTime
      JSON.parseAll(JSON.value,addressbook) match {
