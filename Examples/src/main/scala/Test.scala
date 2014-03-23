@@ -111,10 +111,11 @@ object Test {
    }
 
 
-   def toFloat(x:List[Char],y:List[List[Char]]) = (y match {
-     case Nil => x.mkString
-     case List(num) => x.mkString + "." + num.mkString
+   def toFloat(y:(List[Char],List[List[Char]])) = (y match {
+     case (x,Nil) => x.mkString
+     case (x,List(num)) => x.mkString + "." + num.mkString
    }).toFloat
+
 
    /*val JSonParser = FastParser{
      def value:Parser[Any] = obj | arr | stringLit | float | seq("null") | seq("true") | seq("false")
@@ -130,8 +131,9 @@ object Test {
    val JSonParser = FastParser{
      def value:Parser[Any] = obj | arr | stringLit | float | seq("null") | seq("true") | seq("false")
      //def stringLit = '\"' ~> (takeWhile[Char](_ != '\"') ^^ (_.mkString))  <~ '\"'
-     def stringLit = '\"' ~> (except('\"')).repFold[java.lang.StringBuilder](new java.lang.StringBuilder(),(acc, c) => acc.append(c)) <~ '\"'
-     def float = rep1(range('0','9')) ~ opt('.' ~> rep(range('0','9'))) ^^ {x => toFloat(x._1,x._2)}
+     def stringLit = '\"' ~> (takeWhile2[Char,String](_ != '\"') ^^ (x => x.input.substring(x.begin,x.end)))  <~ '\"'
+     //def stringLit = '\"' ~> (except('\"')).repFold[java.lang.StringBuilder](new java.lang.StringBuilder(),(acc, c) => acc.append(c)) <~ '\"'
+     def float = rep1(range('0','9')) ~ opt('.' ~> rep(range('0','9'))) ^^ toFloat
      def wss = takeWhile[Char](c => c == ' ' || c == '\n' || c == '\r')
      def obj:Parser[Any] = wss ~ '{' ~ wss ~> repsep(member,wss ~ ',' ~ wss) <~ wss ~ '}'
      def arr:Parser[Any] = wss ~ '[' ~ wss ~> repsep(value,wss ~ ',' ~ wss) <~ wss ~ ']'
@@ -140,7 +142,7 @@ object Test {
 
    val lines = (scala.io.Source.fromFile("FastParsers\\src\\test\\resources\\tweet75").getLines mkString "\n")
 
-   val tmp = new StreamMarkedArray(addressbook.toCharArray)
+   //val tmp = new StreamMarkedArray(addressbook.toCharArray)
 
    (1 to 30).foreach{_=>
 

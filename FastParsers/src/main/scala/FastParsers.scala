@@ -113,11 +113,16 @@ object FastParsers {
   def takeWhile[T](f:T => Boolean):Parser[Array[T]] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
+  def takeWhile2[T,Input](f:T => Boolean):Parser[InputWindow[Input]] = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
   def except[T](elems:T*):Parser[T] = ???
 
   implicit def toElem[T](elem:T):Elem[T] = Elem(elem)
   implicit def toElemList[T](elem:List[T]):Parser[List[T]] = ???
   case class Elem[T](elem:T) extends Parser[T]
+
+  class InputWindow[T](val input:T,val  begin:Int,val  end:Int)
 
 
   /**
@@ -579,6 +584,7 @@ object FastParsers {
     def parseElemTakeWhile(f:c.Tree, typ:c.Tree,results:ListBuffer[Result]):c.Tree = {
       val result = TermName(c.freshName)
       val tmp_f = TermName(c.freshName)
+      //results.append((result,tq"Array[$typ]",true))
       results.append((result,tq"Array[$typ]",true))
       val tree = input.getChunk(typ,{ addInput:c.Tree =>
         q"""
@@ -591,6 +597,22 @@ object FastParsers {
        """
       })
       q"$result = $tree"
+    }
+
+    def parseElemTakeWhile2(f:c.Tree, typ:c.Tree,inputTyp:c.Tree,results:ListBuffer[Result]):c.Tree = {
+      val result = TermName(c.freshName)
+      val tmp_f = TermName(c.freshName)
+      val begin_pos = TermName(c.freshName)
+      results.append((result,tq"InputWindow[$inputTyp]",true))
+      q"""
+        val $tmp_f = $f
+        val $begin_pos = ${input.pos}
+        while(${input.isNEOI} && $tmp_f(${input.currentInput})) {
+          ${input.advance}
+        }
+        $result = new InputWindow(input,$begin_pos,${input.pos})
+        success = true
+      """
     }
 
     def parseElemExcept(a:List[c.Tree],typ:c.Tree,results:ListBuffer[Result]):c.Tree = {
@@ -807,6 +829,8 @@ object FastParsers {
         parseElemAlt(a,d,results)
       case q"FastParsers.takeWhile[$d]($f)" =>
         parseElemTakeWhile(f,d,results)
+      case q"FastParsers.takeWhile2[$d,$input]($f)" =>
+        parseElemTakeWhile2(f,d,input,results)
       case q"FastParsers.range[$d]($a,$b)" =>
         parseRange(a,b,d,results)
       case q"FastParsers.except[$d](..$a)" =>
