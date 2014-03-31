@@ -140,9 +140,11 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     case q"FastParsers.acceptIf($f)" => parseAcceptIf(f,rs)
     case q"FastParsers.wildcard" => parseWildcard(rs)
     case q"FastParsers.guard[$d]($a)" => parseGuard(a,d,rs)
+    case q"$a ~[$d] $b" => parseThen(a,b,rs)
+    case q"$a ~>[$d] $b" => parseIgnoreLeft(a,b,d,rs)
+    case q"$a <~[$d] $b" => parseIgnoreRight(a,b,d,rs)
     case q"$a ||[$d] $b" => parseOr(a,b,d,rs)
     case q"$a |[$d] $b" => parseOr(a,b,d,rs)
-    case q"$a ~[$d] $b" => parseThen(a,b,rs)
     case q"call[$d](${ruleCall : TermName})" => parseRuleCall(ruleCall,d,rs)
     case q"compound[$d]($a)" => parseCompound(a,d,rs)
     case _ => super.expand(tree,rs)//q"""println(show(reify($tree).tree))"""
@@ -224,6 +226,34 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
         ${expand(b,rs)}
       }
    """
+  }
+
+  private def parseIgnoreLeft(a:c.Tree,b:c.Tree,typ:c.Tree,rs:ResultsStruct): c.Tree = {
+    val results_tmp = new ResultsStruct()
+    val tree =
+    q"""
+      ${expand(a,results_tmp)}
+      if (success) {
+        ${expand(b,rs)}
+      }
+     """
+    results_tmp.setNoUse
+    rs.append(results_tmp)
+    tree
+  }
+
+  private def parseIgnoreRight(a:c.Tree,b:c.Tree,typ:c.Tree,rs:ResultsStruct): c.Tree = {
+    val results_tmp = new ResultsStruct()
+    val tree =
+    q"""
+      ${expand(a,rs)}
+      if (success) {
+        ${expand(b,results_tmp)}
+      }
+     """
+    results_tmp.setNoUse
+    rs.append(results_tmp)
+    tree
   }
 
   def parseOr(a:c.Tree,b:c.Tree,typ:c.Tree,rs:ResultsStruct): c.Tree = {

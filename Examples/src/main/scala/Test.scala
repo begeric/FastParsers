@@ -23,9 +23,11 @@ object Test {
      def rule6 = decimalNumber ~ stringLit ~ number
 
      def rule7 = range('a','d') ~ wildcard ~ acceptIf(_ != 'c')
+
+     def rule8 = 'a' ~> ('b' || 'c') <~ 'd'
    }
    //" -.3    \"hell\" -458"
-   parser.rule7("bxe") match {
+   parser.rule8("abd") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }
