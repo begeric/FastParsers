@@ -19,11 +19,13 @@ object Test {
 
      def rule4 = repsep1('a','b')
 
-     def  rule5 = lit("salut") ~ "hello"
+     def rule5 = lit("salut") ~ "hello"
      def rule6 = decimalNumber ~ stringLit ~ number
-   }
 
-   parser.rule6(" -.3    \"hell\" -458") match {
+     def rule7 = range('a','d') ~ wildcard ~ acceptIf(_ != 'c')
+   }
+   //" -.3    \"hell\" -458"
+   parser.rule7("bxe") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

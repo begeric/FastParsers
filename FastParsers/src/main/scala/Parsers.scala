@@ -7,28 +7,6 @@ import scala.reflect.macros.whitebox.Context
  */
 trait Parser[+T]
 
-/**
-  * Base Parsers
-  * @tparam Elem
-  * @tparam Input
-  */
-trait BaseParsers[Elem,Input] {
-
-  implicit def toElem(elem:Elem):Parser[Elem] = ???
-
-  trait BaseParser[T] {
-    @compileTimeOnly("can’t be used outside FastParser")
-    def ~[U](p2:Parser[U]):Parser[(T,U)] =    ???
-    @compileTimeOnly("can’t be used outside FastParser")
-    def ||[U >: T](p2:Parser[U]):Parser[U] =  ???
-    @compileTimeOnly("can’t be used outside FastParser")
-    def |[U >: T](p2:Parser[U]):Parser[U] =  ???
-  }
-
-  implicit class elemParser(p1:Elem) extends BaseParser[Elem]
-  implicit class baseParsers[T](p1:Parser[T]) extends BaseParser[T]
-}
-
 
 /**
  *  Provide the interface and the basics method needed to implement the transformation on parsers
@@ -100,6 +78,52 @@ trait CombinatorImpl { self:ParseInput =>
 }
 
 
+/**
+ * Base Parsers
+ * @tparam Elem
+ * @tparam Input
+ */
+trait BaseParsers[Elem,Input] {
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  implicit def toElem(elem:Elem):Parser[Elem] = ???
+  @compileTimeOnly("can’t be used outside FastParser")
+  def range(a:Elem,b:Elem):Parser[Elem] = ???
+  @compileTimeOnly("can’t be used outside FastParser")
+  def acceptIf(f:Elem => Boolean):Parser[Elem]  = ???
+  @compileTimeOnly("can’t be used outside FastParser")
+  def wildcard:Parser[Elem]  = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  def guard[T](p:Parser[T]):Parser[T] = ???
+
+  trait BaseParser[T] {
+    @compileTimeOnly("can’t be used outside FastParser")
+    def ~[U](p2:Parser[U]):Parser[(T,U)] =    ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def ~>[U](p2:Parser[U]):Parser[U] =    ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def <~[U](p2:Parser[U]):Parser[T] =    ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def ||[U >: T](p2:Parser[U]):Parser[U] =  ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def |[U >: T](p2:Parser[U]):Parser[U] =  ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def ^^[U](f:T => U):Parser[U] = ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def map[U](f:T => U):Parser[U] = ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def ^^^[U](f:U):Parser[U] = ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def filter[U](f:T => U):Parser[U] = ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def withFailureMessage(msg:String):Parser[T] = ???
+  }
+
+  implicit class elemParser(p1:Elem) extends BaseParser[Elem]
+  implicit class baseParsers[T](p1:Parser[T]) extends BaseParser[T]
+}
+
 
 /**
  * Expansion of Basic combinators
@@ -109,9 +133,13 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
   import c.universe._
 
   override def expand(tree:c.Tree,rs:ResultsStruct) = tree match{
+    case q"FastParsers.baseParsers[$d]($a)" => expand(a,rs)
     case q"FastParsers.toElem($elem)" => parseElem(elem,rs)//q"success = false"
     case q"FastParsers.elemParser($elem)" => parseElem(elem,rs)
-    case q"FastParsers.baseParsers[$d]($a)" => expand(a,rs)
+    case q"FastParsers.range($a,$b)" => parseRange(a,b,rs)
+    case q"FastParsers.acceptIf($f)" => parseAcceptIf(f,rs)
+    case q"FastParsers.wildcard" => parseWildcard(rs)
+    case q"FastParsers.guard[$d]($a)" => parseGuard(a,d,rs)
     case q"$a ||[$d] $b" => parseOr(a,b,d,rs)
     case q"$a |[$d] $b" => parseOr(a,b,d,rs)
     case q"$a ~[$d] $b" => parseThen(a,b,rs)
@@ -135,6 +163,58 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
           msg = "expected '" + $a + " at " + $pos
         }
      """
+  }
+
+  private def parseRange(a:c.Tree,b:c.Tree,rs:ResultsStruct):c.Tree = {
+    val result = TermName(c.freshName)
+    rs.append((result,inputElemType,true))
+    q"""
+     if ($isNEOI && $currentInput >= $a && $currentInput <= $b){
+      $result = $currentInput
+      $advance
+      success = true
+     }
+     else {
+        success = false
+        msg = "expected in range ('" + $a + "', '" + $b + "')  at " + $pos
+     }
+    """
+  }
+
+  private def parseAcceptIf(f:c.Tree,rs:ResultsStruct):c.Tree = {
+    val result = TermName(c.freshName)
+    rs.append((result,inputElemType,true))
+    q"""
+     if ($isNEOI && $f($currentInput)){
+      $result = $currentInput
+      $advance
+      success = true
+     }
+     else {
+        success = false
+        msg = "acceptIf combinator failed at " + $pos
+     }
+     """
+  }
+
+  private def parseWildcard(rs:ResultsStruct):c.Tree = {
+    val result = TermName(c.freshName)
+    rs.append((result,inputElemType,true))
+    q"""
+      $result = $currentInput
+      $advance
+      success = true
+    """
+  }
+
+  private def parseGuard(a:c.Tree, typ:c.Tree, rs:ResultsStruct):c.Tree = {
+    val tree = mark{rollback =>
+      q"""
+         ${expand(a,rs)}
+         ${rollback}
+       """
+    }
+    tree
   }
 
   private def parseThen(a:c.Tree,b:c.Tree,rs:ResultsStruct): c.Tree = {
