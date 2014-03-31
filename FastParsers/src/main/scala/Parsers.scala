@@ -101,6 +101,9 @@ trait BaseParsers[Elem,Input] {
   @compileTimeOnly("can’t be used outside FastParser")
   def guard[T](p:Parser[T]):Parser[T] = ???
 
+  @compileTimeOnly("can’t be used outside FastParser")
+  def phrase[T](p:Parser[T]):Parser[T] = ???
+
   trait BaseParser[T] {
     @compileTimeOnly("can’t be used outside FastParser")
     def ~[U](p2:Parser[U]):Parser[(T,U)] =    ???
@@ -144,6 +147,7 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     case q"FastParsers.acceptIf($f)" => parseAcceptIf(f,rs)
     case q"FastParsers.wildcard" => parseWildcard(rs)
     case q"FastParsers.guard[$d]($a)" => parseGuard(a,d,rs)
+    case q"FastParsers.phrase[$d]($a)" => parsePhrase(a,rs)
     case q"$a ~[$d] $b" => parseThen(a,b,rs)
     case q"$a ~>[$d] $b" => parseIgnoreLeft(a,b,d,rs)
     case q"$a <~[$d] $b" => parseIgnoreRight(a,b,d,rs)
@@ -226,6 +230,18 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
        """
     }
     tree
+  }
+
+  private def parsePhrase(a:c.Tree, rs:ResultsStruct):c.Tree = {
+    q"""
+    ${expand(a,rs)}
+    if (success) {
+      if (!$isEOI){
+        success = false
+        msg = "not all the input is consummed, at pos " + $pos
+      }
+    }
+    """
   }
 
   private def parseThen(a:c.Tree,b:c.Tree,rs:ResultsStruct): c.Tree = {

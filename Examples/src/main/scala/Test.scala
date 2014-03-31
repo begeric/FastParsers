@@ -31,7 +31,7 @@ object Test {
 
      def rule10 = ('a' ~ 'b').filter(x => false) withFailureMessage("erororororror")
 
-     def rule11 = ('b' || 'c') ^^^ 5
+     def rule11 = phrase(('b' || 'c') ^^^ 5)
    }
    //" -.3    \"hell\" -458"
    parser.rule11("b") match {
