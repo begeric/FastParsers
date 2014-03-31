@@ -25,9 +25,16 @@ object Test {
      def rule7 = range('a','d') ~ wildcard ~ acceptIf(_ != 'c')
 
      def rule8 = 'a' ~> ('b' || 'c') <~ 'd'
+
+     //def rule9 = 'a' ~ 'b' ~ 'c' ^^ {case ((x,y),z) => x.toString + y + z}
+     def rule9 = 'a' ~ 'b' ~ 'd' ^^ {case x ~ y ~ z => x.toString + y + z}
+
+     def rule10 = ('a' ~ 'b').filter(x => false) withFailureMessage("erororororror")
+
+     def rule11 = ('b' || 'c') ^^^ 5
    }
    //" -.3    \"hell\" -458"
-   parser.rule8("abd") match {
+   parser.rule11("b") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

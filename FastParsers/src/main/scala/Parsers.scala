@@ -85,6 +85,10 @@ trait CombinatorImpl { self:ParseInput =>
  */
 trait BaseParsers[Elem,Input] {
 
+  object ~ {
+    def unapply[T,U](x:Tuple2[T,U]):Option[Tuple2[T,U]] = Some(Tuple2(x._1,x._2))
+  }
+
   @compileTimeOnly("can’t be used outside FastParser")
   implicit def toElem(elem:Elem):Parser[Elem] = ???
   @compileTimeOnly("can’t be used outside FastParser")
@@ -115,7 +119,7 @@ trait BaseParsers[Elem,Input] {
     @compileTimeOnly("can’t be used outside FastParser")
     def ^^^[U](f:U):Parser[U] = ???
     @compileTimeOnly("can’t be used outside FastParser")
-    def filter[U](f:T => U):Parser[U] = ???
+    def filter[U >: T](f:T => Boolean):Parser[T] = ???
     @compileTimeOnly("can’t be used outside FastParser")
     def withFailureMessage(msg:String):Parser[T] = ???
   }
@@ -145,6 +149,11 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     case q"$a <~[$d] $b" => parseIgnoreRight(a,b,d,rs)
     case q"$a ||[$d] $b" => parseOr(a,b,d,rs)
     case q"$a |[$d] $b" => parseOr(a,b,d,rs)
+    case q"$a ^^[$d] $f" => parseMap(a,f,d,rs)
+    case q"$a map[$d] $f" => parseMap(a,f,d,rs)
+    case q"$a ^^^[$d] $v" => parseValue(a,v,d,rs)
+    case q"$a filter[$d] $f" => parseFilter(a,f,d,rs)
+    case q"$a withFailureMessage $msg" => parseWithFailureMessage(a,msg,rs)
     case q"call[$d](${ruleCall : TermName})" => parseRuleCall(ruleCall,d,rs)
     case q"compound[$d]($a)" => parseCompound(a,d,rs)
     case _ => super.expand(tree,rs)//q"""println(show(reify($tree).tree))"""
@@ -283,7 +292,70 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     tree
   }
 
-  def parseRuleCall(ruleCall:TermName,typ:c.Tree,rs:ResultsStruct): c.Tree = {
+  private def parseMap(a:c.Tree,f:c.Tree,typ:c.Tree,rs:ResultsStruct):c.Tree = {
+    val result = TermName(c.freshName)
+    val tmp_f = TermName(c.freshName)
+    val results_tmp = new ResultsStruct()
+    val tree =
+    q"""
+      val $tmp_f = $f
+      ${expand(a,results_tmp)}
+       if (success)
+         $result = $tmp_f(${combineResults(results_tmp)})
+      """
+    results_tmp.setNoUse
+    rs.append(results_tmp)
+    rs.append((result,typ,true))
+    tree
+  }
+
+  private def parseValue(a:c.Tree,v:c.Tree,typ:c.Tree,rs:ResultsStruct):c.Tree = {
+    val result = TermName(c.freshName)
+    val results_tmp = new ResultsStruct()
+    val tree =
+      q"""
+      ${expand(a,results_tmp)}
+       if (success)
+         $result = $v
+      """
+    results_tmp.setNoUse
+    rs.append(results_tmp)
+    rs.append((result,typ,true))
+    tree
+  }
+
+  private def parseFilter(a:c.Tree,f:c.Tree,typ:c.Tree,rs:ResultsStruct):c.Tree = {
+    val result = TermName(c.freshName)
+    val tmp_f = TermName(c.freshName)
+    val results_tmp = new ResultsStruct()
+    val tree = mark{rollback =>
+    q"""
+      val $tmp_f = $f
+      ${expand(a,results_tmp)}
+       if (success && $tmp_f(${combineResults(results_tmp)}))
+         $result = ${combineResults(results_tmp)}
+       else {
+        success = false
+        msg = "incorrect result for 'rule' at filter('rule') at " + ${pos}
+        $rollback
+       }
+      """
+    }
+    results_tmp.setNoUse
+    rs.append(results_tmp)
+    rs.append((result,typ,true))
+    tree
+  }
+
+  private def parseWithFailureMessage(a:c.Tree,msg:c.Tree,rs:ResultsStruct):c.Tree = {
+    q"""
+     ${expand(a,rs)}
+      if (!success)
+         msg = $msg
+    """
+  }
+
+  private def parseRuleCall(ruleCall:TermName,typ:c.Tree,rs:ResultsStruct): c.Tree = {
     val callResult = TermName(c.freshName)
     val result = TermName(c.freshName)
 
@@ -301,7 +373,7 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     tree
   }
 
-  def parseCompound(a:c.Tree,typ:c.Tree,rs:ResultsStruct):c.Tree = {
+  private def parseCompound(a:c.Tree,typ:c.Tree,rs:ResultsStruct):c.Tree = {
     val result = TermName(c.freshName)
     var results_tmp = new ResultsStruct()
     val tree =
