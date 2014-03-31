@@ -20,10 +20,10 @@ object Test {
      def rule4 = repsep1('a','b')
 
      def  rule5 = lit("salut") ~ "hello"
-     def rule6 = stringLit ~ stringLit ~ number
+     def rule6 = decimalNumber ~ stringLit ~ number
    }
 
-   parser.rule6(" \"salut\"    \"hell\" -4528") match {
+   parser.rule6(" -.3    \"hell\" -458") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }
