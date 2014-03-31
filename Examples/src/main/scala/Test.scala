@@ -19,11 +19,11 @@ object Test {
 
      def rule4 = repsep1('a','b')
 
-     def rule5 = lit("salut") ~ "hello"
-     def rule6 = stringLit ~ stringLit
+     def  rule5 = lit("salut") ~ "hello"
+     def rule6 = stringLit ~ stringLit ~ number
    }
 
-   parser.rule6(" \"salut\"    \"hell\"") match {
+   parser.rule6(" \"salut\"    \"hell\" -4528") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }
