@@ -32,9 +32,18 @@ object Test {
      def rule10 = ('a' ~ 'b').filter(x => false) withFailureMessage("erororororror")
 
      def rule11 = phrase(('b' || 'c') ^^^ 5)
+
+     def rule12 = range('0','9').foldLeft[Int](0,(acc,c) => acc + c.asDigit)
+     def rule13 = (range('0','9') ^^ (_.asDigit)).reduceLeft[Int]((acc,c) => acc + c)
+
+     def rule14 = (('a' ~ 'b' ~ 'c') ^^^ 1).reduceLeft{(acc,c) => acc + c} ~ 'a' ~ 'b'
+
+     def rule15 = range('0','9').foldRight(16,(c:Char,acc:Int) => acc / c.asDigit)
+
+     def rule16 = (range('a','z') ^^ (_.toUpper.toString)).reduceRight{(c,acc) => acc + c}
    }
    //" -.3    \"hell\" -458"
-   parser.rule11("b") match {
+   parser.rule15("82") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

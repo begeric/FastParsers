@@ -18,6 +18,16 @@ trait RepParsers {
   @compileTimeOnly("can’t be used outside FastParser")
   def repsep1[T](p:Parser[T],sep:Parser[T]):Parser[List[T]] = ???
 
+  implicit class repParser[T](p:Parser[T]){
+    @compileTimeOnly("can’t be used outside FastParser")
+    def foldLeft[U](init:U,f:(U,T) => U):Parser[U] = ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def foldRight[U,X >: T](init:U,f:(T,U) => U):Parser[U] = ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def reduceLeft[U >: T](f:(U,T) => U):Parser[U] = ???
+    @compileTimeOnly("can’t be used outside FastParser")
+    def reduceRight[U >: T](f:(T,U) => U):Parser[U] = ???
+  }
 }
 
 trait RepParsersImpl extends CombinatorImpl { self:ParseInput =>
@@ -25,18 +35,17 @@ trait RepParsersImpl extends CombinatorImpl { self:ParseInput =>
   import c.universe._
 
   override def expand(tree:c.Tree,rs:ResultsStruct) = tree match{
-    case q"FastParsers.rep[$d]($a,$min,$max)" =>
-      parseRep(a,d,min,max,rs)
-    case q"FastParsers.rep1[$d]($a)" =>
-      parseRep(a,d,q"1",q"-1",rs)
-    case q"FastParsers.repN[$d]($a,$n)" =>
-      parseRep(a,d,n,n,rs)
-    case q"FastParsers.opt[$d]($a)" =>
-      parseOpt(a,d,rs)
-    case q"FastParsers.repsep[$d]($a,$b)" =>
-      parseRepsep(a,b,d,false,rs)
-    case q"FastParsers.repsep1[$d]($a,$b)" =>
-      parseRepsep(a,b,d,true,rs)
+    case q"FastParsers.repParser[$d]($a)" => expand(a,rs)
+    case q"FastParsers.rep[$d]($a,$min,$max)" => parseRep(a,d,min,max,rs)
+    case q"FastParsers.rep1[$d]($a)" => parseRep(a,d,q"1",q"-1",rs)
+    case q"FastParsers.repN[$d]($a,$n)" => parseRep(a,d,n,n,rs)
+    case q"FastParsers.opt[$d]($a)" => parseOpt(a,d,rs)
+    case q"FastParsers.repsep[$d]($a,$b)" => parseRepsep(a,b,d,false,rs)
+    case q"FastParsers.repsep1[$d]($a,$b)" => parseRepsep(a,b,d,true,rs)
+    case q"$a foldLeft[$d]($init,$f)" => parseFoldLeft(a,init,f,d,rs)
+    case q"$a foldRight[$d,$ptype]($init,$f)" => parseFoldRight(a,init,f,d,ptype,rs)
+    case q"$a reduceLeft[$d]($f)" => parseReduceLeft(a,f,d,rs)
+    case q"$a reduceRight[$d]($f)" => parseReduceRight(a,f,d,rs)
     case _ => super.expand(tree,rs)
   }
 
@@ -181,4 +190,120 @@ trait RepParsersImpl extends CombinatorImpl { self:ParseInput =>
     rs.append((result,tq"List[$typ]",true))
     tree
   }
+
+  private def parseFoldLeft(a:c.Tree,init:c.Tree,f:c.Tree,typ:c.Tree,rs:ResultsStruct) : c.Tree = {
+    var results_tmp = new ResultsStruct()
+    val result = TermName(c.freshName)
+    val cont = TermName(c.freshName)
+    val tmp_f = TermName(c.freshName)
+
+    val inner = mark {rollback =>
+      q"""
+        ${expand(a,results_tmp)}
+         if (success)
+           $result = $tmp_f($result,${combineResults(results_tmp)})
+         else {
+          $cont = false
+          $rollback
+         }
+      """
+    }
+    val tree =
+    q"""
+      val $tmp_f = $f
+      var $cont = true
+      $result = $init
+      while($cont){
+        $inner
+      }
+      success = true
+    """
+    results_tmp.setNoUse
+    rs.append(results_tmp)
+    rs.append((result,typ,true))
+    tree
+  }
+
+  private def buffer(a:c.Tree,typ:c.Tree,rs:ResultsStruct)(process:TermName => c.Tree):c.Tree = {
+    var results_tmp = new ResultsStruct()
+    val cont = TermName(c.freshName)
+    val buffer = TermName(c.freshName)
+
+    val buffering = mark{ rollback =>
+      q"""
+        ${expand(a,results_tmp)}
+        if (success)
+          $buffer.append(${combineResults(results_tmp)})
+        else
+          $cont = false
+      """
+    }
+
+    val tree =
+      q"""
+     var $cont = true
+     val $buffer = new ListBuffer[$typ]()
+     while($cont){
+       $buffering
+     }
+
+     ${process(buffer)}
+    """
+    results_tmp.setNoUse
+    rs.append(results_tmp)
+    tree
+  }
+
+
+  private def parseFoldRight(a:c.Tree,init:c.Tree,f:c.Tree,typ:c.Tree,parserType:c.Tree,rs:ResultsStruct) : c.Tree = {
+    val result = TermName(c.freshName)
+    val tree = buffer(a,parserType,rs){ buffer =>
+      q"""
+       $result = $buffer.foldRight[$typ]($init)($f)
+       success = true
+      """
+    }
+    rs.append((result,typ,true))
+    tree
+  }
+
+  private def parseReduceLeft(a:c.Tree,f:c.Tree,typ:c.Tree,rs:ResultsStruct): c.Tree = {
+    var results_tmp = new ResultsStruct()
+    val tree = mark { rollback =>
+      q"""
+       ${expand(a,results_tmp)}
+       if (success){
+          ${parseFoldLeft(a,combineResults(results_tmp),f,typ,rs)}
+       }
+       else {
+        success = false
+        msg = "reduceLeft failed"
+        $rollback
+       }
+      """
+    }
+    results_tmp.setNoUse
+    rs.append(results_tmp)
+    tree
+  }
+
+
+
+  private def parseReduceRight(a:c.Tree,f:c.Tree,typ:c.Tree,rs:ResultsStruct): c.Tree = { val result = TermName(c.freshName)
+    val tree = buffer(a,typ,rs){ buffer =>
+      q"""
+        if ($buffer.size == 0){
+          success = false
+          msg = "reduceRight failed"
+        }
+        else {
+         $result = $buffer.reduceRight[$typ]($f)
+         success = true
+        }
+      """
+    }
+    rs.append((result,typ,true))
+    tree
+  }
+
 }
