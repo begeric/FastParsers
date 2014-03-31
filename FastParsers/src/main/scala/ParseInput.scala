@@ -20,6 +20,7 @@ trait ParseInput {
   def inputType:c.Tree
   def inputElemType:c.Tree
   def getChunk(typ:c.Tree,code:c.Tree => c.Tree):c.Tree
+  def slice(begin:c.Tree,end:c.Tree):c.Tree
 }
 
 /**
@@ -63,6 +64,10 @@ trait ArrayInput extends ParseInput {
         input.slice($beginPos,$pos)
     """
   }
+
+  def slice(begin:c.Tree,end:c.Tree):c.Tree = {
+    q"input.slice($begin,$end)"
+  }
 }
 
 /**
@@ -88,5 +93,9 @@ trait StringInput extends ArrayInput{
       else
         input.substring($beginPos,$pos)
     """
+  }
+
+  override def slice(begin:c.Tree,end:c.Tree):c.Tree = {
+    q"input.substring($begin,$end)"
   }
 }

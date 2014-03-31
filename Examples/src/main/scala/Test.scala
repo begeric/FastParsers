@@ -12,13 +12,20 @@ object Test {
    import FastParsers._
 
    val parser = FastParser{
-     def rule1:Parser[Any] = 'a' ~ 'e' || '2' || rule2
+     def rule1:Parser[Any] = 'a' ~ 'e' || '3' || rule2
      def rule2:Parser[Any] = 'x' ~ rule1
+
+     def rule3 = 'a' ~ opt(repN('b',3)) ~ 'c'
+
+     def rule4 = repsep1('a','b')
+
+     def rule5 = lit("salut") ~ "hello"
+     def rule6 = stringLit ~ stringLit
    }
 
-   parser.rule1("xxxxae") match {
+   parser.rule6(" \"salut\"    \"hell\"") match {
      case Success(x) => println(x)
-     case Failure(msg) => println("failure")
+     case Failure(msg) => println("failure : " + msg)
    }
 
 	 println("new begining !")

@@ -55,7 +55,7 @@ trait FastParsersImpl { self:MapRules with RuleCombiner with ParseInput =>
 /**
  * Example of a parser working on string.
  */
-object FastParsers extends BaseParsers[Char,String]{
+object FastParsers extends BaseParsers[Char,String] with RepParsers with TokenParsers{
   def FastParser(rules: => Unit): Any = macro BaseImpl.FastParser
 }
 
@@ -65,6 +65,7 @@ object FastParsers extends BaseParsers[Char,String]{
 class BaseImpl(val c:Context) extends FastParsersImpl with InlineRules
                                                       with ParseRules
                                                       with BaseParsersImpl
+                                                      with RepParsersImpl
                                                       with TokenParsersImpl
                                                       with RuleCombiner
                                                       with StringInput {
