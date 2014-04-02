@@ -161,7 +161,7 @@ trait RuleCombiner extends ReduceRules{
  */
 trait PrintCode extends RuleCombiner {
   import c.universe._
-  override def combine(rules: HashMap[String,RuleInfo]) =  {
+  override def combine(rules: HashMap[String,RuleInfo]):c.Tree =  {
     val anon = TypeName(c.freshName)
     val dmmy = TermName(c.freshName)
     q"""

@@ -97,6 +97,10 @@ trait BaseParsers[Elem,Input] {
   def acceptIf(f:Elem => Boolean):Parser[Elem]  = ???
   @compileTimeOnly("can’t be used outside FastParser")
   def wildcard:Parser[Elem]  = ???
+  @compileTimeOnly("can’t be used outside FastParser")
+  def takeWhile(f:Elem => Boolean):Parser[Input] = ???
+  @compileTimeOnly("can’t be used outside FastParser")
+  def take(n:Int):Parser[Input] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
   def guard[T](p:Parser[T]):Parser[T] = ???
@@ -148,6 +152,8 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     case q"FastParsers.wildcard" => parseWildcard(rs)
     case q"FastParsers.guard[$d]($a)" => parseGuard(a,d,rs)
     case q"FastParsers.phrase[$d]($a)" => parsePhrase(a,rs)
+    case q"FastParsers.takeWhile($f)" => parseTakeWhile(f,rs)
+    case q"FastParsers.take($n)" => parseTake(n,rs)
     case q"$a ~[$d] $b" => parseThen(a,b,rs)
     case q"$a ~>[$d] $b" => parseIgnoreLeft(a,b,d,rs)
     case q"$a <~[$d] $b" => parseIgnoreRight(a,b,d,rs)
@@ -240,6 +246,36 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
         success = false
         msg = "not all the input is consummed, at pos " + $pos
       }
+    }
+    """
+  }
+
+  private def parseTakeWhile(f:c.Tree, rs:ResultsStruct):c.Tree = {
+    val result = TermName(c.freshName)
+    val tmp_f = TermName(c.freshName)
+    val beginpos = TermName(c.freshName)
+    rs.append((result,inputElemType,true))
+    q"""
+      val $tmp_f = $f
+      val $beginpos = $pos
+      while ($isNEOI && $tmp_f($currentInput))
+        $advance
+      $result = ${slice(q"$beginpos",q"$pos")}
+      success = true
+    """
+  }
+
+  private def parseTake(n:c.Tree, rs:ResultsStruct):c.Tree = {
+    val result = TermName(c.freshName)
+    rs.append((result,inputElemType,true))
+    q"""
+    if ($pos + $n < $inputsize) {
+      success = true
+      result = ${slice(pos,q"$pos + $n")}
+    }
+    else {
+      success = false
+      msg = "take(" + $n + ") cannot proceed, only " + ($inputsize - $pos) + " elements left at " + $pos
     }
     """
   }

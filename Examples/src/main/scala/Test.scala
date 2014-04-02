@@ -41,9 +41,10 @@ object Test {
      def rule15 = range('0','9').foldRight(16,(c:Char,acc:Int) => acc / c.asDigit)
 
      def rule16 = (range('a','z') ^^ (_.toUpper.toString)).reduceRight{(c,acc) => acc + c}
+
    }
    //" -.3    \"hell\" -458"
-   parser.rule15("82") match {
+   parser.rule15("81") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

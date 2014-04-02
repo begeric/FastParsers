@@ -21,6 +21,7 @@ trait ParseInput {
   def inputElemType:c.Tree
   def getChunk(typ:c.Tree,code:c.Tree => c.Tree):c.Tree
   def slice(begin:c.Tree,end:c.Tree):c.Tree
+  def inputsize:c.Tree
 }
 
 /**
@@ -52,6 +53,7 @@ trait ArrayInput extends ParseInput {
   def isNEOI = q"inputpos < inputsize"
   def pos = q"inputpos"
   def offset = q"inputpos"
+  def inputsize = q"inputsize"
 
   def getChunk(typ:c.Tree,code:c.Tree => c.Tree) = {
     val beginPos = TermName(c.freshName)
