@@ -4,7 +4,7 @@
 import org.scalatest._
 import FastParsers._
 
-import UnitTests._
+import TestsHelper._
 
 class ParserSpecs extends FunSuite {
 

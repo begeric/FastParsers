@@ -9,7 +9,7 @@
 import scala.collection.mutable.HashMap
 
 object Test {
-  /*val addressbook =
+  val addressbook =
     """{
   "address book": {
     "name": "John Smith",
@@ -22,10 +22,7 @@ object Test {
     "408 338-4238",
     "408 111-6892"
     ]
-  }  }"""    */
-  val addressbook =
-    """{
-  "address book": "hey"}"""
+  }  }"""
 
  def main(args: Array[String]) {
    import FastParsers._
@@ -41,7 +38,7 @@ object Test {
 
    object JSON extends JavaTokenParsers {
      def value: Parser[Any] = obj | arr | stringLiteral |
-       floatingPointNumber |
+       floatingPointNumber ^^ (_.toDouble) |
        "null" | "true" | "false"
      def obj: Parser[Any] = "{" ~> repsep(member, ",") <~ "}"
      def arr: Parser[Any] = "[" ~> repsep(value, ",") <~ "]"
@@ -51,15 +48,22 @@ object Test {
      def bla: Parser[Int] = (wholeNumber ^^ (_.toInt)) | "[" ~> wNum <~ "]"
    }
 
-   //val file = scala.io.Source.fromFile("FastParsers/src/test/resources/tweet75").getLines mkString "\n"
-   parser.value(addressbook) match {
-     case Success(x) => println(x)
+   val file = scala.io.Source.fromFile("FastParsers/src/test/resources/json2").getLines mkString "\n"
+   var res1:Any = null
+   var res2:Any = null
+   parser.value(file) match {
+     case Success(x) => res1 = x
      case Failure(msg) => println("failure: " + msg)
    }
 
-   JSON.parse(JSON.value,addressbook) match {
-     case JSON.Success(r,_) => println(r)
+   JSON.parse(JSON.value,file) match {
+     case JSON.Success(x,_) => res2 = x
      case _ => println("error")
    }
+
+   println(res1)
+   println(res2)
+
+   println(res1 == res2)
  }
 }
