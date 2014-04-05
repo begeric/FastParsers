@@ -69,7 +69,7 @@ object TestsHelper extends FunSuite {
       assert(res1 == res2)
       //assert(micros < micros2)
       //println(fileName.split('\\').last + " : FastParserResult @ " + micros + " : " + "CombinatorResult @ " + micros2)
-      println(fileName.split('\\').last + "  (" + (file.length/1024) + "kb)" + " FastParsers is " + ((micros2 / micros)*100).toInt/100.0 + " times faster than Combinator")
+      println(fileName.split('/').last + "  (" + (file.length/1024) + "kb)" + " FastParsers is " + ((micros2 / micros)*100).toInt/100.0 + " times faster than Combinator")
     }
 
 }

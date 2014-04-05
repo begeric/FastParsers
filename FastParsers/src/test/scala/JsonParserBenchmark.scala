@@ -18,7 +18,7 @@ object JsonParserBenchmark extends PerformanceTest {
   val range = Gen.enumeration("size")(10)
 
   val files = (1 to 5).foldLeft(new ListBuffer[String]){ (acc,i) =>
-    val data = (scala.io.Source.fromFile("FastParsers\\src\\test\\resources\\json" + i).getLines mkString "\n")
+    val data = (scala.io.Source.fromFile("FastParsers/src/test/resources/json" + i).getLines mkString "\n")
     acc.append(data)
     acc
   }.toList

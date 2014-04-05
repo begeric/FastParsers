@@ -7,11 +7,17 @@ import org.scalatest.FunSuite
  */
 class JsonParserSpecs  extends FunSuite {
   (1 to 20).foreach{ i =>
-    test("jsonparser " + "FastParsers\\src\\test\\resources\\json" + i){
-      compareImplementations("FastParsers\\src\\test\\resources\\json" + i,
+    test("jsonparser " + "FastParsers/src/test/resources/json" + i){
+      compareImplementations("FastParsers/src/test/resources/json" + i,
         jsonparser.value,
         JSON,
         x => JSON.parse(JSON.value, x))
     }
+  }
+  test("jsonparser " + "FastParsers/src/test/resources/json.big" + 1){
+    compareImplementations("FastParsers/src/test/resources/json.big" + 1,
+      jsonparser.value,
+      JSON,
+      x => JSON.parse(JSON.value, x))
   }
 }

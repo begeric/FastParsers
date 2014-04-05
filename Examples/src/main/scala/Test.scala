@@ -6,7 +6,9 @@
  * To change this template use File | Settings | File Templates.
  */
 
-import scala.collection.mutable.HashMap
+//because warnings
+import scala.language.reflectiveCalls
+import scala.language.implicitConversions
 
 object Test {
   val addressbook =

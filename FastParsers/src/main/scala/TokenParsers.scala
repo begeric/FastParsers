@@ -6,7 +6,7 @@ trait TokenParsers {
   implicit def lit(str:String):Parser[String] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
-  def ident:Parser[String]  = ???
+  def ident:Parser[String] = ???
   @compileTimeOnly("can’t be used outside FastParser")
   def number:Parser[Int] = ???
   @compileTimeOnly("can’t be used outside FastParser")
