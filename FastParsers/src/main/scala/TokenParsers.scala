@@ -13,6 +13,9 @@ trait TokenParsers {
   def decimalNumber:Parser[Float] = ???
   @compileTimeOnly("can’t be used outside FastParser")
   def stringLit:Parser[String] = ???
+  @compileTimeOnly("can’t be used outside FastParser")
+  def whitespaces:Parser[String] = ???
+
 }
 
 trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
@@ -24,12 +27,13 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
     case q"FastParsers.stringLit" => parseStringLit(rs)
     case q"FastParsers.number" => parseNumber(rs)
     case q"FastParsers.decimalNumber" => parseDecimalNumber(rs)
+    case q"FastParsers.whitespaces" => parseWhiteSpaces(rs)
     case _ => super.expand(tree,rs)
   }
 
   private def skipWhiteSpace:c.Tree = {
     q"""
-    while($isNEOI && $currentInput == ' ')
+    while($isNEOI && ($currentInput == ' ' || $currentInput == '\t'))
       $advance
     """
   }
@@ -168,5 +172,17 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
 
       """
     }
+  }
+
+  private def parseWhiteSpaces(rs:ResultsStruct):c.Tree = {
+    val beginPos = TermName(c.freshName)
+    val result = TermName(c.freshName)
+    rs.append((result,tq"String",true))
+    q"""
+      val $beginPos = $pos
+      $skipWhiteSpace
+      $result = ${slice(q"$beginPos",q"$pos")}
+      success = true
+    """
   }
 }

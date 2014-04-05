@@ -325,7 +325,7 @@ class ParserSpecs extends FunSuite {
   test("Rule51 test"){  //number ~ "hey" ~ number
     shouldSucced(parser.rule51)(
       "1 hey 2" gives ((1,"hey"),2),
-      "434 hey 8782" gives ((434,"hey"),8782)
+      "43 hey 8782" gives ((43,"hey"),8782)
     )
 
     shouldFail(parser.rule51)(
