@@ -314,7 +314,7 @@ class ParserSpecs extends FunSuite {
 
   test("Rule50 test"){    //rep1(stringLit)
     shouldSucced(parser.rule50)(
-      "\"abcd\" \"xcyxc\"" gives List("abcd","xcyxc")
+      "\"abcd\" \"xcyxc\"" gives List("\"abcd\"","\"xcyxc\"")
     )
 
     shouldFail(parser.rule50)(

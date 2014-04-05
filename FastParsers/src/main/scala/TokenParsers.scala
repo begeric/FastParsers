@@ -71,9 +71,9 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
     rs.append((result,tq"String",true))
     mark {rollback => q"""
       $skipWhiteSpace
+      val $beginpos = $pos
       if ($isNEOI && $currentInput == '\"'){
         $advance
-        val $beginpos = $pos
         while ($isNEOI && $currentInput != '\"'){
           if ($currentInput == '\\'){
             $advance
@@ -83,8 +83,8 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
 
         if ($isNEOI) {
           success = true
-          $result = ${slice(q"$beginpos",q"$pos")}
           $advance
+          $result = ${slice(q"$beginpos",q"$pos")}
         }
         else {
           success = false
