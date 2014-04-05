@@ -31,13 +31,13 @@ object Test {
      def value:Parser[Any] = obj | arr | stringLit | decimalNumber | "null" | "true" | "false"
      def obj:Parser[Any] = lit("{") ~> repsep(member,",") <~ "}"
      def arr:Parser[Any] = lit("[") ~> repsep(value,",") <~ "]"
-     def member:Parser[Any] = stringLit ~ (lit(":") ~> value)
+     def member:Parser[Any] = stringLit ~ ":" ~ value
    }
-
    //val file = scala.io.Source.fromFile("FastParsers/src/test/resources/tweet75").getLines mkString "\n"
    parser.value(addressbook) match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }
+
  }
 }
