@@ -48,7 +48,7 @@ object TestsHelper extends FunSuite {
   }
 
   def compareImplementations(fileName: String, fast:String => Any,combHelper:Parsers, comb:String => Any) {
-      val file = (scala.io.Source.fromFile(fileName).getLines mkString "\n")
+      val file = scala.io.Source.fromFile(fileName).getLines mkString "\n"
 
       def getFastParserResult = fast(file) match {
         case Success(result) =>  result

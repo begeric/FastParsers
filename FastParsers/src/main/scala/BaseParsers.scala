@@ -3,13 +3,11 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.macros.whitebox.Context
 /**
  * Base Parsers
- * @tparam Elem
- * @tparam Input
  */
 trait BaseParsers[Elem,Input] {
 
   object ~ {
-    def unapply[T,U](x:Tuple2[T,U]):Option[Tuple2[T,U]] = Some(Tuple2(x._1,x._2))
+    def unapply[T,U](x:Tuple2[T,U]):Option[Tuple2[T,U]] = Some((x._1,x._2))
   }
 
   @compileTimeOnly("can’t be used outside FastParser")
@@ -160,7 +158,7 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     val tree = mark{rollback =>
       q"""
          ${expand(a,rs)}
-         ${rollback}
+         $rollback
        """
     }
     tree
@@ -253,7 +251,7 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
       q"""
           ${expand(a,results_tmp1)}
           if (!success) {
-            ${rollback}
+            $rollback
             ${expand(b,results_tmp2)}
             if (success)
               $result = ${combineResults(results_tmp2)}
@@ -316,7 +314,7 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
          $result = ${combineResults(results_tmp)}
        else {
         success = false
-        msg = "incorrect result for 'rule' at filter('rule') at " + ${pos}
+        msg = "incorrect result for 'rule' at filter('rule') at " + $pos
         $rollback
        }
       """
@@ -340,7 +338,7 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     val result = TermName(c.freshName)
 
     val tree = q"""
-        val $callResult = ${ruleCall}(input.substring($offset))
+        val $callResult = $ruleCall(input.substring($offset))
         success = $callResult.success
         if (success){
           ${advanceTo(q"$callResult.inputPos")}

@@ -6,6 +6,8 @@ import FastParsers._
 
 import TestsHelper._
 
+import scala.language.reflectiveCalls
+
 class ParserSpecs extends FunSuite {
 
   val parser = FastParser{
@@ -33,7 +35,7 @@ class ParserSpecs extends FunSuite {
     def rule37 = take(10)
     def rule38 = acceptIf(_ == 'b') ~ opt(acceptIf(x => x > 'a'))
     def rule39 = repN('a' ~ ('b' || 'c'),3)
-    def rule40 = repsep(('a' || 'b'),repN('x' ~ 'y',2))
+    def rule40 = repsep('a' || 'b',repN('x' ~ 'y',2))
     def rule41 = '[' ~> repsep1(number,',') <~']'
     def rule42:Parser[(Char,Any)] = 'a' ~ rule43
     def rule43:Parser[Any] = 'b' || rule42

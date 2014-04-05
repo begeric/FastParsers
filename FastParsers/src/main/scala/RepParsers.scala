@@ -40,8 +40,8 @@ trait RepParsersImpl extends CombinatorImpl { self:ParseInput =>
     case q"FastParsers.rep1[$d]($a)" => parseRep(a,d,q"1",q"-1",rs)
     case q"FastParsers.repN[$d]($a,$n)" => parseRep(a,d,n,n,rs)
     case q"FastParsers.opt[$d]($a)" => parseOpt(a,d,rs)
-    case q"FastParsers.repsep[$d]($a,$b)" => parseRepsep(a,b,d,false,rs)
-    case q"FastParsers.repsep1[$d]($a,$b)" => parseRepsep(a,b,d,true,rs)
+    case q"FastParsers.repsep[$d]($a,$b)" => parseRepsep(a,b,d,atLeastOnce = false,rs)
+    case q"FastParsers.repsep1[$d]($a,$b)" => parseRepsep(a,b,d,atLeastOnce = true,rs)
     case q"$a foldLeft[$d]($init,$f)" => parseFoldLeft(a,init,f,d,rs)
     case q"$a foldRight[$d,$ptype]($init,$f)" => parseFoldRight(a,init,f,d,ptype,rs)
     case q"$a reduceLeft[$d]($f)" => parseReduceLeft(a,f,d,rs)
@@ -69,7 +69,7 @@ trait RepParsersImpl extends CombinatorImpl { self:ParseInput =>
               if (!success)
                 msg = "expected at least " + $min + " occurence(s) for rep('rule') at " + $pos
               else
-                ${rollback}
+                $rollback
 
           }
         """

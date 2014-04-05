@@ -21,7 +21,7 @@ object HttpParserBenchmark extends PerformanceTest {
   val range = Gen.enumeration("size")(10)
 
   val files = (1 to 6).foldLeft(new ListBuffer[String]){ (acc,i) =>
-    val data = (scala.io.Source.fromFile("FastParsers/src/test/resources/tweet" + i).getLines mkString "\n")
+    val data = scala.io.Source.fromFile("FastParsers/src/test/resources/tweet" + i).getLines mkString "\n"
     acc.append(data)
     acc
   }.toList

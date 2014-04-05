@@ -192,9 +192,9 @@ object HttpParsers {
 
 
     def collect(hName: String, prop: String): Option[(String, Any)] = hName match {
-      case "connection" | "proxy-connection" if (prop == "keep-alive" || prop == "close") => Some((hName, prop))
+      case "connection" | "proxy-connection" if prop == "keep-alive" || prop == "close" => Some((hName, prop))
       case "content-length" => Some((hName, prop.toInt)) //TODO: deal with numformatexception
-      case "transfer-encoding" if (prop == "chunked") => Some(("chunked", true))
+      case "transfer-encoding" if prop == "chunked" => Some(("chunked", true))
       case "upgrade" => Some((hName, true))
       case _ => None
     }

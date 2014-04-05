@@ -32,7 +32,7 @@ trait FastParsersImpl { self:MapRules with RuleCombiner with ParseInput =>
     val rulesMap = new HashMap[String,RuleInfo]()
     rules match {
       case q"{..$body}" =>
-        body.foreach (_ match {
+        body.foreach  {
           case q"def $name:${d:TypeTree} = $b" =>
             val x = d.tpe match {
               case TypeRef(_,_,z) => z.head//q"Any".tpe//q"var x:${d.tpe}" //check it is a parser
@@ -43,7 +43,7 @@ trait FastParsersImpl { self:MapRules with RuleCombiner with ParseInput =>
             rulesMap += in
           case q"()" =>
           case x => c.abort(c.enclosingPosition, "body must only contain rule definition with the following form : def ruleName = body : " + x)
-        })
+        }
       case _ =>
         c.abort(c.enclosingPosition, "ill-formed body, cannot be empty")//TODO can be empty ?
     }
