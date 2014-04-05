@@ -25,6 +25,7 @@ trait CombinatorImpl { self:ParseInput =>
     def this() = this(new ListBuffer[Result]())
     def setNoUse = results = results.map(x => (x._1,x._2,false))
     def append(r:Result) = results.append(r)
+    def append(t:TermName,typ:c.Tree) = results.append((t,typ,true))
     def append(rs:ResultsStruct) = results.appendAll(rs.results)
   }
 

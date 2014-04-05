@@ -297,8 +297,8 @@ trait RepParsersImpl extends CombinatorImpl { self:ParseInput =>
           msg = "reduceRight failed"
         }
         else {
-         $result = $buffer.reduceRight[$typ]($f)
          success = true
+         $result = $buffer.reduceRight[$typ]($f)
         }
       """
     }

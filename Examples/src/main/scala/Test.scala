@@ -42,9 +42,14 @@ object Test {
 
      def rule16 = (range('a','z') ^^ (_.toUpper.toString)).reduceRight{(c,acc) => acc + c}
 
+     def rule17 = rep(wildcard)
+     def rule36 = takeWhile(_ != 'x')
+
+     def rule50 = stringLit
+
    }
    //" -.3    \"hell\" -458"
-   parser.rule15("81") match {
+   parser.rule50("  ") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

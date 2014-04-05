@@ -145,9 +145,14 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     val result = TermName(c.freshName)
     rs.append((result,inputElemType,true))
     q"""
-      $result = $currentInput
-      $advance
-      success = true
+      if ($isNEOI){
+        $result = $currentInput
+        $advance
+        success = true
+      }
+      else
+        success = false
+
     """
   }
 
@@ -177,7 +182,7 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     val result = TermName(c.freshName)
     val tmp_f = TermName(c.freshName)
     val beginpos = TermName(c.freshName)
-    rs.append((result,inputElemType,true))
+    rs.append((result,inputType,true))
     q"""
       val $tmp_f = $f
       val $beginpos = $pos
@@ -190,11 +195,11 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
 
   private def parseTake(n:c.Tree, rs:ResultsStruct):c.Tree = {
     val result = TermName(c.freshName)
-    rs.append((result,inputElemType,true))
+    rs.append((result,inputType,true))
     q"""
-    if ($pos + $n < $inputsize) {
+    if ($pos + $n <= $inputsize) {
       success = true
-      result = ${slice(pos,q"$pos + $n")}
+      $result = ${slice(pos,q"$pos + $n")}
     }
     else {
       success = false

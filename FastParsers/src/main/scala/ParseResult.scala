@@ -7,7 +7,7 @@
  * @param inputPos The position in the input at which the parser has finished to read
  * @tparam T Type of the result
  */
-case class ParseResult[T](success:Boolean,msg:String,result:T, inputPos:Int)
+case class ParseResult[+T](success:Boolean,msg:String,result:T, inputPos:Int)
 
 /**
  * Extractor for ParseResult in case of success

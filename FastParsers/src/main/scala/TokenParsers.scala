@@ -29,7 +29,7 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
 
   private def skipWhiteSpace:c.Tree = {
     q"""
-    while($currentInput == ' ')
+    while($isNEOI && $currentInput == ' ')
       $advance
     """
   }
@@ -84,13 +84,13 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
         }
         else {
           success = false
-          msg = "expected '\"' got EOF at" + $pos
+          msg = "expected '\"' got EOF at " + $pos
           $rollback
         }
       }
       else {
         success = false
-        msg = "expected '\"' at" + $pos
+        msg = "expected '\"' at " + $pos
         $rollback
       }
     """
