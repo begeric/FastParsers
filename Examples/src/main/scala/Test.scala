@@ -8,37 +8,36 @@
 
 import scala.collection.mutable.HashMap
 
-case class Response(status: Int,contentLength: Int,connection: String, chunked: Boolean = false,upgrade: Boolean = false)
-
 object Test {
-
-  def processResp(x:(Int,HashMap[String, String])) = Response(
-      status = x._1,
-      contentLength = x._2("content-length").toInt,
-      connection = x._2.getOrElse("connection", ""),
-      chunked = x._2.getOrElse("chunked", false).asInstanceOf[Boolean],
-      upgrade = x._2.getOrElse("upgrade", false).asInstanceOf[Boolean]
-    )
+  val addressbook =
+    """{
+  "address book": {
+    "name": "John Smith",
+    "address": {
+    "street": "10 Market Street",
+    "city" : "San Francisco, CA",
+    "zip" : 94111
+    },
+    "phone Nums": [
+    "408 338-4238",
+    "408 111-6892"
+    ]
+  }  }"""
 
  def main(args: Array[String]) {
    import FastParsers._
 
    val parser = FastParser{
-     def data = takeWhile(_ => true)
-     def restOfLine = takeWhile(_ != '\n')
-     def headerName = takeWhile(x => (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || x == '-')
-     def header = (headerName <~ ':' ~ whitespaces) ~ restOfLine
-     def headers = (header <~ '\n').foldLeft[HashMap[String, String]](new HashMap[String, String](),(acc,c) => acc += (c._1 -> c._2))
-     def status = lit("HTTP/") ~ decimalNumber ~ whitespaces ~> number <~ restOfLine
-     def response = (status <~ '\n') ~ headers <~ '\n' ^^ processResp
-     def respAndMessage = response ~ data
+     def value:Parser[Any] = obj | arr | stringLit | decimalNumber | "null" | "true" | "false"
+     def obj:Parser[Any] = lit("{") ~> repsep(member,",") <~ "}"
+     def arr:Parser[Any] = lit("[") ~> repsep(value,",") <~ "]"
+     def member:Parser[Any] = stringLit ~ (lit(":") ~> value)
    }
-   //" -.3    \"hell\" -458"
 
-   val file = scala.io.Source.fromFile("FastParsers/src/test/resources/tweet75").getLines mkString "\n"
-   parser.respAndMessage(file) match {
+   //val file = scala.io.Source.fromFile("FastParsers/src/test/resources/tweet75").getLines mkString "\n"
+   parser.value(addressbook) match {
      case Success(x) => println(x)
-     case Failure(msg) => println("failure: " + msg)
+     case Failure(msg) => println("failure : " + msg)
    }
  }
 }

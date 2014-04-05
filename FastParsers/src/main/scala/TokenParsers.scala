@@ -33,7 +33,7 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
 
   private def skipWhiteSpace:c.Tree = {
     q"""
-    while($isNEOI && ($currentInput == ' ' || $currentInput == '\t'))
+    while($isNEOI && ($currentInput == ' ' || $currentInput == '\t' || $currentInput == '\n' || $currentInput == '\r'))
       $advance
     """
   }
