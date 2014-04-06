@@ -105,6 +105,7 @@ trait ParseRules extends MapRules { self:ParseInput with CombinatorImpl =>
 
   private def createRuleDef(name:String,retType:c.Type,code:c.Tree):c.Tree = {
     val ruleName = TermName(name)
+    val startPosition = TermName(c.freshName)
     val rs = new ResultsStruct(new ListBuffer[Result]())
     val ruleCode = expand(code,rs)
     val initResults = rs.results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
@@ -113,19 +114,15 @@ trait ParseRules extends MapRules { self:ParseInput with CombinatorImpl =>
     val result = q"""ParseResult(success,msg,if (success) $tupledResults else ${zeroValue(tq"$retType")},$offset)"""
 
     val wrapCode =
-      q"""
+     q"""
       var success = false
       var msg = ""
-      try {
-          ..$initResults
-          $ruleCode
-          $result
-      } catch {
-        case e:Throwable => ParseResult(false,"Exception : " + e.getMessage,${zeroValue(tq"$retType")},$pos)
-      }
+        ..$initResults
+        $ruleCode
+        $result
     """
 
-    q"def $ruleName(input:$inputType):ParseResult[$retType] = ${initInput(wrapCode)}"
+    q"""def $ruleName(input:$inputType,$startPosition:Int = 0):ParseResult[$retType] = ${initInput(q"$startPosition",wrapCode)}"""
   }
 
 }

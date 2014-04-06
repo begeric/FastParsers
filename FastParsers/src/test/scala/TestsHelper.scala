@@ -17,18 +17,18 @@ object TestsHelper extends FunSuite {
 
   case class InputAndResult(in:String, res:Any)
 
-  def shouldSucced[T](rule:String => ParseResult[Any])(tests:InputAndResult*) = {
+  def shouldSucced[T](rule:(String,Int) => ParseResult[Any])(tests:InputAndResult*) = {
     tests.foreach{
-      x => rule(x.in) match {
+      x => rule(x.in,0) match {
         case Success(result) => assert(result == x.res, "on " + x.in + " expected " + x.res + " got " + result)
         case Failure(msg) => fail("Didn't succeed : " + msg + " on \"" + x.in+"\"")
       }
     }
   }
 
-  def shouldFail(rule:String => ParseResult[Any])(tests:String*) = {
+  def shouldFail(rule:(String,Int) => ParseResult[Any])(tests:String*) = {
     tests.foreach{
-      str => rule(str) match {
+      str => rule(str,0) match {
         case Success(result) => fail("Wasn't supposed to succeed, result : " + result)
         case _ =>
       }
@@ -47,10 +47,10 @@ object TestsHelper extends FunSuite {
     case _ => x::repeat(x,n - 1)
   }
 
-  def compareImplementations(fileName: String, fast:String => Any,combHelper:Parsers, comb:String => Any) {
+  def compareImplementations(fileName: String, fast:(String,Int) => Any,combHelper:Parsers, comb:String => Any) {
       val file = scala.io.Source.fromFile(fileName).getLines mkString "\n"
 
-      def getFastParserResult = fast(file) match {
+      def getFastParserResult = fast(file,0) match {
         case Success(result) =>  result
         case Failure(msg) => fail("error : " + msg)
       }

@@ -26,4 +26,13 @@ object JsonParsers {
     def bla: Parser[Int] = (wholeNumber ^^ (_.toInt)) | "[" ~> wNum <~ "]"
   }
 
+  //if needed
+  def JsonEqual(a:Any,b:Any):Boolean = (a,b) match {
+    case (x::xs,y::ys) => JsonEqual(x,y) && JsonEqual(xs,ys)
+    case (Tuple2(x1,y1),JSON.~(x2,y2)) => JsonEqual(x1,x2) && JsonEqual(y1,y2)
+    case (JSON.~(x1,y1),(x2,y2)) => JsonEqual(x1,x2) && JsonEqual(y1,y2)
+    case _ => a == b
+
+  }
+
 }

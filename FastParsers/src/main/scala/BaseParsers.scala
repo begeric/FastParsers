@@ -337,11 +337,13 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     val callResult = TermName(c.freshName)
     val result = TermName(c.freshName)
 
+   // val $callResult = $ruleCall(input.substring($offset),0)
+    //${advanceTo(q"$callResult.inputPos")}
     val tree = q"""
-        val $callResult = $ruleCall(input.substring($offset))
+        val $callResult = $ruleCall(input,$offset)
         success = $callResult.success
         if (success){
-          ${advanceTo(q"$callResult.inputPos")}
+          ${setpos(q"$callResult.inputPos")}
           $result = $callResult.result
          }
         else

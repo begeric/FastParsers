@@ -8,10 +8,11 @@ trait ParseInput {
   type Elem
   type Input
 
-  def initInput(then:c.Tree) :c.Tree
+  def initInput(startpos:c.Tree,then:c.Tree) :c.Tree
   def currentInput:c.Tree
   def advance:c.Tree
   def advanceTo(offset:c.Tree):c.Tree
+  def setpos(pos:c.Tree):c.Tree
   def mark(code:c.Tree => c.Tree):c.Tree
   def isEOI:c.Tree
   def isNEOI:c.Tree
@@ -33,15 +34,16 @@ trait ArrayInput extends ParseInput {
 
   import c.universe._
 
-  def initInput(then:c.Tree) =
+  def initInput(startpos:c.Tree,then:c.Tree) =
     q"""
-      var inputpos = 0
+      var inputpos = $startpos
       val inputsize = input.size
       $then
     """
   def currentInput = q"input(inputpos)"
   def advance = q"inputpos = inputpos + 1"
   def advanceTo(offset:c.Tree) = q"inputpos += $offset"
+  def setpos(pos:c.Tree):c.Tree = q"inputpos = $pos"
   def mark(code:c.Tree => c.Tree) = {
     val input_tmp = TermName(c.freshName)
     q"""

@@ -109,7 +109,7 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
     q"""
       $skipWhiteSpace
       var $isNeg = false
-      if ($currentInput == '-'){
+      if ($isNEOI && $currentInput == '-'){
         $isNeg = true
         $advance
       }
@@ -144,7 +144,7 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
       var $isNeg = false
       val $beginPos = $pos
       success = false
-      if ($currentInput == '-'){
+      if ($isNEOI && $currentInput == '-'){
         $advance
       }
       if ($isNEOI && $currentInput >= '0' && $currentInput <= '9') {
