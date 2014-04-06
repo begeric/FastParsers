@@ -33,7 +33,7 @@ trait FlatMapImpl extends InlineRules with  CombinatorImpl { self:ParseInput  =>
       var results_tmp = new ResultsStruct()
       val result = TermName(c.freshName)
       val fm = TermName(c.freshName)
-      val tree = c.resetLocalAttrs(mark { rollback =>
+      val tree = c.untypecheck(mark { rollback =>
       q"""
         ${expand(a,results_tmp)}
         if (success) {

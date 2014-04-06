@@ -22,7 +22,7 @@ object Test {
      /*def rule4 = number >> (x => {take(x) ~ take(x)})   */
    }
 
-   parser.rule2("5abaaava") match {
+   parser.rule2("5abacava") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }
