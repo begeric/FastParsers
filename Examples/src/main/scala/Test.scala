@@ -16,12 +16,15 @@ object Test {
    import FastParsers._
 
    val parser = FastParser{
-     def rule2 = number >> ((x:Int) => take(x))
+     //def rule2 = number >> (x => take(x))
+     def rule2 = number >> (x => take(x))
+     def rule3 = number >> {case 0 => take(1);case x => take(2)}
    }
 
-   parser.rule2("5aaaaaaa") match {
+   parser.rule2("5aaaaa") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }
+
  }
 }

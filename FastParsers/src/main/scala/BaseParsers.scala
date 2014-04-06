@@ -279,7 +279,7 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
       val $tmp_f = $f
       ${expand(a,results_tmp)}
        if (success)
-         $result = $tmp_f(${combineResults(results_tmp)})
+         $result = $tmp_f.apply(${combineResults(results_tmp)})
       """
     results_tmp.setNoUse
     rs.append(results_tmp)

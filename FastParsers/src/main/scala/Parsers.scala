@@ -75,5 +75,5 @@ trait CombinatorImpl { self:ParseInput =>
   }
 
 
-  def expand(tree:c.Tree,r:ResultsStruct):c.Tree = c.abort(c.enclosingPosition,"Not implemented combinator")
+  def expand(tree:c.Tree,r:ResultsStruct):c.Tree = c.abort(c.enclosingPosition,"Not implemented combinator " + show(tree))
 }
