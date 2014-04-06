@@ -1,5 +1,6 @@
 
 import scala.annotation.compileTimeOnly
+import scala.collection.mutable.HashMap
 import scala.reflect.macros.whitebox.Context
 
 trait FlatMapParsers{
@@ -12,9 +13,13 @@ trait FlatMapParsers{
   }
 }
 
-trait FlatMapImpl extends InlineRules with  CombinatorImpl { self:ParseInput =>
+trait FlatMapImpl extends InlineRules with  CombinatorImpl { self:ParseInput  =>
 
   import c.universe._
+
+  override def expandCallRule(tree:c.Tree,rulesMap: HashMap[String,RuleInfo],rulesPath:List[String]):c.Tree = tree match {
+    case _ => super.expandCallRule(tree,rulesMap,rulesPath)
+  }
 
   override def expand(tree: c.Tree, rs: ResultsStruct) = tree match{
     case q"FastParsers.flatmapparsers[$d]($a)" => expand(a,rs)
@@ -28,7 +33,7 @@ trait FlatMapImpl extends InlineRules with  CombinatorImpl { self:ParseInput =>
       var results_tmp = new ResultsStruct()
       val result = TermName(c.freshName)
       val fm = TermName(c.freshName)
-      val tree = mark { rollback =>
+      val tree = c.resetLocalAttrs(mark { rollback =>
       q"""
         ${expand(a,results_tmp)}
         if (success) {
@@ -40,7 +45,7 @@ trait FlatMapImpl extends InlineRules with  CombinatorImpl { self:ParseInput =>
           $rollback
         }
       """
-      }
+      } )
       results_tmp.setNoUse
       rs.append(results_tmp)
       rs.append(result,typ)
