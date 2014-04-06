@@ -24,17 +24,16 @@ trait FlatMapImpl extends InlineRules with  CombinatorImpl { self:ParseInput =>
   }
 
   private def parseFlatMap(a: c.Tree,f: c.Tree,typ: c.Tree,rs:ResultsStruct):c.Tree = f match{
-    case q"($params => $body)" =>
+    case q"(..$params => $body)" =>
       var results_tmp = new ResultsStruct()
-      var results_tmp2 = new ResultsStruct()
       val result = TermName(c.freshName)
       val fm = TermName(c.freshName)
       val tree = mark { rollback =>
       q"""
         ${expand(a,results_tmp)}
         if (success) {
-          val $fm = ($params => ${expandFunction(body,typ,result,rs)})
-          $fm(${combineResults(results_tmp)})
+          val $fm = (..$params => ${expandFunction(body,result,rs)})
+          $fm.apply(${combineResults(results_tmp)})
           success = true
         }
         else {
@@ -43,44 +42,34 @@ trait FlatMapImpl extends InlineRules with  CombinatorImpl { self:ParseInput =>
       """
       }
       results_tmp.setNoUse
-      results_tmp2.setNoUse
       rs.append(results_tmp)
-      rs.append(results_tmp2)
       rs.append(result,typ)
       tree
 
     case _ => c.abort(c.enclosingPosition,"invalid function in rhs of flatMap")
   }
 
-  private def expandFunction(a: c.Tree,typ:c.Tree,result:TermName,rs:ResultsStruct):c.Tree = a match {
-    case q"$x match {case ..$cases}" =>
-      val trcases = cases.map{
-        case cq"$pat => {..$body;$parser}" =>
-          var results_tmp = new ResultsStruct()
-          val t =
-            cq"""
-              $pat => {
-              ..$body
-              ${expand(parser,results_tmp)}
-              $result = ${combineResults(results_tmp)}
-            }"""
-          results_tmp.setNoUse
-          rs.append(results_tmp)
-          t
-      }
-      q"$x match {case ..$trcases}"
-    case q"{..$body;$parser}" =>
+  private def expandFunction(func: c.Tree,result:TermName,rs:ResultsStruct):c.Tree = {
+    def expandBody(body: List[c.Tree],parser: c.Tree)(wrap:c.Tree => c.Tree) = {
       var results_tmp = new ResultsStruct()
-      val t =
+      val tree = wrap(
         q"""{
-          ..$body
-          ${expand(parser,results_tmp)}
-          $result = ${combineResults(results_tmp)}
-        }"""
+        ..$body
+        ${expand(parser,results_tmp)}
+        $result = ${combineResults(results_tmp)}
+      } """)
       results_tmp.setNoUse
       rs.append(results_tmp)
-      t
-    case _ => expand(a,rs)
+      tree
+    }
+
+    func match {
+      case q"$x match {case ..$cases}" =>
+        val trcases = cases.map { case cq"$pat => {..$body;$parser}" => expandBody(body,parser){code => cq"$pat => $code"}}
+        q"$x match {case ..$trcases}"
+      case q"{..$body;$parser}" => expandBody(body,parser) {x => x}
+      case _ => expand(func,rs)
+    }
   }
 
 }
