@@ -14,9 +14,9 @@ trait RepParsers {
   def opt[T](p:Parser[T]):Parser[Option[T]] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
-  def repsep[T](p:Parser[T],sep:Parser[T]):Parser[List[T]] = ???
+  def repsep[T,U](p:Parser[T],sep:Parser[U]):Parser[List[T]] = ???
   @compileTimeOnly("can’t be used outside FastParser")
-  def repsep1[T](p:Parser[T],sep:Parser[T]):Parser[List[T]] = ???
+  def repsep1[T,U](p:Parser[T],sep:Parser[U]):Parser[List[T]] = ???
 
   implicit class repParser[T](p:Parser[T]){
     @compileTimeOnly("can’t be used outside FastParser")
@@ -40,8 +40,8 @@ trait RepParsersImpl extends CombinatorImpl { self:ParseInput =>
     case q"FastParsers.rep1[$d]($a)" => parseRep(a,d,q"1",q"-1",rs)
     case q"FastParsers.repN[$d]($a,$n)" => parseRep(a,d,n,n,rs)
     case q"FastParsers.opt[$d]($a)" => parseOpt(a,d,rs)
-    case q"FastParsers.repsep[$d]($a,$b)" => parseRepsep(a,b,d,atLeastOnce = false,rs)
-    case q"FastParsers.repsep1[$d]($a,$b)" => parseRepsep(a,b,d,atLeastOnce = true,rs)
+    case q"FastParsers.repsep[$typ,$d]($a,$b)" => parseRepsep(a,b,typ,atLeastOnce = false,rs)
+    case q"FastParsers.repsep1[$typ,$d]($a,$b)" => parseRepsep(a,b,typ,atLeastOnce = true,rs)
     case q"$a foldLeft[$d]($init,$f)" => parseFoldLeft(a,init,f,d,rs)
     case q"$a foldRight[$d,$ptype]($init,$f)" => parseFoldRight(a,init,f,d,ptype,rs)
     case q"$a reduceLeft[$d]($f)" => parseReduceLeft(a,f,d,rs)
@@ -121,7 +121,7 @@ trait RepParsersImpl extends CombinatorImpl { self:ParseInput =>
     tree
   }
 
-  private def parseRepsep(a:c.Tree,sep:c.Tree,typ:c.Tree,atLeastOnce:Boolean,rs:ResultsStruct) : c.Tree = {
+  private def parseRepsep(a: c.Tree,sep: c.Tree,typ: c.Tree,atLeastOnce: Boolean,rs: ResultsStruct) : c.Tree = {
     var results_tmp = new ResultsStruct()
     var results_tmp2 = new ResultsStruct()
     val cont = TermName(c.freshName)

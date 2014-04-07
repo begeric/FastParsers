@@ -284,7 +284,7 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     results_tmp.setNoUse
     rs.append(results_tmp)
     rs.append((result,typ,true))
-    tree
+    c.untypecheck(tree)
   }
 
   private def parseValue(a:c.Tree,v:c.Tree,typ:c.Tree,rs:ResultsStruct):c.Tree = {
@@ -322,7 +322,7 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
     results_tmp.setNoUse
     rs.append(results_tmp)
     rs.append((result,typ,true))
-    tree
+    c.untypecheck(tree)
   }
 
   private def parseWithFailureMessage(a:c.Tree,msg:c.Tree,rs:ResultsStruct):c.Tree = {
@@ -350,7 +350,7 @@ trait BaseParsersImpl extends CombinatorImpl { self:ParseInput =>
           msg = $callResult.msg
         """
     rs.append((result,typ,true))
-    tree
+    c.untypecheck(tree)
   }
 
   private def parseCompound(a:c.Tree,typ:c.Tree,rs:ResultsStruct):c.Tree = {
