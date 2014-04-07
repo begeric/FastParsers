@@ -18,7 +18,23 @@ trait FlatMapImpl extends InlineRules with  CombinatorImpl { self:ParseInput  =>
   import c.universe._
 
   override def expandCallRule(tree:c.Tree,rulesMap: HashMap[String,RuleInfo],rulesPath:List[String]):c.Tree = tree match {
+    case q"$a flatMap[$d]($f)" => q"$a flatMap[$d](${expandCallRuleFlatMap(f,rulesMap,rulesPath)})"
+    case q"$a >>[$d]($f)" =>  q"$a >>[$d](${expandCallRuleFlatMap(f,rulesMap,rulesPath)})"
     case _ => super.expandCallRule(tree,rulesMap,rulesPath)
+  }
+
+  private def expandCallRuleFlatMap(tree:c.Tree,rulesMap: HashMap[String,RuleInfo],rulesPath:List[String]):c.Tree = {
+    def expandBody(body:c.Tree) = body match {
+      case q"{..$body;$parser}" => q"{..$body;${expandCallRule(parser,rulesMap,rulesPath)}}"
+      case _ => c.abort(c.enclosingPosition,"ill-formed body")
+    }
+    tree match {
+      case q"(..$params => $x match {case ..$cases})" =>
+        val trcases = cases.map{case cq"$pat => $body" => cq"$pat => ${expandBody(body)}"}
+        q"(..$params => $x match {case ..$trcases})"
+      case q"(..$params => $body)" => q"(..$params => ${expandBody(body)})"
+      case _ => c.abort(c.enclosingPosition,show(tree))
+    }
   }
 
   override def expand(tree: c.Tree, rs: ResultsStruct) = tree match{
@@ -39,7 +55,8 @@ trait FlatMapImpl extends InlineRules with  CombinatorImpl { self:ParseInput  =>
         if (success) {
           val $fm = (..$params => ${expandFunction(body,result,rs)})
           $fm.apply(${combineResults(results_tmp)})
-          success = true
+          if (!success)
+            $rollback
         }
         else {
           $rollback
