@@ -48,6 +48,10 @@ class ParserSpecs extends FunSuite {
     def rule50 = rep1(stringLit)
     def rule51 = number ~ "hey" ~ number
     def rule52 = decimalNumber ^^ (_.toString)
+    def rule53 = number >> (x => take(x) ^^ (y => (x,y)))
+    def rule54 = ('a' || 'b') >> {case 'a' => 'b' ~ rep('1');case 'b' => number}
+    def rule55 = rule52 >> {case x => ':' ~> rep(rule32) ^^ (y => (x,y))}
+    def rule56 = (number ^^ (_.toString)) >> {case b => ':' ~> rep(b)}
   }
 
   test("Rule1 test") {
@@ -348,6 +352,57 @@ class ParserSpecs extends FunSuite {
 
     shouldFail(parser.rule52)(
       "adas", "", "."
+    )
+  }
+
+  test("Rule53 test"){//number >> (x => take(x) ^^ (y => (x,y)))
+    shouldSucced(parser.rule53)(
+      "5abcde" gives (5,"abcde"),
+      "5abcdef" gives (5,"abcde"),
+      "0" gives (0,"")
+    )
+
+    shouldFail(parser.rule53)(
+      "", "5", "3aa"
+    )
+  }
+
+  test("Rule54 test"){ //('a' || 'b') >> {case 'a' => 'b' ~ rep('1');case 'b' => number}
+    shouldSucced(parser.rule54)(
+      "ab" gives ('b',Nil),
+      "ab1" gives ('b',List('1')),
+      "ab2" gives ('b',Nil),
+      "ab111" gives ('b',List('1','1','1')),
+      "b52" gives 52
+    )
+
+    shouldFail(parser.rule54)(
+      "", "b", "a", "c"
+    )
+  }
+
+  test("Rule55 test"){ //rule52 >> {case x => ':' ~ rep(rule32) ^^ (y => (x,y))}
+    shouldSucced(parser.rule55)(
+      "3.141592:123" gives ("3.141592",List('1','2','3')),
+      "3.3:" gives ("3.3",Nil)
+    )
+
+    shouldFail(parser.rule55)(
+      "", "2.5"
+    )
+  }
+
+  test("Rule56 test"){ //(number ^^ (_.toString)) >> {case b => ':' ~> rep(b)}
+    shouldSucced(parser.rule56)(
+      "1:11111" gives repeat("1",5),
+      "52:" gives Nil,
+      "52:52" gives List("52"),
+      "52:53" gives Nil,
+      "12:121212" gives repeat("12",3)
+    )
+
+    shouldFail(parser.rule56)(
+      "", "abc","12"
     )
   }
 }
