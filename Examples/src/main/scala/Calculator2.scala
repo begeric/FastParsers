@@ -57,8 +57,8 @@ object Calculator2 {
       def ident = whitespaces  ~> acceptIf(alpha) ~ takeWhile(alphanum) ^^ (x => x._1 + x._2)
       def funccall = ident ~ (lit("(") ~> repsep(expr,",") <~ ")") ^^ (x => func(x._1,x._2))
       def factor:Parser[Int] = number | lit("(") ~> expr <~ ")" | funccall | ident ^^ getVar
-      def term:Parser[Int] = factor ~ opt(op2 ~ factor) ^^ exec
-      def expr:Parser[Int] = term ~ opt(op1 ~ term) ^^ exec
+      def term:Parser[Int] = factor ~ opt(op2 ~ term) ^^ exec
+      def expr:Parser[Int] = term ~ opt(op1 ~ expr) ^^ exec
       def assign = ident ~ (lit("=") ~ whitespaces ~> expr)
       def start = phrase(assign ^^ (x => setVar(x._1,x._2)) | expr ^^ setRes) //the order is important !! (because of opt(op1 ~ expr))
     }

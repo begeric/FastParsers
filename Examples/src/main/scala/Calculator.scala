@@ -13,7 +13,7 @@ object Calculator {
 
     val parser = FastParser{
       def op1 = lit("+") ^^^ ((x:Int,y:Int) => x + y) |
-                lit("-") ^^^ ((x:Int,y:Int) => x + y)
+                lit("-") ^^^ ((x:Int,y:Int) => x - y)
 
       def op2 = lit("*") ^^^ ((x:Int,y:Int) => x * y) |
                 lit("/") ^^^ ((x:Int,y:Int) => x / y)
