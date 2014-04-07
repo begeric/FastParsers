@@ -7,8 +7,11 @@
  */
 
 //because warnings
+
+import scala.collection.mutable.HashMap
 import scala.language.reflectiveCalls
 import scala.language.implicitConversions
+
 
 object Test {
 
@@ -18,12 +21,12 @@ object Test {
    val parser = FastParser{
      //def rule2 = number >> (x => take(x))
      def rule1 = 'a' ~ 'b'
-     def rule2 = number >> (x => rule1 ~take(x) ^^ (y => (x,y)))
+     def rule2 = number >> (x => rule1 ~ take(x) ^^ (y => (x,y)))
      def rule3 = number >> {case 0 => rule1 ~ take(1);case x => take(2)}
      /*def rule4 = number >> (x => {take(x) ~ take(x)})   */
    }
 
-   parser.rule3("0abacabva") match {
+   parser.rule2("5ab12345") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

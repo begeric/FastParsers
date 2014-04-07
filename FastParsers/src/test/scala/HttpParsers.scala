@@ -216,7 +216,7 @@ object HttpParsers {
     def headers = (header <~ '\n').foldLeft[HashMap[String, String]](new HashMap[String, String](),(acc,c) => acc += (c._1 -> c._2))
     def status = lit("HTTP/") ~ decimalNumber ~ whitespaces ~> number <~ restOfLine
     def response = (status <~ '\n') ~ headers <~ '\n' ^^ processResp
-    def respAndMessage = response ~ data
+    def respAndMessage = response >> (r => (take(r.contentLength) ^^ (y => (r,y))))
   }
 
 }

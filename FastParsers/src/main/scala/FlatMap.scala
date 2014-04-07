@@ -18,8 +18,8 @@ trait FlatMapImpl extends InlineRules with  CombinatorImpl { self:ParseInput  =>
   import c.universe._
 
   override def expandCallRule(tree:c.Tree,rulesMap: HashMap[String,RuleInfo],rulesPath:List[String]):c.Tree = tree match {
-    case q"$a flatMap[$d]($f)" => q"$a flatMap[$d](${expandCallRuleFlatMap(f,rulesMap,rulesPath)})"
-    case q"$a >>[$d]($f)" =>  q"$a >>[$d](${expandCallRuleFlatMap(f,rulesMap,rulesPath)})"
+    case q"$a flatMap[$d]($f)" => q"${expandCallRule(a,rulesMap,rulesPath)} flatMap[$d](${expandCallRuleFlatMap(f,rulesMap,rulesPath)})"
+    case q"$a >>[$d]($f)" =>  q"${expandCallRule(a,rulesMap,rulesPath)} >>[$d](${expandCallRuleFlatMap(f,rulesMap,rulesPath)})"
     case _ => super.expandCallRule(tree,rulesMap,rulesPath)
   }
 
