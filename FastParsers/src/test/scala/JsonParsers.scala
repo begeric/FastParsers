@@ -16,14 +16,11 @@ object JsonParsers {
 
   object JSON extends JavaTokenParsers {
     def value: Parser[Any] = obj | arr | stringLiteral |
-      floatingPointNumber ^^ (_.toDouble) |
+      floatingPointNumber ^^ (_.toFloat) |
       "null" | "true" | "false"
     def obj: Parser[Any] = "{" ~> repsep(member, ",") <~ "}"
     def arr: Parser[Any] = "[" ~> repsep(value, ",") <~ "]"
     def member: Parser[Any] = stringLiteral ~> ":" ~> value
-
-    def wNum: Parser[Int] = bla
-    def bla: Parser[Int] = (wholeNumber ^^ (_.toInt)) | "[" ~> wNum <~ "]"
   }
 
   //if needed
