@@ -9,24 +9,30 @@ trait Parser[+T]
 
 
 /**
- *  Provide the interface and the basics method needed to implement the transformation on parsers
+ * Provide the interface and the basics method needed to implement the transformation on parsers
  */
-trait CombinatorImpl { self:ParseInput =>
-  val c:Context
+trait CombinatorImpl {
+  self: ParseInput =>
+  val c: Context
+
   import c.universe._
 
 
-  type Result = (TermName,c.Tree,Boolean)
+  type Result = (TermName, c.Tree, Boolean)
 
   /**
    * Structure to deal with the results of a rule expansion
    */
-  class ResultsStruct(var results:ListBuffer[Result]){
+  class ResultsStruct(var results: ListBuffer[Result]) {
     def this() = this(new ListBuffer[Result]())
-    def setNoUse = results = results.map(x => (x._1,x._2,false))
-    def append(r:Result) = results.append(r)
-    def append(t:TermName,typ:c.Tree) = results.append((t,typ,true))
-    def append(rs:ResultsStruct) = results.appendAll(rs.results)
+
+    def setNoUse = results = results.map(x => (x._1, x._2, false))
+
+    def append(r: Result) = results.append(r)
+
+    def append(t: TermName, typ: c.Tree) = results.append((t, typ, true))
+
+    def append(rs: ResultsStruct) = results.appendAll(rs.results)
   }
 
   /**
@@ -34,7 +40,7 @@ trait CombinatorImpl { self:ParseInput =>
    * @param results
    * @return
    */
-  def combineResults(results:ListBuffer[Result]):c.Tree = {
+  def combineResults(results: ListBuffer[Result]): c.Tree = {
     val usedResults = results.toList.filter(_._3)
     if (usedResults.size > 1) {
       //q"(..${usedResults.map(x => q"${x._1}")})"
@@ -49,7 +55,7 @@ trait CombinatorImpl { self:ParseInput =>
       q"Nil"
   }
 
-  def combineResults(rs:ResultsStruct):c.Tree = combineResults(rs.results)
+  def combineResults(rs: ResultsStruct): c.Tree = combineResults(rs.results)
 
   /**
    * Get the "zero" value of a certain type
@@ -57,8 +63,8 @@ trait CombinatorImpl { self:ParseInput =>
    * @return
    */
 
-  def zeroValue(typ:c.Tree):c.Tree = {
-    def fromString(str:String) = str match {
+  def zeroValue(typ: c.Tree) = {
+    def fromString(str: String) = str match {
       case "Char" => q"' '"
       case "Int" => q"0"
       case "Float" => q"0"
@@ -69,11 +75,11 @@ trait CombinatorImpl { self:ParseInput =>
     }
     typ match {
       case Ident(TypeName(name)) => fromString(name)
-      case AppliedTypeTree(Ident(TypeName("List")),_) =>  q"Nil"
+      case AppliedTypeTree(Ident(TypeName("List")), _) => q"Nil"
       case x => fromString(x.toString)
     }
   }
 
 
-  def expand(tree:c.Tree,r:ResultsStruct):c.Tree = c.abort(c.enclosingPosition,"Not implemented combinator " + show(tree))
+  def expand(tree: c.Tree, r: ResultsStruct): c.Tree = c.abort(c.enclosingPosition, "Not implemented combinator " + show(tree))
 }

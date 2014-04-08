@@ -1,51 +1,58 @@
 import scala.annotation.compileTimeOnly
+import scala.language.implicitConversions
 
 trait TokenParsers {
 
   @compileTimeOnly("can’t be used outside FastParser")
-  implicit def lit(str:String):Parser[String] = ???
+  implicit def lit(str: String): Parser[String] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
-  def ident:Parser[String] = ???
+  def ident: Parser[String] = ???
+
   @compileTimeOnly("can’t be used outside FastParser")
-  def number:Parser[Int] = ???
+  def number: Parser[Int] = ???
+
   @compileTimeOnly("can’t be used outside FastParser")
-  def decimalNumber:Parser[Float] = ???
+  def decimalNumber: Parser[Float] = ???
+
   @compileTimeOnly("can’t be used outside FastParser")
-  def stringLit:Parser[String] = ???
+  def stringLit: Parser[String] = ???
+
   @compileTimeOnly("can’t be used outside FastParser")
-  def whitespaces:Parser[String] = ???
+  def whitespaces: Parser[String] = ???
 
 }
 
-trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
+trait TokenParsersImpl extends CombinatorImpl {
+  self: StringInput =>
 
   import c.universe._
 
-  override def expand(tree:c.Tree,rs:ResultsStruct) = tree match{
-    case q"FastParsers.lit($str)" => parseLit(str,rs)
+  override def expand(tree: c.Tree, rs: ResultsStruct) = tree match {
+    case q"FastParsers.lit($str)" => parseLit(str, rs)
     case q"FastParsers.ident" => parseIdentifier(rs)
     case q"FastParsers.stringLit" => parseStringLit(rs)
     case q"FastParsers.number" => parseNumber(rs)
     case q"FastParsers.decimalNumber" => parseDecimalNumber(rs)
     case q"FastParsers.whitespaces" => parseWhiteSpaces(rs)
-    case _ => super.expand(tree,rs)
+    case _ => super.expand(tree, rs)
   }
 
-  private def skipWhiteSpace:c.Tree = {
+  private def skipWhiteSpace = {
     q"""
     while($isNEOI && ($currentInput == ' ' || $currentInput == '\t' || $currentInput == '\n' || $currentInput == '\r'))
       $advance
     """
   }
 
-  private def parseLit(str:c.Tree, rs:ResultsStruct):c.Tree = {
+  private def parseLit(str: c.Tree, rs: ResultsStruct) = {
     val result = TermName(c.freshName)
     val tmpstr = TermName(c.freshName)
     val i = TermName(c.freshName)
-    rs.append((result,tq"String",true))
-    mark {rollback =>
-      q"""
+    rs.append((result, tq"String", true))
+    mark {
+      rollback =>
+        q"""
       var $i = 0
       val $tmpstr = $str
       $skipWhiteSpace
@@ -66,12 +73,13 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
     }
   }
 
-  private def parseIdentifier(rs: ResultsStruct): c.Tree = {
+  private def parseIdentifier(rs: ResultsStruct) = {
     val beginpos = TermName(c.freshName)
     val result = TermName(c.freshName)
-    rs.append((result,tq"String",true))
-    mark {rollback =>
-      q"""
+    rs.append((result, tq"String", true))
+    mark {
+      rollback =>
+        q"""
       $skipWhiteSpace
       val $beginpos = $pos
       if ($isNEOI && Character.isJavaIdentifierStart($currentInput)){
@@ -79,7 +87,7 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
         while ($isNEOI && Character.isJavaIdentifierPart($currentInput)) {
           $advance
         }
-        $result = ${slice(q"$beginpos",q"$pos")}
+        $result = ${slice(q"$beginpos", q"$pos")}
         success = true
       }
       else {
@@ -90,11 +98,12 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
     }
   }
 
-  private def parseStringLit(rs:ResultsStruct):c.Tree = {
+  private def parseStringLit(rs: ResultsStruct) = {
     val beginpos = TermName(c.freshName)
     val result = TermName(c.freshName)
-    rs.append((result,tq"String",true))
-    mark {rollback => q"""
+    rs.append((result, tq"String", true))
+    mark {
+      rollback => q"""
       $skipWhiteSpace
       val $beginpos = $pos
       if ($isNEOI && $currentInput == '\"'){
@@ -109,7 +118,7 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
         if ($isNEOI) {
           success = true
           $advance
-          $result = ${slice(q"$beginpos",q"$pos")}
+          $result = ${slice(q"$beginpos", q"$pos")}
         }
         else {
           success = false
@@ -126,12 +135,13 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
     }
   }
 
-  private def parseNumber(rs:ResultsStruct):c.Tree = {
+  private def parseNumber(rs: ResultsStruct) = {
     val isNeg = TermName(c.freshName)
     val result = TermName(c.freshName)
-    rs.append((result,tq"Int",true))
-    mark {rollback =>
-    q"""
+    rs.append((result, tq"Int", true))
+    mark {
+      rollback =>
+        q"""
       $skipWhiteSpace
       var $isNeg = false
       if ($isNEOI && $currentInput == '-'){
@@ -158,13 +168,14 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
     }
   }
 
-  private def parseDecimalNumber(rs:ResultsStruct):c.Tree = {
+  private def parseDecimalNumber(rs: ResultsStruct) = {
     val isNeg = TermName(c.freshName)
     val beginPos = TermName(c.freshName)
     val result = TermName(c.freshName)
-    rs.append((result,tq"Float",true))
-    mark {rollback =>
-      q"""
+    rs.append((result, tq"Float", true))
+    mark {
+      rollback =>
+        q"""
       $skipWhiteSpace
       var $isNeg = false
       val $beginPos = $pos
@@ -182,7 +193,7 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
               $advance
          }
          success = true
-         $result = ${slice(q"$beginPos",q"$pos")}.toFloat
+         $result = ${slice(q"$beginPos", q"$pos")}.toFloat
       }
       else if ($isNEOI && $currentInput == '.')  {
         $advance
@@ -191,7 +202,7 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
           while ($isNEOI && $currentInput >= '0' && $currentInput <= '9')
             $advance
           success = true
-          $result = ${slice(q"$beginPos",q"$pos")}.toFloat
+          $result = ${slice(q"$beginPos", q"$pos")}.toFloat
         }
       }
 
@@ -199,14 +210,14 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
     }
   }
 
-  private def parseWhiteSpaces(rs:ResultsStruct):c.Tree = {
+  private def parseWhiteSpaces(rs: ResultsStruct) = {
     val beginPos = TermName(c.freshName)
     val result = TermName(c.freshName)
-    rs.append((result,tq"String",true))
+    rs.append((result, tq"String", true))
     q"""
       val $beginPos = $pos
       $skipWhiteSpace
-      $result = ${slice(q"$beginPos",q"$pos")}
+      $result = ${slice(q"$beginPos", q"$pos")}
       success = true
     """
   }

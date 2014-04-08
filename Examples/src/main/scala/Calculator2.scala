@@ -62,7 +62,7 @@ object Calculator2 {
         def start = phrase(assign ^^ (x => setVar(x._1,x._2)) | expr ^^ setRes) //the order is important !! (because of opt(op1 ~ expr))
     }
 
-    println("Please enter an expression (enter an empty line to quit)")
+    println("Please enter an expression (or enter an empty line to quit)")
 
     var cont = true
     while (cont) {
