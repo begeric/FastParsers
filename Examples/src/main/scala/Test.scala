@@ -25,9 +25,14 @@ object Test {
      def rule3 = number >> {case 0 => rule1 ~ take(1);case x => take(2)}
      /*def rule4 = number >> (x => {take(x) ~ take(x)})   */
      def rule56 = (number ^^ (_.toString)) >> {case b => ':' ~> rep(b)}
+
+     def rule5 = 'a' || 'b' || failure("so bad")    //type = Any (how to change that)
+     def rule6 = 'a' || 'b' || success('c')
+
+     def rule7 = raw(range('a','z') ~ ':' ~ rep(range('a','z') || range('0','9')))
    }
 
-   parser.rule56("11:1111") match {
+   parser.rule7("a:bd5df") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

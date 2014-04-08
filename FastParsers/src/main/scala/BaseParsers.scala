@@ -31,10 +31,19 @@ trait BaseParsers[Elem, Input] {
   def take(n: Int): Parser[Input] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
+  def raw[T](p:Parser[T]):Parser[Input] = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
   def guard[T](p: Parser[T]): Parser[T] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
   def phrase[T](p: Parser[T]): Parser[T] = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  def failure(msg: String): Parser[Any] = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  def success[T](v: T): Parser[T] = ???
 
   trait BaseParser[T] {
     @compileTimeOnly("can’t be used outside FastParser")
@@ -91,9 +100,12 @@ trait BaseParsersImpl extends CombinatorImpl {
     case q"FastParsers.acceptIf($f)" => parseAcceptIf(f, rs)
     case q"FastParsers.wildcard" => parseWildcard(rs)
     case q"FastParsers.guard[$d]($a)" => parseGuard(a, d, rs)
-    case q"FastParsers.phrase[$d]($a)" => parsePhrase(a, rs)
     case q"FastParsers.takeWhile($f)" => parseTakeWhile(f, rs)
     case q"FastParsers.take($n)" => parseTake(n, rs)
+    case q"FastParsers.raw[$d]($a)" => parseRaw(a,rs)
+    case q"FastParsers.phrase[$d]($a)" => parsePhrase(a, rs)
+    case q"FastParsers.failure($a)" => parseFailure(a,rs)
+    case q"FastParsers.success[$d]($a)" => parseSuccess(a,d,rs)
     case q"$a ~[$d] $b" => parseThen(a, b, rs)
     case q"$a ~>[$d] $b" => parseIgnoreLeft(a, b, d, rs)
     case q"$a <~[$d] $b" => parseIgnoreRight(a, b, d, rs)
@@ -173,6 +185,7 @@ trait BaseParsersImpl extends CombinatorImpl {
     """
   }
 
+
   private def parseGuard(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     val tree = mark {
       rollback =>
@@ -184,17 +197,6 @@ trait BaseParsersImpl extends CombinatorImpl {
     tree
   }
 
-  private def parsePhrase(a: c.Tree, rs: ResultsStruct) = {
-    q"""
-    ${expand(a, rs)}
-    if (success) {
-      if (!$isEOI){
-        success = false
-        msg = "not all the input is consummed, at pos " + $pos
-      }
-    }
-    """
-  }
 
   private def parseTakeWhile(f: c.Tree, rs: ResultsStruct) = {
     val result = TermName(c.freshName)
@@ -225,6 +227,55 @@ trait BaseParsersImpl extends CombinatorImpl {
     }
     """
   }
+
+  private def parseRaw(a: c.Tree, rs: ResultsStruct) = {
+    val beginpos = TermName(c.freshName)
+    val result = TermName(c.freshName)
+    val results_tmp = new ResultsStruct()
+    val tree = q"""
+      val $beginpos = $pos
+      ${expand(a,results_tmp)}
+      if (success) {
+        $result = ${slice(q"$beginpos", q"$pos")}
+      }
+      else {
+        msg = "raw failure"
+      }
+    """
+    results_tmp.setNoUse
+    rs.append(results_tmp)
+    rs.append((result, inputType, true))
+    tree
+  }
+
+  private def parsePhrase(a: c.Tree, rs: ResultsStruct) = {
+    q"""
+    ${expand(a, rs)}
+    if (success) {
+      if (!$isEOI){
+        success = false
+        msg = "not all the input is consummed, at pos " + $pos
+      }
+    }
+    """
+  }
+
+
+  private def parseFailure(a: c.Tree, rs: ResultsStruct) = {
+    q"""
+      success = false
+      msg = $a
+    """
+  }
+  private def  parseSuccess(a: c.Tree,typ: c.Tree, rs: ResultsStruct) = {
+    val result = TermName(c.freshName)
+    rs.append((result, typ, true))
+    q"""
+      success = true
+      $result = $a
+    """
+  }
+
 
   private def parseThen(a: c.Tree, b: c.Tree, rs: ResultsStruct) = {
     q"""
