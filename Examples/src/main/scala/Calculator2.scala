@@ -52,15 +52,14 @@ object Calculator2 {
     def alphanum(x:Char) = alpha(x) || x >= '0' && x <= '9'
 
     val parser = FastParser{
-      def op1 = lit("+") ^^^ '+' | lit("-") ^^^ '-'
-      def op2 = lit("*") ^^^ '*' | lit("/") ^^^ '/'
-      def ident = whitespaces  ~> acceptIf(alpha) ~ takeWhile(alphanum) ^^ (x => x._1 + x._2)
-      def funccall = ident ~ (lit("(") ~> repsep(expr,",") <~ ")") ^^ (x => func(x._1,x._2))
-      def factor:Parser[Int] = number | lit("(") ~> expr <~ ")" | funccall | ident ^^ getVar
-      def term:Parser[Int] = factor ~ opt(op2 ~ term) ^^ exec
-      def expr:Parser[Int] = term ~ opt(op1 ~ expr) ^^ exec
-      def assign = ident ~ (lit("=") ~ whitespaces ~> expr)
-      def start = phrase(assign ^^ (x => setVar(x._1,x._2)) | expr ^^ setRes) //the order is important !! (because of opt(op1 ~ expr))
+        def op1 = lit("+") ^^^ '+' | lit("-") ^^^ '-'
+        def op2 = lit("*") ^^^ '*' | lit("/") ^^^ '/'
+        def funccall = ident ~ (lit("(") ~> repsep(expr,",") <~ ")") ^^ (x => func(x._1,x._2))
+        def factor:Parser[Int] = number | lit("(") ~> expr <~ ")" | funccall | ident ^^ getVar
+        def term:Parser[Int] = factor ~ opt(op2 ~ term) ^^ exec
+        def expr:Parser[Int] = term ~ opt(op1 ~ expr) ^^ exec
+        def assign = ident ~ (lit("=") ~ whitespaces ~> expr)
+        def start = phrase(assign ^^ (x => setVar(x._1,x._2)) | expr ^^ setRes) //the order is important !! (because of opt(op1 ~ expr))
     }
 
     println("Please enter an expression (enter an empty line to quit)")

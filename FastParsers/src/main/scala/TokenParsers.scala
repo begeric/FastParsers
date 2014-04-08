@@ -24,6 +24,7 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
 
   override def expand(tree:c.Tree,rs:ResultsStruct) = tree match{
     case q"FastParsers.lit($str)" => parseLit(str,rs)
+    case q"FastParsers.ident" => parseIdentifier(rs)
     case q"FastParsers.stringLit" => parseStringLit(rs)
     case q"FastParsers.number" => parseNumber(rs)
     case q"FastParsers.decimalNumber" => parseDecimalNumber(rs)
@@ -62,6 +63,30 @@ trait TokenParsersImpl extends CombinatorImpl { self:StringInput =>
         $rollback
       }
     """
+    }
+  }
+
+  private def parseIdentifier(rs: ResultsStruct): c.Tree = {
+    val beginpos = TermName(c.freshName)
+    val result = TermName(c.freshName)
+    rs.append((result,tq"String",true))
+    mark {rollback =>
+      q"""
+      $skipWhiteSpace
+      val $beginpos = $pos
+      if ($isNEOI && Character.isJavaIdentifierStart($currentInput)){
+        $advance
+        while ($isNEOI && Character.isJavaIdentifierPart($currentInput)) {
+          $advance
+        }
+        $result = ${slice(q"$beginpos",q"$pos")}
+        success = true
+      }
+      else {
+        $rollback
+        success = false
+      }
+      """
     }
   }
 
