@@ -68,6 +68,9 @@ trait BaseParsers[Elem, Input] {
   @compileTimeOnly("can’t be used outside FastParser")
   def success[T](v: T): Parser[T] = ???
 
+  @compileTimeOnly("can’t be used outside FastParser")
+  def ifelse[T](cond: Boolean,thn: Parser[T], els: Parser[T]): Parser[T] = ???
+
   trait BaseParser[T] {
     @compileTimeOnly("can’t be used outside FastParser")
     def ~[U](p2: Parser[U]): Parser[(T, U)] = ???
@@ -143,6 +146,7 @@ trait BaseParsersImpl extends CombinatorImpl {
     case q"$a withFailureMessage $msg"      => parseWithFailureMessage(a, msg, rs)
     case q"call[$d](${ruleCall: TermName})" => parseRuleCall(ruleCall, d, rs)
     case q"compound[$d]($a)"                => parseCompound(a, d, rs)
+    case q"FastParsers.ifelse[$d]($cond,$a,$b)"         => parseIfThnEls(cond,a,b,d,rs)
     case _                                  => super.expand(tree, rs) //q"""println(show(reify($tree).tree))"""
   }
 
@@ -489,6 +493,29 @@ trait BaseParsersImpl extends CombinatorImpl {
     results_tmp.setNoUse
     rs.append((result, typ, true))
     rs.append(results_tmp)
+    tree
+  }
+
+  private def parseIfThnEls(cond: c.Tree,a: c.Tree,b: c.Tree,typ: c.Tree, rs: ResultsStruct) = {
+    val result = TermName(c.freshName)
+    var results_tmp1 = new ResultsStruct()
+    var results_tmp2 = new ResultsStruct()
+    val tree =
+    q"""
+    if ($cond){
+      ${expand(a,results_tmp1)}
+      $result = ${combineResults(results_tmp1)}
+     }
+    else {
+      ${expand(b,results_tmp2)}
+      $result = ${combineResults(results_tmp2)}
+     }
+    """
+    results_tmp1.setNoUse
+    results_tmp2.setNoUse
+    rs.append((result, typ, true))
+    rs.append(results_tmp1)
+    rs.append(results_tmp2)
     tree
   }
 }

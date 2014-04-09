@@ -39,10 +39,12 @@ object Test {
                       b <- number) yield (op(a,b))
 
      def rule10 = rep(not('a','b',('x','z')))
+
+     def rule11 = ifelse(2 > 3, 'a' ~ 'b', 'c' ~ 'd')
    }
 
-   parser.rule7("a:wasfdg8f") match {
-     case Success(x:InputWindow[String]) => println(str(x))
+   parser.rule11("cd") match {
+     case Success(x) => println(x)
      case Failure(msg) => println("failure: " + msg)
    }
 
