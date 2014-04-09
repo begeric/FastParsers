@@ -29,13 +29,13 @@ trait TokenParsersImpl extends CombinatorImpl {
   import c.universe._
 
   override def expand(tree: c.Tree, rs: ResultsStruct) = tree match {
-    case q"FastParsers.lit($str)" => parseLit(str, rs)
-    case q"FastParsers.ident" => parseIdentifier(rs)
-    case q"FastParsers.stringLit" => parseStringLit(rs)
-    case q"FastParsers.number" => parseNumber(rs)
+    case q"FastParsers.lit($str)"     => parseLit(str, rs)
+    case q"FastParsers.ident"         => parseIdentifier(rs)
+    case q"FastParsers.stringLit"     => parseStringLit(rs)
+    case q"FastParsers.number"        => parseNumber(rs)
     case q"FastParsers.decimalNumber" => parseDecimalNumber(rs)
-    case q"FastParsers.whitespaces" => parseWhiteSpaces(rs)
-    case _ => super.expand(tree, rs)
+    case q"FastParsers.whitespaces"   => parseWhiteSpaces(rs)
+    case _                            => super.expand(tree, rs)
   }
 
   private def skipWhiteSpace = {

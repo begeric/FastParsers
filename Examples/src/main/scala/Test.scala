@@ -30,9 +30,17 @@ object Test {
      def rule6 = 'a' || 'b' || success('c')
 
      def rule7 = raw(range('a','z') ~ ':' ~ rep(range('a','z') || range('0','9')))
+
+     def rule8:Parser[Int] = for (x <- number if x > 10) yield x
+
+     def rule9 = for (a <- number;
+                      op <- '+' ^^^ ((x:Int,y:Int) => x + y) | '-' ^^^ ((x:Int,y:Int) => x - y);
+                      b <- number) yield (op(a,b))
+
+     def rule10 = rep(not('a','b',('x','z')))
    }
 
-   parser.rule7("a:bd5df") match {
+   parser.rule10("ubya") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

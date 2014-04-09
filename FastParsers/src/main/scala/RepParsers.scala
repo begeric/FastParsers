@@ -44,18 +44,18 @@ trait RepParsersImpl extends CombinatorImpl {
   import c.universe._
 
   override def expand(tree: c.Tree, rs: ResultsStruct) = tree match {
-    case q"FastParsers.repParser[$d]($a)" => expand(a, rs)
-    case q"FastParsers.rep[$d]($a,$min,$max)" => parseRep(a, d, min, max, rs)
-    case q"FastParsers.rep1[$d]($a)" => parseRep(a, d, q"1", q"-1", rs)
-    case q"FastParsers.repN[$d]($a,$n)" => parseRep(a, d, n, n, rs)
-    case q"FastParsers.opt[$d]($a)" => parseOpt(a, d, rs)
-    case q"FastParsers.repsep[$typ,$d]($a,$b)" => parseRepsep(a, b, typ, atLeastOnce = false, rs)
+    case q"FastParsers.repParser[$d]($a)"       => expand(a, rs)
+    case q"FastParsers.rep[$d]($a,$min,$max)"   => parseRep(a, d, min, max, rs)
+    case q"FastParsers.rep1[$d]($a)"            => parseRep(a, d, q"1", q"-1", rs)
+    case q"FastParsers.repN[$d]($a,$n)"         => parseRep(a, d, n, n, rs)
+    case q"FastParsers.opt[$d]($a)"             => parseOpt(a, d, rs)
+    case q"FastParsers.repsep[$typ,$d]($a,$b)"  => parseRepsep(a, b, typ, atLeastOnce = false, rs)
     case q"FastParsers.repsep1[$typ,$d]($a,$b)" => parseRepsep(a, b, typ, atLeastOnce = true, rs)
-    case q"$a foldLeft[$d]($init,$f)" => parseFoldLeft(a, init, f, d, rs)
-    case q"$a foldRight[$d,$ptype]($init,$f)" => parseFoldRight(a, init, f, d, ptype, rs)
-    case q"$a reduceLeft[$d]($f)" => parseReduceLeft(a, f, d, rs)
-    case q"$a reduceRight[$d]($f)" => parseReduceRight(a, f, d, rs)
-    case _ => super.expand(tree, rs)
+    case q"$a foldLeft[$d]($init,$f)"           => parseFoldLeft(a, init, f, d, rs)
+    case q"$a foldRight[$d,$ptype]($init,$f)"   => parseFoldRight(a, init, f, d, ptype, rs)
+    case q"$a reduceLeft[$d]($f)"               => parseReduceLeft(a, f, d, rs)
+    case q"$a reduceRight[$d]($f)"              => parseReduceRight(a, f, d, rs)
+    case _                                      => super.expand(tree, rs)
   }
 
   private def parseRep(a: c.Tree, typ: c.Tree, min: c.Tree, max: c.Tree, rs: ResultsStruct) = {

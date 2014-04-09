@@ -6,17 +6,40 @@ import scala.reflect.macros.whitebox.Context
 /**
  * Base Parsers
  */
+
 trait BaseParsers[Elem, Input] {
 
   object ~ {
     def unapply[T, U](x: Tuple2[T, U]): Option[Tuple2[T, U]] = Some((x._1, x._2))
   }
 
+  case class InputWindow(in:Input,start:Int,end:Int)
+
+  abstract class ElemOrRange
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  implicit def toElemOrRange(elem: Elem): ElemOrRange = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  implicit def toElemOrRange(elem: (Elem,Elem)): ElemOrRange = ???
+
+
+
+
   @compileTimeOnly("can’t be used outside FastParser")
   implicit def toElem(elem: Elem): Parser[Elem] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
+  implicit def toElem(elem: (Elem, Elem)): Parser[Elem] = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
   def range(a: Elem, b: Elem): Parser[Elem] = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  def accept(p1: ElemOrRange, p2: ElemOrRange*):Parser[Elem] = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  def not(p1: ElemOrRange, p2: ElemOrRange*): Parser[Elem] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
   def acceptIf(f: Elem => Boolean): Parser[Elem] = ???
@@ -78,7 +101,6 @@ trait BaseParsers[Elem, Input] {
   }
 
   implicit class elemParser(p1: Elem) extends BaseParser[Elem]
-
   implicit class baseParsers[T](p1: Parser[T]) extends BaseParser[T]
 
 }
@@ -94,31 +116,34 @@ trait BaseParsersImpl extends CombinatorImpl {
 
   override def expand(tree: c.Tree, rs: ResultsStruct) = tree match {
     case q"FastParsers.baseParsers[$d]($a)" => expand(a, rs)
-    case q"FastParsers.toElem($elem)" => parseElem(elem, rs) //q"success = false"
-    case q"FastParsers.elemParser($elem)" => parseElem(elem, rs)
-    case q"FastParsers.range($a,$b)" => parseRange(a, b, rs)
-    case q"FastParsers.acceptIf($f)" => parseAcceptIf(f, rs)
-    case q"FastParsers.wildcard" => parseWildcard(rs)
-    case q"FastParsers.guard[$d]($a)" => parseGuard(a, d, rs)
-    case q"FastParsers.takeWhile($f)" => parseTakeWhile(f, rs)
-    case q"FastParsers.take($n)" => parseTake(n, rs)
-    case q"FastParsers.raw[$d]($a)" => parseRaw(a,rs)
-    case q"FastParsers.phrase[$d]($a)" => parsePhrase(a, rs)
-    case q"FastParsers.failure($a)" => parseFailure(a,rs)
-    case q"FastParsers.success[$d]($a)" => parseSuccess(a,d,rs)
-    case q"$a ~[$d] $b" => parseThen(a, b, rs)
-    case q"$a ~>[$d] $b" => parseIgnoreLeft(a, b, d, rs)
-    case q"$a <~[$d] $b" => parseIgnoreRight(a, b, d, rs)
-    case q"$a ||[$d] $b" => parseOr(a, b, d, rs)
-    case q"$a |[$d] $b" => parseOr(a, b, d, rs)
-    case q"$a ^^[$d] $f" => parseMap(a, f, d, rs)
-    case q"$a map[$d] $f" => parseMap(a, f, d, rs)
-    case q"$a ^^^[$d] $v" => parseValue(a, v, d, rs)
-    case q"$a filter[$d] $f" => parseFilter(a, f, d, rs)
-    case q"$a withFailureMessage $msg" => parseWithFailureMessage(a, msg, rs)
+    case q"FastParsers.toElem(($a,$b))"     => parseRange(a, b, rs)
+    case q"FastParsers.toElem($elem)"       => parseElem(elem, rs)
+    case q"FastParsers.elemParser($elem)"   => parseElem(elem, rs)
+    case q"FastParsers.range($a,$b)"        => parseRange(a, b, rs)
+    case q"FastParsers.accept(..$a)"        => parseAccept(a,false,rs)
+    case q"FastParsers.not(..$a)"           => parseAccept(a,true,rs)
+    case q"FastParsers.acceptIf($f)"        => parseAcceptIf(f, rs)
+    case q"FastParsers.wildcard"            => parseWildcard(rs)
+    case q"FastParsers.guard[$d]($a)"       => parseGuard(a, d, rs)
+    case q"FastParsers.takeWhile($f)"       => parseTakeWhile(f, rs)
+    case q"FastParsers.take($n)"            => parseTake(n, rs)
+    case q"FastParsers.raw[$d]($a)"         => parseRaw(a,rs)
+    case q"FastParsers.phrase[$d]($a)"      => parsePhrase(a, rs)
+    case q"FastParsers.failure($a)"         => parseFailure(a,rs)
+    case q"FastParsers.success[$d]($a)"     => parseSuccess(a,d,rs)
+    case q"$a ~[$d] $b"                     => parseThen(a, b, rs)
+    case q"$a ~>[$d] $b"                    => parseIgnoreLeft(a, b, d, rs)
+    case q"$a <~[$d] $b"                    => parseIgnoreRight(a, b, d, rs)
+    case q"$a ||[$d] $b"                    => parseOr(a, b, d, rs)
+    case q"$a |[$d] $b"                     => parseOr(a, b, d, rs)
+    case q"$a ^^[$d] $f"                    => parseMap(a, f, d, rs)
+    case q"$a map[$d] $f"                   => parseMap(a, f, d, rs)
+    case q"$a ^^^[$d] $v"                   => parseValue(a, v, d, rs)
+    case q"$a filter[$d] $f"                => parseFilter(a, f, d, rs)
+    case q"$a withFailureMessage $msg"      => parseWithFailureMessage(a, msg, rs)
     case q"call[$d](${ruleCall: TermName})" => parseRuleCall(ruleCall, d, rs)
-    case q"compound[$d]($a)" => parseCompound(a, d, rs)
-    case _ => super.expand(tree, rs) //q"""println(show(reify($tree).tree))"""
+    case q"compound[$d]($a)"                => parseCompound(a, d, rs)
+    case _                                  => super.expand(tree, rs) //q"""println(show(reify($tree).tree))"""
   }
 
 
@@ -152,6 +177,32 @@ trait BaseParsersImpl extends CombinatorImpl {
         msg = "expected in range ('" + $a + "', '" + $b + "')  at " + $pos
      }
     """
+  }
+
+  private def parseAccept(a: List[c.Tree],negate: Boolean,rs: ResultsStruct) = {
+    val result = TermName(c.freshName)
+    rs.append((result, inputElemType, true))
+    val ranges = if (negate)  q"!(${getAcceptedElem(a)})"
+                 else q"(${getAcceptedElem(a)})"
+    q"""
+      if ($isNEOI && $ranges){
+        $result = $currentInput
+        $advance
+        success = true
+       }
+       else {
+          success = false
+          msg = "expected TODO at " + $pos
+        }
+     """ //TODO error msg
+  }
+
+  private def getAcceptedElem(elems: List[c.Tree]) = {
+    def acceptElem(elem: c.Tree) = elem match {
+      case q"FastParsers.toElemOrRange(($x,$y))"  => q"($currentInput >= $x && $currentInput <= $y)"
+      case q"FastParsers.toElemOrRange($x)"       => q"$currentInput == $x"
+    }
+    elems.tail.foldLeft(q"${acceptElem(elems.head)}"){(acc, c) => q"$acc || ${acceptElem(c)}"}
   }
 
   private def parseAcceptIf(f: c.Tree, rs: ResultsStruct) = {

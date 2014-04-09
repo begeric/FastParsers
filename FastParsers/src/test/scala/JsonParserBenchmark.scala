@@ -5,7 +5,7 @@ import org.scalameter.api._
 import JsonParsers._
 import scala.collection.mutable.ListBuffer
 
-object JsonParserBenchmark extends PerformanceTest {
+class JsonParserBenchmark extends PerformanceTest {
 
   lazy val executor = LocalExecutor(
     new Executor.Warmer.Default,
