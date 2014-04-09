@@ -17,6 +17,7 @@ object Test {
 
  def main(args: Array[String])  {
    import FastParsers._
+   import InputWindow._
 
    val parser = FastParser{
      //def rule2 = number >> (x => take(x))
@@ -40,9 +41,9 @@ object Test {
      def rule10 = rep(not('a','b',('x','z')))
    }
 
-   parser.rule10("ubya") match {
-     case Success(x) => println(x)
-     case Failure(msg) => println("failure : " + msg)
+   parser.rule7("a:wasfdg8f") match {
+     case Success(x:InputWindow[String]) => println(str(x))
+     case Failure(msg) => println("failure: " + msg)
    }
 
  }

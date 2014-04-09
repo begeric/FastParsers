@@ -9,11 +9,11 @@ import scala.reflect.macros.whitebox.Context
 
 trait BaseParsers[Elem, Input] {
 
+  import InputWindow._
+
   object ~ {
     def unapply[T, U](x: Tuple2[T, U]): Option[Tuple2[T, U]] = Some((x._1, x._2))
   }
-
-  case class InputWindow(in:Input,start:Int,end:Int)
 
   abstract class ElemOrRange
 
@@ -54,7 +54,7 @@ trait BaseParsers[Elem, Input] {
   def take(n: Int): Parser[Input] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
-  def raw[T](p:Parser[T]):Parser[Input] = ???
+  def raw[T](p:Parser[T]):Parser[InputWindow[Input]] = ???
 
   @compileTimeOnly("can’t be used outside FastParser")
   def guard[T](p: Parser[T]): Parser[T] = ???
@@ -283,11 +283,12 @@ trait BaseParsersImpl extends CombinatorImpl {
     val beginpos = TermName(c.freshName)
     val result = TermName(c.freshName)
     val results_tmp = new ResultsStruct()
+    //${slice(q"$beginpos", q"$pos")}
     val tree = q"""
       val $beginpos = $pos
       ${expand(a,results_tmp)}
       if (success) {
-        $result = ${slice(q"$beginpos", q"$pos")}
+        $result = new InputWindow(input,$beginpos,$pos)
       }
       else {
         msg = "raw failure"
@@ -295,7 +296,7 @@ trait BaseParsersImpl extends CombinatorImpl {
     """
     results_tmp.setNoUse
     rs.append(results_tmp)
-    rs.append((result, inputType, true))
+    rs.append((result, tq"InputWindow[$inputType]", true))
     tree
   }
 

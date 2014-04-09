@@ -209,7 +209,6 @@ object HttpParsers {
   )
 
   val httpparser = FastParser{
-    def data = takeWhile(_ => true)
     def restOfLine = takeWhile(_ != '\n')
     def headerName = takeWhile(x => (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || x == '-')
     def header = (headerName <~ ':' ~ whitespaces) ~ restOfLine
