@@ -58,6 +58,7 @@ trait InlineRules extends MapRules {
    * Traverse the rule tree and expand the rule when it can
    */
   def expandCallRule(tree: c.Tree, rulesMap: HashMap[String, RuleInfo], rulesPath: List[String]): c.Tree = tree match {
+    case q"if($c) $a else $b" => q"if($c) ${expandCallRule(a,rulesMap,rulesPath)} else ${expandCallRule(b,rulesMap,rulesPath)}"
     case q"$a.$m[..$d](..$b)" =>
       val callee = expandCallRule(a, rulesMap, rulesPath)
       val args = b.map(expandCallRule(_, rulesMap, rulesPath))
@@ -113,7 +114,7 @@ trait ParseRules extends MapRules {
     val initResults = rs.results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
     val tupledResults = combineResults(rs.results)
 
-    val result = q"""ParseResult(success,msg,if (success) $tupledResults else ${zeroValue(tq"$retType")},$offset)"""
+    val result = q"""ParseResult(success,msg,if (success) $tupledResults else ${zeroValue(tq"$retType")},$pos)"""
 
     val wrapCode =
       q"""

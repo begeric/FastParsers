@@ -1,0 +1,56 @@
+/**
+ * Created by Eric on 10.04.14.
+ */
+
+import scala.collection.mutable.ArrayBuffer
+import scala.util.parsing.input._
+
+trait ToPosition[T] {
+    def get(offset: Int): Position
+}
+
+/*
+  Almost copy pasted from scala.util.parsing.input.OffsetPosition @ https://github.com/scala/scala/blob/v2.10.2/src/library/scala/util/parsing/input/OffsetPosition.scala
+ */
+class StringToPosition(input: String) extends ToPosition[String] {
+
+  val index = new ArrayBuffer[Int]()
+  index += 0
+
+  def computeIndexTill(pos: Int) {
+
+    def compute(from: Int, to: Int) = {
+      for (i <- from until to)
+        if (input.charAt(i) == '\n')
+          index += (i + 1)
+
+      if (pos >= input.size)
+        index += input.size
+    }
+
+    if (pos > index.last && index.last < input.size)
+      compute(index.last + 1,Math.min(pos,input.size))
+  }
+
+  def lineFromOffset(pos: Int) = {
+    computeIndexTill(pos)
+    var lo = 0
+    var hi = index.length - 1
+    while (lo + 1 < hi) {
+      val mid = (hi + lo) / 2
+      if (pos < index(mid)) hi = mid
+      else lo = mid
+    }
+    lo + 1
+  }
+
+
+  def get(offset: Int) = {
+      val l = lineFromOffset(offset)
+      new Position {
+        override protected def lineContents = input.substring(index(line - 1), index(line))
+        override def line = l
+        override def column = offset - index(lineFromOffset(l) - 1) + 1
+      }
+  }
+}

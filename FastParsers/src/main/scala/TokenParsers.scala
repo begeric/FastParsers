@@ -1,5 +1,6 @@
 import scala.annotation.compileTimeOnly
 import scala.language.implicitConversions
+import scala.util.parsing.input._
 
 trait TokenParsers {
 

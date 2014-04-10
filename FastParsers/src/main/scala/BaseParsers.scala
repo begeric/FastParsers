@@ -2,6 +2,7 @@ import scala.annotation.compileTimeOnly
 import scala.language.implicitConversions
 import scala.collection.mutable.ListBuffer
 import scala.reflect.macros.whitebox.Context
+import scala.util.parsing.input.Positional
 
 /**
  * Base Parsers
@@ -38,6 +39,16 @@ trait BaseParsers[Elem, Input] {
   @compileTimeOnly("can’t be used outside FastParser")
   def accept(p1: ElemOrRange, p2: ElemOrRange*):Parser[Elem] = ???
 
+
+
+  /*@compileTimeOnly("can’t be used outside FastParser")
+  def acceptRec(p1: ElemOrRange, p2: ElemOrRange*):Parser[Nothing] = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  def notRec(p1: ElemOrRange, p2: ElemOrRange*):Parser[Nothing] = ??? */
+
+
+
   @compileTimeOnly("can’t be used outside FastParser")
   def not(p1: ElemOrRange, p2: ElemOrRange*): Parser[Elem] = ???
 
@@ -68,8 +79,12 @@ trait BaseParsers[Elem, Input] {
   @compileTimeOnly("can’t be used outside FastParser")
   def success[T](v: T): Parser[T] = ???
 
+
   @compileTimeOnly("can’t be used outside FastParser")
-  def ifelse[T](cond: Boolean,thn: Parser[T], els: Parser[T]): Parser[T] = ???
+  def position: Parser[Int] = ???
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  def positioned[T <: Positional](p: Parser[T]): Parser[T] = ???
 
   trait BaseParser[T] {
     @compileTimeOnly("can’t be used outside FastParser")
@@ -134,6 +149,8 @@ trait BaseParsersImpl extends CombinatorImpl {
     case q"FastParsers.phrase[$d]($a)"      => parsePhrase(a, rs)
     case q"FastParsers.failure($a)"         => parseFailure(a,rs)
     case q"FastParsers.success[$d]($a)"     => parseSuccess(a,d,rs)
+    case q"FastParsers.position"            => parsePosition(rs)
+    case q"FastParsers.positioned[$d]($a)"  => parsePositioned(a,d,rs)
     case q"$a ~[$d] $b"                     => parseThen(a, b, rs)
     case q"$a ~>[$d] $b"                    => parseIgnoreLeft(a, b, d, rs)
     case q"$a <~[$d] $b"                    => parseIgnoreRight(a, b, d, rs)
@@ -146,7 +163,11 @@ trait BaseParsersImpl extends CombinatorImpl {
     case q"$a withFailureMessage $msg"      => parseWithFailureMessage(a, msg, rs)
     case q"call[$d](${ruleCall: TermName})" => parseRuleCall(ruleCall, d, rs)
     case q"compound[$d]($a)"                => parseCompound(a, d, rs)
-    case q"FastParsers.ifelse[$d]($cond,$a,$b)"         => parseIfThnEls(cond,a,b,d,rs)
+    case q"if ($cond) $a else $b"           =>
+      c.typecheck(tree).tpe match {
+        case TypeRef(_, _, List(d)) => parseIfThnEls(cond,a,b,q"$d",rs)
+        case x => c.abort(c.enclosingPosition,"Ill formed if, type must be Parser[_] it is now : " + show(x))
+      }
     case _                                  => super.expand(tree, rs) //q"""println(show(reify($tree).tree))"""
   }
 
@@ -332,6 +353,32 @@ trait BaseParsersImpl extends CombinatorImpl {
     """
   }
 
+  private def parsePosition(rs: ResultsStruct) = {
+    val result = TermName(c.freshName)
+    rs.append((result, q"Int", true))
+    q"$result = $pos"
+  }
+
+  private def parsePositioned(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
+    val beginpos = TermName(c.freshName)
+    val result = TermName(c.freshName)
+    val results_tmp = new ResultsStruct()
+    //if ($result.pos == NoPosition)
+    val tree =
+    q"""
+     val $beginpos = $pos
+     ${expand(a,results_tmp)}
+     if (success) {
+        $result = ${combineResults(results_tmp)}
+          $result setPos ${getPositionned(q"$beginpos")}
+     }
+     """
+    results_tmp.setNoUse
+    rs.append(results_tmp)
+    rs.append((result, typ, true))
+    tree
+  }
+
 
   private def parseThen(a: c.Tree, b: c.Tree, rs: ResultsStruct) = {
     q"""
@@ -469,7 +516,7 @@ trait BaseParsersImpl extends CombinatorImpl {
     // val $callResult = $ruleCall(input.substring($offset),0)
     //${advanceTo(q"$callResult.inputPos")}
     val tree = q"""
-        val $callResult = $ruleCall(input,$offset)
+        val $callResult = $ruleCall(input,$pos)
         success = $callResult.success
         if (success){
           ${setpos(q"$callResult.inputPos")}

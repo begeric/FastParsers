@@ -8,13 +8,16 @@ trait ParseInput {
   type Elem
   type Input
 
+  import c.universe._
+
+  def inputType: c.Tree
+  def inputElemType: c.Tree
+
   def initInput(startpos: c.Tree, then: c.Tree): c.Tree
 
   def currentInput: c.Tree
 
   def advance: c.Tree
-
-  def advanceTo(offset: c.Tree): c.Tree
 
   def setpos(pos: c.Tree): c.Tree
 
@@ -26,17 +29,11 @@ trait ParseInput {
 
   def pos: c.Tree
 
-  def offset: c.Tree
-
-  def inputType: c.Tree
-
-  def inputElemType: c.Tree
-
-  def getChunk(typ: c.Tree, code: c.Tree => c.Tree): c.Tree
-
   def slice(begin: c.Tree, end: c.Tree): c.Tree
 
   def inputsize: c.Tree
+
+  def getPositionned(offset: c.Tree): c.Tree = q"NoPosition"
 }
 
 /**
@@ -59,8 +56,6 @@ trait ArrayInput extends ParseInput {
 
   def advance = q"inputpos = inputpos + 1"
 
-  def advanceTo(offset: c.Tree) = q"inputpos += $offset"
-
   def setpos(pos: c.Tree): c.Tree = q"inputpos = $pos"
 
   def mark(code: c.Tree => c.Tree) = {
@@ -77,21 +72,8 @@ trait ArrayInput extends ParseInput {
 
   def pos = q"inputpos"
 
-  def offset = q"inputpos"
 
   def inputsize = q"inputsize"
-
-  def getChunk(typ: c.Tree, code: c.Tree => c.Tree) = {
-    val beginPos = TermName(c.freshName)
-    q"""
-      val $beginPos = $pos
-      ${code(q"")}
-      if ($isEOI)
-        input.slice($beginPos,$pos - 1)
-      else
-        input.slice($beginPos,$pos)
-    """
-  }
 
   def slice(begin: c.Tree, end: c.Tree) = {
     q"input.slice($begin,$end)"
@@ -109,24 +91,20 @@ trait StringInput extends ArrayInput {
   type Input = String
 
   def inputType = tq"String"
-
   def inputElemType = tq"Char"
 
-  override def currentInput = q"input.charAt(inputpos)"
+  override def initInput(startpos: c.Tree, then: c.Tree) =
+    super.initInput(startpos,
+      q"""
+        val inputpositioned = new StringToPosition(input)
+        $then
+      """
+    )
 
-  override def getChunk(typ: c.Tree, code: c.Tree => c.Tree) = {
-    val beginPos = TermName(c.freshName)
-    q"""
-      val $beginPos = $pos
-      ${code(q"")}
-      if ($isEOI)
-        input.substring($beginPos,$pos - 1)
-      else
-        input.substring($beginPos,$pos)
-    """
-  }
+  override def currentInput = q"input.charAt(inputpos)"
 
   override def slice(begin: c.Tree, end: c.Tree) = {
     q"input.substring($begin,$end)"
   }
+  override def getPositionned(offset: c.Tree): c.Tree = q"inputpositioned.get($offset)"
 }

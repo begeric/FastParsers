@@ -18,10 +18,13 @@ object Test {
  def main(args: Array[String])  {
    import FastParsers._
    import InputWindow._
+   import scala.util.parsing.input._
+
+   case class SuperStuff(x: Int) extends Positional
 
    val parser = FastParser{
      //def rule2 = number >> (x => take(x))
-     def rule1 = 'a' ~ 'b'
+     /*def rule1 = 'a' ~ 'b'
      def rule2 = number >> (x => rule1 ~ take(x) ^^ (y => (x,y)))
      def rule3 = number >> {case 0 => rule1 ~ take(1);case x => take(2)}
      /*def rule4 = number >> (x => {take(x) ~ take(x)})   */
@@ -40,10 +43,21 @@ object Test {
 
      def rule10 = rep(not('a','b',('x','z')))
 
-     def rule11 = ifelse(2 > 3, 'a' ~ 'b', 'c' ~ 'd')
+     def rule12 = if (2 > 3) 'a' ~ 'b' else 'c' ~ 'd'   */
+
+
+     def rule13 = rep('a') ~> positioned('b' ^^^ SuperStuff(1))         //TODO if positioned('b' ^^^ SuperStuff(1)) -> mega fail !!!
+
+     //def rule13 = acceptRec('a',('x','y'),('0','9')) || acceptRec('b') ~ acceptRec('b') ^^ (x => x)
+
+     /*def expr = term chainl1 op1
+     def term = number chainl1 op2
+     def op1 = '+' ^^^ ((x:Int,y:Int) => x + y)  || '-' ^^^ ((x:Int,y:Int) => x - y)
+     def op2 = '*' ^^^ ((x:Int,y:Int) => x * y)  || '/' ^^^ ((x:Int,y:Int) => x / y) */
    }
 
-   parser.rule11("cd") match {
+   parser.rule13("aaaaaaaab") match {
+     case Success(x : Positional) => println(x + " : " + x.pos)
      case Success(x) => println(x)
      case Failure(msg) => println("failure: " + msg)
    }

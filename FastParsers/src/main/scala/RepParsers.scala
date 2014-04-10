@@ -22,6 +22,10 @@ trait RepParsers {
   @compileTimeOnly("can’t be used outside FastParser")
   def repsep1[T, U](p: Parser[T], sep: Parser[U]): Parser[List[T]] = ???
 
+
+  @compileTimeOnly("can’t be used outside FastParser")
+  def until[T,U](p: Parser[T], sep: Parser[U]): Parser[T] = ???
+
   implicit class repParser[T](p: Parser[T]) {
     @compileTimeOnly("can’t be used outside FastParser")
     def foldLeft[U](init: U, f: (U, T) => U): Parser[U] = ???
@@ -34,6 +38,7 @@ trait RepParsers {
 
     @compileTimeOnly("can’t be used outside FastParser")
     def reduceRight[U >: T](f: (T, U) => U): Parser[U] = ???
+
   }
 
 }
