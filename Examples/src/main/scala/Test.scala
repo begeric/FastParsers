@@ -48,6 +48,8 @@ object Test {
 
      def rule13 = rep('a') ~> positioned('b' ^^^ SuperStuff(1))         //TODO if positioned('b' ^^^ SuperStuff(1)) -> mega fail !!!
 
+     def rule14 = until('a' || 'b','b' ~ 'c') ~ 'a'
+
      //def rule13 = acceptRec('a',('x','y'),('0','9')) || acceptRec('b') ~ acceptRec('b') ^^ (x => x)
 
      /*def expr = term chainl1 op1
@@ -56,7 +58,7 @@ object Test {
      def op2 = '*' ^^^ ((x:Int,y:Int) => x * y)  || '/' ^^^ ((x:Int,y:Int) => x / y) */
    }
 
-   parser.rule13("aaaaaaaab") match {
+   parser.rule14("aabaababcaa") match {
      case Success(x : Positional) => println(x + " : " + x.pos)
      case Success(x) => println(x)
      case Failure(msg) => println("failure: " + msg)

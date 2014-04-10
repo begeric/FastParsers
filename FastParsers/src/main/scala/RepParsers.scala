@@ -24,7 +24,7 @@ trait RepParsers {
 
 
   @compileTimeOnly("can’t be used outside FastParser")
-  def until[T,U](p: Parser[T], sep: Parser[U]): Parser[T] = ???
+  def until[T,U](p: Parser[T], sep: Parser[U]): Parser[List[T]] = ???
 
   implicit class repParser[T](p: Parser[T]) {
     @compileTimeOnly("can’t be used outside FastParser")
@@ -49,18 +49,19 @@ trait RepParsersImpl extends CombinatorImpl {
   import c.universe._
 
   override def expand(tree: c.Tree, rs: ResultsStruct) = tree match {
-    case q"FastParsers.repParser[$d]($a)"       => expand(a, rs)
-    case q"FastParsers.rep[$d]($a,$min,$max)"   => parseRep(a, d, min, max, rs)
-    case q"FastParsers.rep1[$d]($a)"            => parseRep(a, d, q"1", q"-1", rs)
-    case q"FastParsers.repN[$d]($a,$n)"         => parseRep(a, d, n, n, rs)
-    case q"FastParsers.opt[$d]($a)"             => parseOpt(a, d, rs)
-    case q"FastParsers.repsep[$typ,$d]($a,$b)"  => parseRepsep(a, b, typ, atLeastOnce = false, rs)
-    case q"FastParsers.repsep1[$typ,$d]($a,$b)" => parseRepsep(a, b, typ, atLeastOnce = true, rs)
-    case q"$a foldLeft[$d]($init,$f)"           => parseFoldLeft(a, init, f, d, rs)
-    case q"$a foldRight[$d,$ptype]($init,$f)"   => parseFoldRight(a, init, f, d, ptype, rs)
-    case q"$a reduceLeft[$d]($f)"               => parseReduceLeft(a, f, d, rs)
-    case q"$a reduceRight[$d]($f)"              => parseReduceRight(a, f, d, rs)
-    case _                                      => super.expand(tree, rs)
+    case q"FastParsers.repParser[$d]($a)"         => expand(a, rs)
+    case q"FastParsers.rep[$d]($a,$min,$max)"     => parseRep(a, d, min, max, rs)
+    case q"FastParsers.rep1[$d]($a)"              => parseRep(a, d, q"1", q"-1", rs)
+    case q"FastParsers.repN[$d]($a,$n)"           => parseRep(a, d, n, n, rs)
+    case q"FastParsers.opt[$d]($a)"               => parseOpt(a, d, rs)
+      case q"FastParsers.repsep[$typ,$d]($a,$b)"  => parseRepsep(a, b, typ, atLeastOnce = false, rs)
+    case q"FastParsers.repsep1[$typ,$d]($a,$b)"   => parseRepsep(a, b, typ, atLeastOnce = true, rs)
+    case q"FastParsers.until[$typ,$d]($a,$b)"     => parseUntil(a, b, typ, rs)
+    case q"$a foldLeft[$d]($init,$f)"             => parseFoldLeft(a, init, f, d, rs)
+    case q"$a foldRight[$d,$ptype]($init,$f)"     => parseFoldRight(a, init, f, d, ptype, rs)
+    case q"$a reduceLeft[$d]($f)"                 => parseReduceLeft(a, f, d, rs)
+    case q"$a reduceRight[$d]($f)"                => parseReduceRight(a, f, d, rs)
+    case _                                        => super.expand(tree, rs)
   }
 
   private def parseRep(a: c.Tree, typ: c.Tree, min: c.Tree, max: c.Tree, rs: ResultsStruct) = {
@@ -203,6 +204,56 @@ trait RepParsersImpl extends CombinatorImpl {
       $assignSuccess
     """
 
+    results_tmp.setNoUse
+    results_tmp2.setNoUse
+    rs.append(results_tmp)
+    rs.append(results_tmp2)
+    rs.append((result, tq"List[$typ]", true))
+    tree
+  }
+
+  private def parseUntil(a: c.Tree, end: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
+    var results_tmp = new ResultsStruct()
+    var results_tmp2 = new ResultsStruct()
+
+    val cont = TermName(c.freshName)
+    val tmp_result = TermName(c.freshName)
+    val result = TermName(c.freshName)
+
+    val innertree2 = mark { rollback =>
+      q"""
+        ${expand(end, results_tmp2)}
+        if (success)
+          $cont = false
+        else
+          $rollback
+      """
+    }
+
+    val innertree = mark { rollback =>
+      q"""
+        ${expand(a,results_tmp)}
+        if (success) {
+          $tmp_result.append(${combineResults(results_tmp)})
+          $innertree2
+        }
+        else {
+          $rollback
+          $cont = false
+         }
+      """
+    }
+
+    val tree =
+    q"""
+      var $cont = true
+      val $tmp_result = new ListBuffer[$typ]()
+      while($cont) {
+        $innertree
+      }
+      $result = $tmp_result.toList
+      success = true
+    """
     results_tmp.setNoUse
     results_tmp2.setNoUse
     rs.append(results_tmp)
