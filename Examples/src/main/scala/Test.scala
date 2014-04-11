@@ -72,7 +72,7 @@ object Test {
 
    arrayParser.rule1(Array(0,2,5)) match {
      case Success(x) => println(x)
-     case Failure(msg) => println("failure: " + msg)
+     case Failure(msg) => println("failure : " + msg)
    }
  }
 }

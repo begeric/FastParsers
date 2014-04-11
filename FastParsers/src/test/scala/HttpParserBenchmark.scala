@@ -21,10 +21,10 @@ object HttpParserBenchmark extends PerformanceTest {
   val range = Gen.enumeration("size")(10)
 
 
-  val files = (1 to 6).foldLeft(new ListBuffer[(String,String)]){ (acc,i) =>
+  val files = (1 to 6).foldLeft(new ListBuffer[String]){ (acc,i) =>
     val fileName = "FastParsers/src/test/resources/tweet" + i
     val data = scala.io.Source.fromFile(fileName).getLines mkString "\n"
-    acc.append((data,fileName))
+    acc.append(data)
     acc
   }.toList
 
@@ -33,19 +33,17 @@ object HttpParserBenchmark extends PerformanceTest {
     performance of "HttpParser@FastParsers" in {
       measure method "respAndMessage" in {
         using(range) in { j =>
-          for (i <- 1 to j; m <- files){
-            httpparser.respAndMessage(m._1)
-            println("@(" + i + ", " + j + ")Parsed " + m._2)
-          }
+          for (i <- 1 to j; m <- files)
+            httpparser.respAndMessage(m)
+          println("@("+j+")HttpParser@FastParsers:respAndMessage")
         }
       }
 
       measure method "response" in {
         using(range) in { j =>
-          for (i <- 1 to j; m <- files) {
-            httpparser.response(m._1)
-            println("@(" + i + ", " + j + ")Parsed " + m._2)
-          }
+          for (i <- 1 to j; m <- files)
+            httpparser.response(m)
+          println("@("+j+")HttpParser@FastParsers:response")
         }
       }
   }
@@ -53,18 +51,16 @@ object HttpParserBenchmark extends PerformanceTest {
   performance of "HttpParser@Combinators" in {
     measure method "respAndMessage" in {
       using(range) in { j =>
-        for (i <- 1 to j; m <- files){
-          HTTP.parse(HTTP.respAndMessage, m._1)
-          println("@(" + i + ", " + j + ")Parsed " + m._2)
-        }
+        for (i <- 1 to j; m <- files)
+          HTTP.parse(HTTP.respAndMessage, m)
+        println("@("+j+")HttpParser@Combinators:respAndMessage")
       }
     }
     measure method "response" in {
       using(range) in { j =>
-        for (i <- 1 to j; m <- files) {
-          HTTP.parse(HTTP.response, m._1)
-          println("@(" + i + ", " + j + ")Parsed " + m._2)
-        }
+        for (i <- 1 to j; m <- files)
+          HTTP.parse(HTTP.response, m)
+        println("@("+j+")HttpParser@Combinators:response")
       }
     }
   }

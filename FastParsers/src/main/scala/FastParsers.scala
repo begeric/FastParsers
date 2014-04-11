@@ -36,8 +36,10 @@ trait FastParsersImpl {
         body.foreach {
           case q"def $name:${d: TypeTree} = $b" =>
             val x = c.typecheck(b).tpe match {
-              case TypeRef(_, _, List(z)) => z //q"Any".tpe//q"var x:${d.tpe}" //check it is a parser
-              case _ => c.abort(c.enclosingPosition, "incorrect parser type")
+              //case tq"$_.Parser[$d]" => c.abort(c.enclosingPosition, "correct parser type")
+                                                           //HACK or not HACK ?
+              case TypeRef(_, y, List(z)) if y.fullName == "Parser" => z //q"Any".tpe//q"var x:${d.tpe}" //check it is a parser
+              case v => c.abort(c.enclosingPosition, "incorrect parser type " + show(v))
             }
             val TermName(nameString) = name
             val in = (nameString, (x, b))
