@@ -49,14 +49,14 @@ trait RepParsersImpl extends CombinatorImpl {
   import c.universe._
 
   override def expand(tree: c.Tree, rs: ResultsStruct) = tree match {
-    case q"FastParsers.repParser[$d]($a)"         => expand(a, rs)
-    case q"FastParsers.rep[$d]($a,$min,$max)"     => parseRep(a, d, min, max, rs)
-    case q"FastParsers.rep1[$d]($a)"              => parseRep(a, d, q"1", q"-1", rs)
-    case q"FastParsers.repN[$d]($a,$n)"           => parseRep(a, d, n, n, rs)
-    case q"FastParsers.opt[$d]($a)"               => parseOpt(a, d, rs)
-      case q"FastParsers.repsep[$typ,$d]($a,$b)"  => parseRepsep(a, b, typ, atLeastOnce = false, rs)
-    case q"FastParsers.repsep1[$typ,$d]($a,$b)"   => parseRepsep(a, b, typ, atLeastOnce = true, rs)
-    case q"FastParsers.until[$typ,$d]($a,$b)"     => parseUntil(a, b, typ, rs)
+    case q"$_.repParser[$d]($a)"                  => expand(a, rs)
+    case q"$_.rep[$d]($a,$min,$max)"              => parseRep(a, d, min, max, rs)
+    case q"$_.rep1[$d]($a)"                       => parseRep(a, d, q"1", q"-1", rs)
+    case q"$_.repN[$d]($a,$n)"                    => parseRep(a, d, n, n, rs)
+    case q"$_.opt[$d]($a)"                        => parseOpt(a, d, rs)
+    case q"$_.repsep[$typ,$d]($a,$b)"             => parseRepsep(a, b, typ, atLeastOnce = false, rs)
+    case q"$_.repsep1[$typ,$d]($a,$b)"            => parseRepsep(a, b, typ, atLeastOnce = true, rs)
+    case q"$_.until[$typ,$d]($a,$b)"              => parseUntil(a, b, typ, rs)
     case q"$a foldLeft[$d]($init,$f)"             => parseFoldLeft(a, init, f, d, rs)
     case q"$a foldRight[$d,$ptype]($init,$f)"     => parseFoldRight(a, init, f, d, ptype, rs)
     case q"$a reduceLeft[$d]($f)"                 => parseReduceLeft(a, f, d, rs)
@@ -65,14 +65,14 @@ trait RepParsersImpl extends CombinatorImpl {
   }
 
   override def prettyPrint(tree: c.Tree) = tree match {
-    case q"FastParsers.repParser[$d]($a)"         => prettyPrint(a)
-    case q"FastParsers.rep[$d]($a,$min,$max)"     => "rep(" + prettyPrint(a) + ", " + show(min) + ", " + show(max) + ")"
-    case q"FastParsers.rep1[$d]($a)"              => "rep1(" + prettyPrint(a) + ")"
-    case q"FastParsers.repN[$d]($a,$n)"           => "repN(" + prettyPrint(a) + ", " + show(n) + ")"
-    case q"FastParsers.opt[$d]($a)"               => "opt(" + prettyPrint(a) + ")"
-    case q"FastParsers.repsep[$typ,$d]($a,$b)"    => "repsep(" + prettyPrint(a) + ", " + prettyPrint(b) + ")"
-    case q"FastParsers.repsep1[$typ,$d]($a,$b)"   => "repsep1(" + prettyPrint(a) + ", " + prettyPrint(b) + ")"
-    case q"FastParsers.until[$typ,$d]($a,$b)"     => "until(" + prettyPrint(a) + ", " + prettyPrint(b) + ")"
+    case q"$_.repParser[$d]($a)"         => prettyPrint(a)
+    case q"$_.rep[$d]($a,$min,$max)"     => "rep(" + prettyPrint(a) + ", " + show(min) + ", " + show(max) + ")"
+    case q"$_.rep1[$d]($a)"              => "rep1(" + prettyPrint(a) + ")"
+    case q"$_.repN[$d]($a,$n)"           => "repN(" + prettyPrint(a) + ", " + show(n) + ")"
+    case q"$_.opt[$d]($a)"               => "opt(" + prettyPrint(a) + ")"
+    case q"$_.repsep[$typ,$d]($a,$b)"    => "repsep(" + prettyPrint(a) + ", " + prettyPrint(b) + ")"
+    case q"$_.repsep1[$typ,$d]($a,$b)"   => "repsep1(" + prettyPrint(a) + ", " + prettyPrint(b) + ")"
+    case q"$_.until[$typ,$d]($a,$b)"     => "until(" + prettyPrint(a) + ", " + prettyPrint(b) + ")"
     case q"$a foldLeft[$d]($init,$f)"             => prettyPrint(a) + " foldLeft(" + show(init) + ", " + prettyPrint(f) + ")"
     case q"$a foldRight[$d,$ptype]($init,$f)"     => prettyPrint(a) + " foldRight(" + show(init) + ", " + prettyPrint(f) + ")"
     case q"$a reduceLeft[$d]($f)"                 => prettyPrint(a) + " reduceLeft(" + prettyPrint(f) + ")"

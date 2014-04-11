@@ -30,22 +30,22 @@ trait TokenParsersImpl extends CombinatorImpl {
   import c.universe._
 
   override def expand(tree: c.Tree, rs: ResultsStruct) = tree match {
-    case q"FastParsers.lit($str)"     => parseLit(str, rs)
-    case q"FastParsers.ident"         => parseIdentifier(rs)
-    case q"FastParsers.stringLit"     => parseStringLit(rs)
-    case q"FastParsers.number"        => parseNumber(rs)
-    case q"FastParsers.decimalNumber" => parseDecimalNumber(rs)
-    case q"FastParsers.whitespaces"   => parseWhiteSpaces(rs)
+    case q"$_.lit($str)"     => parseLit(str, rs)
+    case q"$_.ident"         => parseIdentifier(rs)
+    case q"$_.stringLit"     => parseStringLit(rs)
+    case q"$_.number"        => parseNumber(rs)
+    case q"$_.decimalNumber" => parseDecimalNumber(rs)
+    case q"$_.whitespaces"   => parseWhiteSpaces(rs)
     case _                            => super.expand(tree, rs)
   }
 
   override def prettyPrint(tree: c.Tree) = tree match {
-    case q"FastParsers.lit($str)"     => "lit(" + show(str) + ")"
-    case q"FastParsers.ident"         => "ident"
-    case q"FastParsers.stringLit"     => "stringLit"
-    case q"FastParsers.number"        => "number"
-    case q"FastParsers.decimalNumber" => "decimalNumber"
-    case q"FastParsers.whitespaces"   => "whitespaces"
+    case q"$_.lit($str)"     => "lit(" + show(str) + ")"
+    case q"$_.ident"         => "ident"
+    case q"$_.stringLit"     => "stringLit"
+    case q"$_.number"        => "number"
+    case q"$_.decimalNumber" => "decimalNumber"
+    case q"$_.whitespaces"   => "whitespaces"
     case _                            => super.prettyPrint(tree)
   }
 

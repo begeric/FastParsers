@@ -41,7 +41,7 @@ trait ParseInput {
  *
  * Elem, Input, inputType and inputElemType must be set
  */
-trait ArrayInput extends ParseInput {
+trait ArrayLikeInput extends ParseInput {
 
   import c.universe._
 
@@ -83,7 +83,7 @@ trait ArrayInput extends ParseInput {
 /**
  * ArrayInput which work on Strings
  */
-trait StringInput extends ArrayInput {
+trait StringInput extends ArrayLikeInput {
 
   import c.universe._
 
@@ -107,4 +107,17 @@ trait StringInput extends ArrayInput {
     q"input.substring($begin,$end)"
   }
   override def getPositionned(offset: c.Tree): c.Tree = q"inputpositioned.get($offset)"
+}
+
+trait SetArrayInputType
+
+trait ArrayInput extends ArrayLikeInput {
+
+  protected val typ:c.WeakTypeTag[Elem]// = implicitly[c.WeakTypeTag[Elem]]
+
+  import c.universe._
+
+  def inputType = tq"Array[$typ]"
+  def inputElemType = tq"$typ"
+
 }

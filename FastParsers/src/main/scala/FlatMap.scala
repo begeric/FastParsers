@@ -26,11 +26,6 @@ trait FlatMapImpl extends InlineRules with CombinatorImpl {
     case _                      => super.expandCallRule(tree, rulesMap, rulesPath)
   }
 
-  override def prettyPrint(tree: c.Tree) = tree match {
-    case q"$a flatMap[$d]($f)"  => prettyPrint(a) + ".flatMap(" + prettyPrint(f) + ")"
-    case q"$a  >>[$d]($f)"  => prettyPrint(a) + ".>> (" + prettyPrint(f) + ")"
-    case _ => super.prettyPrint(tree)
-  }
 
   private def expandCallRuleFlatMap(tree: c.Tree, rulesMap: HashMap[String, RuleInfo], rulesPath: List[String]): c.Tree = {
     def expandBody(body: c.Tree) = body match {
@@ -49,10 +44,17 @@ trait FlatMapImpl extends InlineRules with CombinatorImpl {
   }
 
   override def expand(tree: c.Tree, rs: ResultsStruct) = tree match {
-    case q"FastParsers.flatmapparsers[$d]($a)" => expand(a, rs)
+    case q"$_.flatmapparsers[$d]($a)" => expand(a, rs)
     case q"$a flatMap[$d]($f)" => parseFlatMap(a, f, d, rs)
     case q"$a >>[$d]($f)" => parseFlatMap(a, f, d, rs)
     case _ => super.expand(tree, rs)
+  }
+
+  override def prettyPrint(tree: c.Tree) = tree match {
+    case q"$_.flatmapparsers[$d]($a)" => prettyPrint(a)
+    case q"$a flatMap[$d]($f)"        => prettyPrint(a) + ".flatMap(" + prettyPrint(f) + ")"
+    case q"$a  >>[$d]($f)"            => prettyPrint(a) + ".>> (" + prettyPrint(f) + ")"
+    case _ => super.prettyPrint(tree)
   }
 
   private def parseFlatMap(a: c.Tree, f: c.Tree, typ: c.Tree, rs: ResultsStruct) = f match {

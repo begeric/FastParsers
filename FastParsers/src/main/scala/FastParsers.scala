@@ -35,8 +35,8 @@ trait FastParsersImpl {
       case q"{..$body}" =>
         body.foreach {
           case q"def $name:${d: TypeTree} = $b" =>
-            val x = d.tpe match {
-              case TypeRef(_, _, List(z)) => z//;c.abort(c.enclosingPosition,showRaw(d.tpe)) //q"Any".tpe//q"var x:${d.tpe}" //check it is a parser
+            val x = c.typecheck(b).tpe match {
+              case TypeRef(_, _, List(z)) => z //q"Any".tpe//q"var x:${d.tpe}" //check it is a parser
               case _ => c.abort(c.enclosingPosition, "incorrect parser type")
             }
             val TermName(nameString) = name
@@ -71,3 +71,25 @@ class BaseImpl(val c: Context) extends FastParsersImpl with InlineRules
 
   override def FastParser(rules: c.Tree) = super.FastParser(rules) //why ??
 }
+
+
+
+class FastArrayParsers[T] extends BaseParsers[T, Array[T]] with RepParsers with FlatMapParsers {
+  def apply(rules: => Unit): Any = macro ArrayParserImpl.ArrayParserImpl[T]
+}
+
+object ArrayParserImpl {
+  def ArrayParserImpl[T: context.WeakTypeTag](context: Context)(rules: context.Tree): context.Tree =  {
+    new FastParsersImpl with InlineRules
+      with ParseRules with BaseParsersImpl with RepParsersImpl
+      with FlatMapImpl with RuleCombiner with ArrayInput {
+
+      type Elem = T
+      type Input = Array[Elem]
+      val c: context.type = context
+      val typ = implicitly[c.WeakTypeTag[T]]
+
+    }.FastParser(rules)
+  }
+}
+

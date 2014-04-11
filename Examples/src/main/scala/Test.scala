@@ -16,7 +16,7 @@ import scala.language.implicitConversions
 object Test {
 
  def main(args: Array[String])  {
-   import FastParsers._
+  /* import FastParsers._
    import InputWindow._
    import scala.util.parsing.input._
 
@@ -24,7 +24,7 @@ object Test {
 
    val parser = FastParser{
      //def rule2 = number >> (x => take(x))
-     /*def rule1 = 'a' ~ 'b'
+     def rule1 = 'a' ~ 'b'
      def rule2 = number >> (x => rule1 ~ take(x) ^^ (y => (x,y)))
      def rule3 = number >> {case 0 => rule1 ~ take(1);case x => take(2)}
      /*def rule4 = number >> (x => {take(x) ~ take(x)})   */
@@ -43,7 +43,7 @@ object Test {
 
      def rule10 = rep(not('a','b',('x','z')))
 
-     def rule12 = if (2 > 3) 'a' ~ 'b' else 'c' ~ 'd'   */
+     def rule12 = if (2 > 3) 'a' ~ 'b' else 'c' ~ 'd'
 
 
      def rule13 = /*rep('a') ~> */positioned('b' ^^^ SuperStuff(1))
@@ -62,7 +62,17 @@ object Test {
      case Success(x : Positional) => println(x + " : " + x.pos)
      case Success(x) => println(x)
      case Failure(msg) => println("failure: " + msg)
+   }       */
+
+   object IntArrayParser extends FastArrayParsers[Int]
+   import IntArrayParser._
+   val arrayParser = IntArrayParser {
+     def rule1:Parser[_] = rep(0 ~ 2) ~ 5
    }
 
+   arrayParser.rule1(Array(0,2,5)) match {
+     case Success(x) => println(x)
+     case Failure(msg) => println("failure: " + msg)
+   }
  }
 }
