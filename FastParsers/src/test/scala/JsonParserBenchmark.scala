@@ -16,21 +16,25 @@ class JsonParserBenchmark extends PerformanceTest {
 
   val range = Gen.enumeration("size")(10)
 
-  val files = (1 to 5).foldLeft(new ListBuffer[String]){ (acc,i) =>
-    val data = scala.io.Source.fromFile("FastParsers/src/test/resources/json" + i).getLines mkString "\n"
-    acc.append(data)
+  val files = (1 to 5).foldLeft(new ListBuffer[(String,String)]){ (acc,i) =>
+    val filename = "FastParsers/src/test/resources/json" + i
+    val data = scala.io.Source.fromFile(filename).getLines mkString "\n"
+    acc.append((data,filename))
     acc
   }.toList
 
-  val bigFile = scala.io.Source.fromFile("FastParsers/src/test/resources/" + "json.big1").getLines mkString "\n"
+  val bigFileName = "FastParsers/src/test/resources/" + "json.big1"
+  val bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
 
 
   /* tests */
   performance of "JsonParser@FastParsers" in {
     measure method "value" in {
       using(range) in { j =>
-        for (i <- 1 to j; m <- files)
-          jsonparser.value(m)
+        for (i <- 1 to j; m <- files){
+          jsonparser.value(m._1)
+          println("@(" + i + ", " + j + ")Parsed " + m._2)
+        }
       }
     }
   }
@@ -38,8 +42,10 @@ class JsonParserBenchmark extends PerformanceTest {
   performance of "JsonParser:Big@FastParsers" in {
     measure method "value" in {
       using(range) in { j =>
-        for (i <- 1 to j)
+        for (i <- 1 to j) {
           jsonparser.value(bigFile)
+          println("@(" + i + ", " + j + ")Parsed " + bigFileName)
+        }
       }
     }
   }
@@ -47,8 +53,10 @@ class JsonParserBenchmark extends PerformanceTest {
   performance of "JsonParser@Combinator" in {
     measure method "value" in {
       using(range) in { j =>
-        for (i <- 1 to j; m <- files)
-          JSON.parse(JSON.value,m)
+        for (i <- 1 to j; m <- files) {
+          JSON.parse(JSON.value,m._1)
+          println("@(" + i + ", " + j + ")Parsed " + m._2)
+        }
       }
     }
   }
@@ -56,8 +64,10 @@ class JsonParserBenchmark extends PerformanceTest {
   performance of "JsonParser:Big@Combinator" in {
     measure method "value" in {
       using(range) in { j =>
-        for (i <- 1 to j)
+        for (i <- 1 to j){
           JSON.parse(JSON.value,bigFile)
+          println("@(" + i + ", " + j + ")Parsed " + bigFileName)
+        }
       }
     }
   }
