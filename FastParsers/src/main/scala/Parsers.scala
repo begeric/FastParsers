@@ -82,4 +82,6 @@ trait CombinatorImpl {
 
 
   def expand(tree: c.Tree, r: ResultsStruct): c.Tree = c.abort(c.enclosingPosition, "Not implemented combinator " + show(tree))
+
+  def prettyPrint(tree: c.Tree): String = "_" //TODO change ?
 }

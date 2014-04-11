@@ -171,6 +171,40 @@ trait BaseParsersImpl extends CombinatorImpl {
     case _                                  => super.expand(tree, rs) //q"""println(show(reify($tree).tree))"""
   }
 
+  override def prettyPrint(tree: c.Tree) = tree match {
+    case q"FastParsers.baseParsers[$d]($a)" => prettyPrint(a)
+    case q"FastParsers.toElem(($a,$b))"     => "(" + prettyPrint(a) + ", " + prettyPrint(b) + ")"
+    case q"FastParsers.toElem($elem)"       => prettyPrint(elem)
+    case q"FastParsers.elemParser($elem)"   => prettyPrint(elem)
+    case q"FastParsers.accept(..$a)"        => "accept(" + a.map(prettyPrint(_)) + ")"
+    case q"FastParsers.not(..$a)"           => "not(" + a.map(prettyPrint(_)) + ")"
+    case q"FastParsers.acceptIf($f)"        => "acceptIf(" + prettyPrint(f) + ")"
+    case q"FastParsers.wildcard"            => "wildcard"
+    case q"FastParsers.guard[$d]($a)"       => "guard(" + prettyPrint(a) + ")"
+    case q"FastParsers.takeWhile($f)"       => "takeWhile(" + prettyPrint(f) + ")"
+    case q"FastParsers.take($n)"            => "take(" + show(n) + ")"
+    case q"FastParsers.raw[$d]($a)"         => "raw(" + prettyPrint(a) + ")"
+    case q"FastParsers.phrase[$d]($a)"      => "phrase(" + prettyPrint(a) + ")"
+    case q"FastParsers.failure($a)"         => "failure(" + prettyPrint(a) + ")"
+    case q"FastParsers.success[$d]($a)"     => "success(" + prettyPrint(a) + ")"
+    case q"FastParsers.position"            => "position"
+    case q"FastParsers.positioned[$d]($a)"  => "positioned(" + prettyPrint(a) + ")"
+    case q"$a ~[$d] $b"                     => "(" + prettyPrint(a) + " ~ " + prettyPrint(b) + ")"
+    case q"$a ~>[$d] $b"                    => "(" + prettyPrint(a) + " ~> " + prettyPrint(b) + ")"
+    case q"$a <~[$d] $b"                    => "(" + prettyPrint(a) + " <~ " + prettyPrint(b) + ")"
+    case q"$a ||[$d] $b"                    => prettyPrint(a) + " | " + prettyPrint(b)
+    case q"$a |[$d] $b"                     => prettyPrint(a) + " | " + prettyPrint(b)
+    case q"$a ^^[$d] $f"                    => prettyPrint(a) + " ^^(" + prettyPrint(f) + ")"
+    case q"$a map[$d] $f"                   => prettyPrint(a) + " map (" + prettyPrint(f) + ")"
+    case q"$a ^^^[$d] $v"                   => prettyPrint(a) + " ^^^ (" + prettyPrint(v) + ")"
+    case q"$a filter[$d] $f"                => prettyPrint(a) + " filter (" + prettyPrint(f) + ")"
+    case q"$a withFailureMessage $msg"      => prettyPrint(a) + " withFailureMessage (" + show(msg) + ")"
+    case q"call[$d](${ruleCall: TermName})" => show(ruleCall)
+    case q"compound[$d]($a)"                => "(" + prettyPrint(a) + ")"
+    case q"if ($cond) $a else $b"           => "if (" + prettyPrint(cond) + ")" + prettyPrint(a) + " else " + prettyPrint(b)
+    case _                                  => super.prettyPrint(tree)
+  }
+
 
   private def parseElem(a: c.Tree, rs: ResultsStruct) = {
     val result = TermName(c.freshName)

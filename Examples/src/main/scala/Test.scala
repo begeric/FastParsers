@@ -46,7 +46,7 @@ object Test {
      def rule12 = if (2 > 3) 'a' ~ 'b' else 'c' ~ 'd'   */
 
 
-     def rule13 = rep('a') ~> positioned('b' ^^^ SuperStuff(1))         //TODO if positioned('b' ^^^ SuperStuff(1)) -> mega fail !!!
+     def rule13 = /*rep('a') ~> */positioned('b' ^^^ SuperStuff(1))
 
      def rule14 = until('a' || 'b','b' ~ 'c') ~ 'a'
 
@@ -58,7 +58,7 @@ object Test {
      def op2 = '*' ^^^ ((x:Int,y:Int) => x * y)  || '/' ^^^ ((x:Int,y:Int) => x / y) */
    }
 
-   parser.rule14("aabaababcaa") match {
+   parser.rule14("aabbabaabcaa") match {
      case Success(x : Positional) => println(x + " : " + x.pos)
      case Success(x) => println(x)
      case Failure(msg) => println("failure: " + msg)

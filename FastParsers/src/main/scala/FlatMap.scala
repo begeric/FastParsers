@@ -26,6 +26,12 @@ trait FlatMapImpl extends InlineRules with CombinatorImpl {
     case _                      => super.expandCallRule(tree, rulesMap, rulesPath)
   }
 
+  override def prettyPrint(tree: c.Tree) = tree match {
+    case q"$a flatMap[$d]($f)"  => prettyPrint(a) + ".flatMap(" + prettyPrint(f) + ")"
+    case q"$a  >>[$d]($f)"  => prettyPrint(a) + ".>> (" + prettyPrint(f) + ")"
+    case _ => super.prettyPrint(tree)
+  }
+
   private def expandCallRuleFlatMap(tree: c.Tree, rulesMap: HashMap[String, RuleInfo], rulesPath: List[String]): c.Tree = {
     def expandBody(body: c.Tree) = body match {
       case q"{..$body;$parser}" => q"{..$body;${expandCallRule(parser, rulesMap, rulesPath)}}"

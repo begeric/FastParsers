@@ -39,6 +39,16 @@ trait TokenParsersImpl extends CombinatorImpl {
     case _                            => super.expand(tree, rs)
   }
 
+  override def prettyPrint(tree: c.Tree) = tree match {
+    case q"FastParsers.lit($str)"     => "lit(" + show(str) + ")"
+    case q"FastParsers.ident"         => "ident"
+    case q"FastParsers.stringLit"     => "stringLit"
+    case q"FastParsers.number"        => "number"
+    case q"FastParsers.decimalNumber" => "decimalNumber"
+    case q"FastParsers.whitespaces"   => "whitespaces"
+    case _                            => super.prettyPrint(tree)
+  }
+
   private def skipWhiteSpace = {
     q"""
     while($isNEOI && ($currentInput == ' ' || $currentInput == '\t' || $currentInput == '\n' || $currentInput == '\r'))

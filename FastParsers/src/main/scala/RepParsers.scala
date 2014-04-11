@@ -64,6 +64,22 @@ trait RepParsersImpl extends CombinatorImpl {
     case _                                        => super.expand(tree, rs)
   }
 
+  override def prettyPrint(tree: c.Tree) = tree match {
+    case q"FastParsers.repParser[$d]($a)"         => prettyPrint(a)
+    case q"FastParsers.rep[$d]($a,$min,$max)"     => "rep(" + prettyPrint(a) + ", " + show(min) + ", " + show(max) + ")"
+    case q"FastParsers.rep1[$d]($a)"              => "rep1(" + prettyPrint(a) + ")"
+    case q"FastParsers.repN[$d]($a,$n)"           => "repN(" + prettyPrint(a) + ", " + show(n) + ")"
+    case q"FastParsers.opt[$d]($a)"               => "opt(" + prettyPrint(a) + ")"
+    case q"FastParsers.repsep[$typ,$d]($a,$b)"    => "repsep(" + prettyPrint(a) + ", " + prettyPrint(b) + ")"
+    case q"FastParsers.repsep1[$typ,$d]($a,$b)"   => "repsep1(" + prettyPrint(a) + ", " + prettyPrint(b) + ")"
+    case q"FastParsers.until[$typ,$d]($a,$b)"     => "until(" + prettyPrint(a) + ", " + prettyPrint(b) + ")"
+    case q"$a foldLeft[$d]($init,$f)"             => prettyPrint(a) + " foldLeft(" + show(init) + ", " + prettyPrint(f) + ")"
+    case q"$a foldRight[$d,$ptype]($init,$f)"     => prettyPrint(a) + " foldRight(" + show(init) + ", " + prettyPrint(f) + ")"
+    case q"$a reduceLeft[$d]($f)"                 => prettyPrint(a) + " reduceLeft(" + prettyPrint(f) + ")"
+    case q"$a reduceRight[$d]($f)"                => prettyPrint(a) + " reduceRight(" + prettyPrint(f) + ")"
+    case _                                        => super.prettyPrint(tree)
+  }
+
   private def parseRep(a: c.Tree, typ: c.Tree, min: c.Tree, max: c.Tree, rs: ResultsStruct) = {
     val counter = TermName(c.freshName)
     val cont = TermName(c.freshName)
