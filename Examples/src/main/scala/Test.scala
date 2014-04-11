@@ -74,9 +74,5 @@ object Test {
      case Success(x) => println(x)
      case Failure(msg) => println("failure: " + msg)
    }
-
-   import java.io.FileInputStream
-   val file = new FileInputStream("fsdf")
-   file.
  }
 }

@@ -22,6 +22,8 @@ class JsonParserBenchmark extends PerformanceTest {
     acc
   }.toList
 
+  val bigFile = scala.io.Source.fromFile("FastParsers/src/test/resources/" + "json.big1").getLines mkString "\n"
+
 
   /* tests */
   performance of "JsonParser@FastParsers" in {
@@ -33,11 +35,29 @@ class JsonParserBenchmark extends PerformanceTest {
     }
   }
 
+  performance of "JsonParser:Big@FastParsers" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          jsonparser.value(bigFile)
+      }
+    }
+  }
+
   performance of "JsonParser@Combinator" in {
     measure method "value" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
           JSON.parse(JSON.value,m)
+      }
+    }
+  }
+
+  performance of "JsonParser:Big@Combinator" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          JSON.parse(JSON.value,bigFile)
       }
     }
   }

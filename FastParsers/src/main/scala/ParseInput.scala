@@ -109,8 +109,6 @@ trait StringInput extends ArrayLikeInput {
   override def getPositionned(offset: c.Tree): c.Tree = q"inputpositioned.get($offset)"
 }
 
-trait SetArrayInputType
-
 trait ArrayInput extends ArrayLikeInput {
 
   protected val typ:c.WeakTypeTag[Elem]// = implicitly[c.WeakTypeTag[Elem]]
