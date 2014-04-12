@@ -161,7 +161,7 @@ trait BaseParsersImpl extends CombinatorImpl {
     case q"$a ^^^[$d] $v"                   => parseValue(a, v, d, rs)
     case q"$a filter[$d] $f"                => parseFilter(a, f, d, rs)
     case q"$a withFailureMessage $msg"      => parseWithFailureMessage(a, msg, rs)
-    case q"call[$d](${ruleCall: TermName})" => parseRuleCall(ruleCall, d, rs)
+    case q"call[$d](${ruleCall: TermName},..$params)" => parseRuleCall(ruleCall, params, d, rs)
     case q"compound[$d]($a)"                => parseCompound(a, d, rs)
     case q"if ($cond) $a else $b"           =>
       c.typecheck(tree).tpe match {
@@ -199,7 +199,7 @@ trait BaseParsersImpl extends CombinatorImpl {
     case q"$a ^^^[$d] $v"                   => prettyPrint(a) + " ^^^ (" + prettyPrint(v) + ")"
     case q"$a filter[$d] $f"                => prettyPrint(a) + " filter (" + prettyPrint(f) + ")"
     case q"$a withFailureMessage $msg"      => prettyPrint(a) + " withFailureMessage (" + show(msg) + ")"
-    case q"call[$d](${ruleCall: TermName})" => show(ruleCall)
+    case q"call[$d]($rule,..$params)"       => show(rule)
     case q"compound[$d]($a)"                => "(" + prettyPrint(a) + ")"
     case q"if ($cond) $a else $b"           => "if (" + prettyPrint(cond) + ")" + prettyPrint(a) + " else " + prettyPrint(b)
     case _                                  => super.prettyPrint(tree)
@@ -543,14 +543,18 @@ trait BaseParsersImpl extends CombinatorImpl {
     """
   }
 
-  private def parseRuleCall(ruleCall: TermName, typ: c.Tree, rs: ResultsStruct) = {
+  private def parseRuleCall(ruleCall: TermName, params: List[c.Tree], typ: c.Tree, rs: ResultsStruct) = {
     val callResult = TermName(c.freshName)
     val result = TermName(c.freshName)
 
     // val $callResult = $ruleCall(input.substring($offset),0)
     //${advanceTo(q"$callResult.inputPos")}
+    val call = params match {
+      case Nil => q"$ruleCall(input,$pos)"
+      case p => q"$ruleCall(input,..$p,$pos)"
+    }
     val tree = q"""
-        val $callResult = $ruleCall(input,$pos)
+        val $callResult = $call
         success = $callResult.success
         if (success){
           ${setpos(q"$callResult.inputPos")}

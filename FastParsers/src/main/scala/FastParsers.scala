@@ -30,19 +30,25 @@ trait FastParsersImpl {
    * @return An HashMap containing (rulename, corresponging code)
    */
   private def getBasicStructure(rules: c.Tree) = {
+
+    def getReturnType(ruleCode: c.Tree): Type = c.typecheck(ruleCode).tpe match {
+      //case tq"$_.Parser[$d]" => c.abort(c.enclosingPosition, "correct parser type")
+      //HACK or not HACK ?
+      case TypeRef(_, y, List(z)) if y.fullName == "Parser" => z //q"Any".tpe//q"var x:${d.tpe}" //check it is a parser
+      case v => c.abort(c.enclosingPosition, "incorrect parser type " + show(v))
+    }
+
     val rulesMap = new HashMap[String, RuleInfo]()
     rules match {
       case q"{..$body}" =>
         body.foreach {
-          case q"def $name:${d: TypeTree} = $b" =>
-            val x = c.typecheck(b).tpe match {
-              //case tq"$_.Parser[$d]" => c.abort(c.enclosingPosition, "correct parser type")
-                                                           //HACK or not HACK ?
-              case TypeRef(_, y, List(z)) if y.fullName == "Parser" => z //q"Any".tpe//q"var x:${d.tpe}" //check it is a parser
-              case v => c.abort(c.enclosingPosition, "incorrect parser type " + show(v))
-            }
+          case q"def $name(..$params): $d = $b" =>
             val TermName(nameString) = name
-            val in = (nameString, Rule(x, b))
+            val in = (nameString, ParamsRule(getReturnType(b),params, b))
+            rulesMap += in
+          case q"def $name: $d = $b" =>
+            val TermName(nameString) = name
+            val in = (nameString, Rule(getReturnType(b), b))
             rulesMap += in
           case q"()" =>
           case x => c.abort(c.enclosingPosition, "body must only contain rule definition with the following form : def ruleName = body : " + x)

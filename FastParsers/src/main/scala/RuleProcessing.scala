@@ -50,10 +50,13 @@ trait InlineRules extends MapRules {
   def expandRules(rulesMap: HashMap[String, RuleInfo]) = {
     val expandedRulesMap = new HashMap[String, RuleInfo]()
     for (k <- rulesMap.keys) {
-      val ruleType = rulesMap(k).typ
-      val ruleCode = rulesMap(k).code
-      val rule = expandCallRule(ruleCode, rulesMap, List(k))
-      expandedRulesMap += ((k, Rule(ruleType, rule)))
+      val rule = rulesMap(k)
+      val newRuleCode = expandCallRule(rule.code, rulesMap, List(k))
+      val newRule = rule match {
+        case r: Rule        => r.copy(code = newRuleCode)
+        case r: ParamsRule  => r.copy(code = newRuleCode)
+      }
+      expandedRulesMap += ((k, newRule))
     }
     expandedRulesMap
   }
@@ -67,23 +70,34 @@ trait InlineRules extends MapRules {
       val callee = expandCallRule(a, rulesMap, rulesPath)
       val args = b.map(expandCallRule(_, rulesMap, rulesPath))
       q"$callee.$m[..$d](..$args)"
+    case q"${ruleCall: TermName}(..$args)" =>
+      val name = ruleCall.toString
+      rulesMap.get(name) match {
+        case Some(_: Rule) => c.abort(c.enclosingPosition,name + " called with parameters")
+        case Some(ParamsRule(typ, params, code)) =>
+          q"call[$typ]($ruleCall, ..$args)"
+        case _ => tree
+      }
     case q"$f[..$d](..$b)" =>
       val callee = expandCallRule(f, rulesMap, rulesPath) //because of repFold and al curried stuff
-    val args = b.map(expandCallRule(_, rulesMap, rulesPath))
+      val args = b.map(expandCallRule(_, rulesMap, rulesPath))
       q"$callee[..$d](..$args)"
     case q"$a.${f: TermName}" =>
       val callee = expandCallRule(a, rulesMap, rulesPath)
       q"$callee.$f"
     case q"${ruleCall: TermName}" =>
       val name = ruleCall.toString
-      if (rulesMap.keySet.contains(name)) {
-        if (!rulesPath.contains(name))
-          q"compound[${rulesMap(name).typ}](${expandCallRule(rulesMap(name).code, rulesMap, name :: rulesPath)})"
-        else
-          q"call[${rulesMap(name).typ}]($tree)"
+      rulesMap.get(name) match {
+        case Some(Rule(typ,code)) =>
+          if (!rulesPath.contains(name))
+            q"compound[$typ](${expandCallRule(code, rulesMap, name :: rulesPath)})"
+          else
+            q"call[$typ]($ruleCall)"
+        case Some(_: ParamsRule) =>
+          c.abort(c.enclosingPosition,name + " called without parameters")
+        case _ =>
+          tree
       }
-      else
-        tree
     case _ => tree
   }
 }
@@ -102,23 +116,22 @@ trait ParseRules extends MapRules {
     val map = new HashMap[String, RuleInfo]()
 
     for (k <- rulesMap.keys) {
-      val typ = rulesMap(k).typ
-      val code = rulesMap(k).code
-      map += ((k, Rule(typ, createRuleDef(k, typ, code))))
+      val rule = rulesMap(k)
+      map += ((k, Rule(rule.typ, createRuleDef(k, rule))))
     }
 
     map
   }
 
-  private def createRuleDef(name: String, retType: c.Type, code: c.Tree): c.Tree = {
+  private def createRuleDef(name: String, rule: RuleInfo): c.Tree = {
     val ruleName = TermName(name)
     val startPosition = TermName(c.freshName)
     val rs = new ResultsStruct(new ListBuffer[Result]())
-    val ruleCode = expand(code, rs)
+    val ruleCode = expand(rule.code, rs)
     val initResults = rs.results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
     val tupledResults = combineResults(rs.results)
 
-    val result = q"""ParseResult(success,msg,if (success) $tupledResults else ${zeroValue(tq"$retType")},$pos)"""
+    val result = q"""ParseResult(success,msg,if (success) $tupledResults else ${zeroValue(tq"${rule.typ}")},$pos)"""
 
     val wrapCode =
       q"""
@@ -128,8 +141,13 @@ trait ParseRules extends MapRules {
         $ruleCode
         $result
     """
+    rule match {
+      case ParamsRule(_,params,_) =>
+        c.untypecheck(q"""def $ruleName(input:$inputType,..$params,$startPosition:Int = 0):ParseResult[${rule.typ}] = ${initInput(q"$startPosition", wrapCode)}""")
+      case _:Rule =>
+        q"""def $ruleName(input:$inputType,$startPosition:Int = 0):ParseResult[${rule.typ}] = ${initInput(q"$startPosition", wrapCode)}"""
+    }
 
-    q"""def $ruleName(input:$inputType,$startPosition:Int = 0):ParseResult[$retType] = ${initInput(q"$startPosition", wrapCode)}"""
   }
 
 }

@@ -16,7 +16,7 @@ import scala.language.implicitConversions
 object Test {
 
  def main(args: Array[String])  {
-  /* import FastParsers._
+   import FastParsers._
    import InputWindow._
    import scala.util.parsing.input._
 
@@ -50,6 +50,11 @@ object Test {
 
      def rule14 = until('a' || 'b','b' ~ 'c') ~ 'a'
 
+
+     def rule15(x: Int) = repN('a',x)
+
+     def rule16(x: Int) = rule15(x)
+
      //def rule13 = acceptRec('a',('x','y'),('0','9')) || acceptRec('b') ~ acceptRec('b') ^^ (x => x)
 
      /*def expr = term chainl1 op1
@@ -58,21 +63,21 @@ object Test {
      def op2 = '*' ^^^ ((x:Int,y:Int) => x * y)  || '/' ^^^ ((x:Int,y:Int) => x / y) */
    }
 
-   parser.rule14("aabbabaabcaa") match {
+   parser.rule16("aaabbabaaabca",3) match {
      case Success(x : Positional) => println(x + " : " + x.pos)
      case Success(x) => println(x)
-     case Failure(msg) => println("failure: " + msg)
-   }       */
+     case Failure(msg) => println("failure : " + msg)
+   }
 
-   object IntArrayParser extends FastArrayParsers[Int]
+   /*object IntArrayParser extends FastArrayParsers[Int]
    import IntArrayParser._
    val arrayParser = IntArrayParser {
-     def rule1:Parser[_] = rep(0 ~ 2) ~ 5
+     def rule1: Parser[_] = rep(0 ~ 2) ~ 5
    }
 
    arrayParser.rule1(Array(0,2,5)) match {
      case Success(x) => println(x)
-     case Failure(msg) => println("failure : " + msg)
-   }
+     case Failure(msg) => println("failure: " + msg)
+   } */
  }
 }
