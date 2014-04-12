@@ -42,7 +42,7 @@ trait FastParsersImpl {
               case v => c.abort(c.enclosingPosition, "incorrect parser type " + show(v))
             }
             val TermName(nameString) = name
-            val in = (nameString, (x, b))
+            val in = (nameString, Rule(x, b))
             rulesMap += in
           case q"()" =>
           case x => c.abort(c.enclosingPosition, "body must only contain rule definition with the following form : def ruleName = body : " + x)

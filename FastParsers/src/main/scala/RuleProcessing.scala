@@ -5,7 +5,11 @@ trait RulesProcessing {
   val c: Context
   type RuleType = c.Type
   type RuleCode = c.Tree
-  type RuleInfo = (RuleType, RuleCode)
+  //type RuleInfo = (RuleType, RuleCode)
+
+  abstract class RuleInfo(val typ: RuleType,val code: RuleCode)
+  case class ParamsRule(override val typ: RuleType, rawparams: List[c.Tree], override val code: RuleCode) extends RuleInfo(typ,code)
+  case class Rule(override val typ: RuleType, override val code: RuleCode) extends RuleInfo(typ,code)
 }
 
 /**
@@ -46,10 +50,10 @@ trait InlineRules extends MapRules {
   def expandRules(rulesMap: HashMap[String, RuleInfo]) = {
     val expandedRulesMap = new HashMap[String, RuleInfo]()
     for (k <- rulesMap.keys) {
-      val ruleType = rulesMap(k)._1
-      val ruleCode = rulesMap(k)._2
+      val ruleType = rulesMap(k).typ
+      val ruleCode = rulesMap(k).code
       val rule = expandCallRule(ruleCode, rulesMap, List(k))
-      expandedRulesMap += ((k, (ruleType, rule)))
+      expandedRulesMap += ((k, Rule(ruleType, rule)))
     }
     expandedRulesMap
   }
@@ -74,9 +78,9 @@ trait InlineRules extends MapRules {
       val name = ruleCall.toString
       if (rulesMap.keySet.contains(name)) {
         if (!rulesPath.contains(name))
-          q"compound[${rulesMap(name)._1}](${expandCallRule(rulesMap(name)._2, rulesMap, name :: rulesPath)})"
+          q"compound[${rulesMap(name).typ}](${expandCallRule(rulesMap(name).code, rulesMap, name :: rulesPath)})"
         else
-          q"call[${rulesMap(name)._1}]($tree)"
+          q"call[${rulesMap(name).typ}]($tree)"
       }
       else
         tree
@@ -98,9 +102,9 @@ trait ParseRules extends MapRules {
     val map = new HashMap[String, RuleInfo]()
 
     for (k <- rulesMap.keys) {
-      val typ = rulesMap(k)._1
-      val code = rulesMap(k)._2
-      map += ((k, (typ, createRuleDef(k, typ, code))))
+      val typ = rulesMap(k).typ
+      val code = rulesMap(k).code
+      map += ((k, Rule(typ, createRuleDef(k, typ, code))))
     }
 
     map
@@ -142,7 +146,7 @@ trait RuleCombiner extends ReduceRules {
     val anon = TypeName(c.freshName)
     val dmmy = TermName(c.freshName) //no joke : see http://stackoverflow.com/questions/14370842/getting-a-structural-type-with-an-anonymous-classs-methods-from-a-macro
 
-    val methods = rules.values.map(_._2)
+    val methods = rules.values.map(_.code)
 
     q"""
       class $anon {
