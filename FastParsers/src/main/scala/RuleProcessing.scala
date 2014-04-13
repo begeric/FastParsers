@@ -61,6 +61,13 @@ trait InlineRules extends MapRules {
     expandedRulesMap
   }
 
+
+  def substitute(symbol: Symbol, value: c.Tree, in: c.Tree) = new Transformer {
+    override def transform(tree: c.Tree): c.Tree =
+      if (tree.symbol == symbol) value
+      else  super.transform(tree)
+  }.transform(in)
+
   /**
    * Traverse the rule tree and expand the rule when it can
    */
@@ -75,7 +82,15 @@ trait InlineRules extends MapRules {
       rulesMap.get(name) match {
         case Some(_: Rule) => c.abort(c.enclosingPosition,name + " called with parameters")
         case Some(ParamsRule(typ, params, code)) =>
-          q"call[$typ]($ruleCall, ..$args)"
+          if (params.size != args.size)
+            c.abort(c.enclosingPosition,"not enough parameters for rule " + name)
+          else if (!rulesPath.contains(name)) {
+            //c.abort(c.enclosingPosition,"I'm her2e")
+            val substituted = params.zip(args).foldLeft(code){(acc,c) => substitute(c._1.symbol,c._2,acc)}
+            q"compound[$typ](${expandCallRule(substituted, rulesMap, name :: rulesPath)})"
+          }
+          else
+           q"call[$typ]($ruleCall, ..$args)"
         case _ => tree
       }
     case q"$f[..$d](..$b)" =>

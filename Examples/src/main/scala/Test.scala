@@ -22,49 +22,59 @@ object Test {
 
    case class SuperStuff(x: Int) extends Positional
 
-   val parser = FastParser{
+
+    val parser = FastParser{
      //def rule2 = number >> (x => take(x))
-     def rule1 = 'a' ~ 'b'
-     def rule2 = number >> (x => rule1 ~ take(x) ^^ (y => (x,y)))
-     def rule3 = number >> {case 0 => rule1 ~ take(1);case x => take(2)}
-     /*def rule4 = number >> (x => {take(x) ~ take(x)})   */
-     def rule56 = (number ^^ (_.toString)) >> {case b => ':' ~> rep(b)}
+      def rule1 = 'a' ~ 'b'
+      def rule2 = number >> (x => rule1 ~ take(x) ^^ (y => (x,y)))
+      def rule3 = number >> {case 0 => rule1 ~ take(1);case x => take(2)}
+      /*def rule4 = number >> (x => {take(x) ~ take(x)})   */
+      def rule56 = (number ^^ (_.toString)) >> {case b => ':' ~> rep(b)}
 
-     def rule5 = 'a' || 'b' || failure("so bad")    //type = Any (how to change that)
-     def rule6 = 'a' || 'b' || success('c')
+      def rule5 = 'a' || 'b' || failure("so bad")    //type = Any (how to change that)
+      def rule6 = 'a' || 'b' || success('c')
 
-     def rule7 = raw(range('a','z') ~ ':' ~ rep(range('a','z') || range('0','9')))
+      def rule7 = raw(range('a','z') ~ ':' ~ rep(range('a','z') || range('0','9')))
 
-     def rule8:Parser[Int] = for (x <- number if x > 10) yield x
+      def rule8:Parser[Int] = for (x <- number if x > 10) yield x
 
-     def rule9 = for (a <- number;
-                      op <- '+' ^^^ ((x:Int,y:Int) => x + y) | '-' ^^^ ((x:Int,y:Int) => x - y);
-                      b <- number) yield (op(a,b))
+      def rule9 = for (a <- number;
+                       op <- '+' ^^^ ((x:Int,y:Int) => x + y) | '-' ^^^ ((x:Int,y:Int) => x - y);
+                       b <- number) yield (op(a,b))
 
-     def rule10 = rep(not('a','b',('x','z')))
+      def rule10 = rep(not('a','b',('x','z')))
 
-     def rule12 = if (2 > 3) 'a' ~ 'b' else 'c' ~ 'd'
-
-
-     def rule13 = /*rep('a') ~> */positioned('b' ^^^ SuperStuff(1))
-
-     def rule14 = until('a' || 'b','b' ~ 'c') ~ 'a'
+      def rule12 = if (2 > 3) 'a' ~ 'b' else 'c' ~ 'd'
 
 
-     def rule15(x: Int) = repN('a',x)
+      def rule13 = /*rep('a') ~> */positioned('b' ^^^ SuperStuff(1))
 
-     def rule16(x: Int) = rule15(x)
+      def rule14 = until('a' || 'b','b' ~ 'c') ~ 'a'
 
-     //def rule13 = acceptRec('a',('x','y'),('0','9')) || acceptRec('b') ~ acceptRec('b') ^^ (x => x)
+      def rule(x: Int) = repN('a',x) ^^ (y => println(y + " : " + x))
 
-     /*def expr = term chainl1 op1
-     def term = number chainl1 op2
-     def op1 = '+' ^^^ ((x:Int,y:Int) => x + y)  || '-' ^^^ ((x:Int,y:Int) => x - y)
-     def op2 = '*' ^^^ ((x:Int,y:Int) => x * y)  || '/' ^^^ ((x:Int,y:Int) => x / y) */
+      def rule15(x: Int) = repN('a',x)
+
+      def rule16(x: Int) = rule15(x)
+
+      def rule17 = rep1(('a' || 'b') ~ 'c') || 'd'
+
+      def rule18 = rule17 | 'e' ~ 'f'
+
+
+      //def rule13 = acceptRec('a',('x','y'),('0','9')) || acceptRec('b') ~ acceptRec('b') ^^ (x => x)
+
+      /*def expr = term chainl1 op1
+      def term = number chainl1 op2
+      def op1 = '+' ^^^ ((x:Int,y:Int) => x + y)  || '-' ^^^ ((x:Int,y:Int) => x - y)
+      def op2 = '*' ^^^ ((x:Int,y:Int) => x * y)  || '/' ^^^ ((x:Int,y:Int) => x / y) */
    }
 
-   parser.rule16("aaabbabaaabca",3) match {
-     case Success(x : Positional) => println(x + " : " + x.pos)
+
+   //getAST.get(parser)
+
+   parser.rule16("aaaaaa",4) match {
+     //case Success(x : Positional) => println(x + " : " + x.pos)
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

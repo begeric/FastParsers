@@ -1,9 +1,10 @@
 import scala.language.experimental.macros
 import scala.reflect.api.Universe
 import scala.reflect.macros.whitebox.Context
-import scala.annotation.compileTimeOnly
+import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.collection.mutable._
 
+class saveAST extends StaticAnnotation
 
 /**
  * General trait which create the basic needs of a FastParsers implementation.
@@ -38,11 +39,13 @@ trait FastParsersImpl {
       case v => c.abort(c.enclosingPosition, "incorrect parser type " + show(v))
     }
 
+
     val rulesMap = new HashMap[String, RuleInfo]()
     rules match {
       case q"{..$body}" =>
         body.foreach {
           case q"def $name(..$params): $d = $b" =>
+            //c.abort(c.enclosingPosition,show(substitute(params.head.symbol,q"1",b)))
             val TermName(nameString) = name
             val in = (nameString, ParamsRule(getReturnType(b),params, b))
             rulesMap += in
@@ -98,6 +101,16 @@ object ArrayParserImpl {
       val typ = implicitly[c.WeakTypeTag[T]]
 
     }.FastParser(rules)
+  }
+}
+
+object getAST {
+  def get(parser: Any):Any = macro getImpl
+
+  def getImpl(c: Context)(parser: c.Tree): c.Tree = {
+    import c.universe._
+
+    c.abort(c.enclosingPosition,show(parser.tpe))
   }
 }
 

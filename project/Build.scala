@@ -15,8 +15,10 @@ object MacroBuild extends Build {
 		
 		resolvers ++= Seq(
 		  "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases",
-		  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+		  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"/*,
+		  Classpaths.sbtPluginReleases*/
 		),
+		//addSbtPlugin("org.scoverage" %% "sbt-scoverage" % "0.98.0"),
 			
 	   libraryDependencies += "org.scalatest"  % "scalatest_2.10"   % "1.9.1" % "test",
 		
@@ -27,7 +29,6 @@ object MacroBuild extends Build {
 		libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.11.0-RC4",
 		
 		libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.11.0-RC4"/*,
-		
 		
 		testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")*/
 		
