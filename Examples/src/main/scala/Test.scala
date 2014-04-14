@@ -61,6 +61,8 @@ object Test {
 
       def rule18 = rule17 | 'e' ~ 'f'
 
+      //def rule19[T](p: Parser[T]) = '5' ~ 'b'
+
 
       //def rule13 = acceptRec('a',('x','y'),('0','9')) || acceptRec('b') ~ acceptRec('b') ^^ (x => x)
 

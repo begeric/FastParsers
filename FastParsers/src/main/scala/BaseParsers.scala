@@ -202,6 +202,8 @@ trait BaseParsersImpl extends CombinatorImpl {
     case q"call[$d]($rule,..$params)"       => show(rule)
     case q"compound[$d]($a)"                => "(" + prettyPrint(a) + ")"
     case q"if ($cond) $a else $b"           => "if (" + prettyPrint(cond) + ")" + prettyPrint(a) + " else " + prettyPrint(b)
+      case q"$_.toElemOrRange(($x,$y))"     => "(" + show(x) + ", " + show(y) + ")"
+    case q"$_.toElemOrRange($x)"            => show(x)
     case _                                  => super.prettyPrint(tree)
   }
 
@@ -251,15 +253,15 @@ trait BaseParsersImpl extends CombinatorImpl {
        }
        else {
           success = false
-          msg = "expected TODO at " + $pos
+          msg = "expected element in " + ${a.map(prettyPrint(_)).mkString} + " at " + $pos
         }
-     """ //TODO error msg
+     """
   }
 
   private def getAcceptedElem(elems: List[c.Tree]) = {
     def acceptElem(elem: c.Tree) = elem match {
-      case q"FastParsers.toElemOrRange(($x,$y))"  => q"($currentInput >= $x && $currentInput <= $y)"
-      case q"FastParsers.toElemOrRange($x)"       => q"$currentInput == $x"
+      case q"$_.toElemOrRange(($x,$y))"  => q"($currentInput >= $x && $currentInput <= $y)"
+      case q"$_.toElemOrRange($x)"       => q"$currentInput == $x"
     }
     elems.tail.foldLeft(q"${acceptElem(elems.head)}"){(acc, c) => q"$acc || ${acceptElem(c)}"}
   }
@@ -350,7 +352,7 @@ trait BaseParsersImpl extends CombinatorImpl {
         $result = new InputWindow(input,$beginpos,$pos)
       }
       else {
-        msg = "raw failure"
+        msg = "raw(" + ${prettyPrint(a)} +  ") failure at " + $pos
       }
     """
     results_tmp.setNoUse
@@ -524,7 +526,7 @@ trait BaseParsersImpl extends CombinatorImpl {
          $result = ${combineResults(results_tmp)}
        else {
         success = false
-        msg = "incorrect result for 'rule' at filter('rule') at " + $pos
+        msg = "incorrect result for " + ${prettyPrint(a)} + ".filter at " + $pos
         $rollback
        }
       """

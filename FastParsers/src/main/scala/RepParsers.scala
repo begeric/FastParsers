@@ -99,7 +99,7 @@ trait RepParsersImpl extends CombinatorImpl {
               success = $counter >= $min
               $cont = false
               if (!success)
-                msg = "expected at least " + $min + " occurence(s) for rep('rule') at " + $pos
+                msg = "expected at least " + $min + " occurence(s) for rep(" + ${prettyPrint(a)} + ", " + $min + ", " + $max + ") at " + $pos
               else
                 $rollback
 
@@ -368,7 +368,7 @@ trait RepParsersImpl extends CombinatorImpl {
        }
        else {
         success = false
-        msg = "reduceLeft failed"
+        msg = ${prettyPrint(a)} + ".reduceLeft failed"
         $rollback
        }
       """
@@ -386,7 +386,7 @@ trait RepParsersImpl extends CombinatorImpl {
         q"""
         if ($buffer.size == 0){
           success = false
-          msg = "reduceRight failed"
+          msg = ${prettyPrint(a)} + ".reduceRight failed"
         }
         else {
          success = true

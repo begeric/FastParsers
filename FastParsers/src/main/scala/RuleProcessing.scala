@@ -85,7 +85,6 @@ trait InlineRules extends MapRules {
           if (params.size != args.size)
             c.abort(c.enclosingPosition,"not enough parameters for rule " + name)
           else if (!rulesPath.contains(name)) {
-            //c.abort(c.enclosingPosition,"I'm her2e")
             val substituted = params.zip(args).foldLeft(code){(acc,c) => substitute(c._1.symbol,c._2,acc)}
             q"compound[$typ](${expandCallRule(substituted, rulesMap, name :: rulesPath)})"
           }
