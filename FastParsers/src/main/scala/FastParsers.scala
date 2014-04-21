@@ -43,12 +43,12 @@ trait FastParsersImpl {
     rules match {
       case q"{..$body}" =>
         body.foreach {
+          case q"def $name[..$t](..$params): $d = $b" =>
+            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params,t)
           case q"def $name(..$params): $d = $b" =>
-            val in = (name.toString, RuleInfo(getReturnType(d), b, params))
-            rulesMap += in
+            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params, Nil)
           case q"def $name: $d = $b" =>
-            val in = (name.toString, RuleInfo(getReturnType(d), b, Nil))
-            rulesMap += in
+            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, Nil, Nil)
           case q"()" =>
           case x => c.abort(c.enclosingPosition, "body must only contain rule definition with the following form : def ruleName = body : " + x)
         }

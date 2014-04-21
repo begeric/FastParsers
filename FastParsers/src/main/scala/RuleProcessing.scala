@@ -14,7 +14,7 @@ trait RulesProcessing {
   type RuleCode = c.Tree
   //type RuleInfo = (RuleType, RuleCode)
 
-  case class RuleInfo(typ: RuleType,code: RuleCode, params: List[c.Tree])
+  case class RuleInfo(typ: RuleType,code: RuleCode, params: List[c.Tree], typeParams: List[c.universe.TypeDef])
 }
 
 /**
@@ -83,9 +83,9 @@ trait InlineRules extends MapRules {
    def expandRuleCall(ruleName: TermName, args: List[c.Tree]): Option[c.Tree] = {
      val name = ruleName.toString
      rulesMap.get(name) match {
-       case Some(RuleInfo(typ, code, params)) =>
+       case Some(RuleInfo(typ, code, params, typParams)) =>
          if (params.size != args.size)
-           c.abort(c.enclosingPosition,"not enough parameters for rule " + name)
+           c.abort(c.enclosingPosition,"not enough parameters for rule " + name + " : " + show(params) + " : " + show(args))
          else if (!rulesPath.contains(name)) {
            val substituted = params.zip(args).foldLeft(code){(acc,c) => substitute(c._1.symbol,c._2,acc)}
            Some(q"compound[$typ](${expandCallRule(substituted, rulesMap, name :: rulesPath)})")
@@ -117,6 +117,8 @@ trait InlineRules extends MapRules {
         val callee = expandCallRule(a, rulesMap, rulesPath)
         val args = b.map(expandCallRule(_, rulesMap, rulesPath))
         q"$callee.$m[..$d](..$args)"
+     case q"${ruleName: TermName}[$_](..$args)" =>
+       expandRuleCall(ruleName,args) getOrElse tree
      case q"${ruleName: TermName}(..$args)" =>
         expandRuleCall(ruleName,args) getOrElse tree
      case q"$f[..$d](..$b)" =>
@@ -191,7 +193,8 @@ trait ParseRules extends MapRules {
    val replacedTree = removeCompileTimeAnnotation(rule.code)
    val allParams: List[c.Tree] = q"input: $inputType" :: rule.params ::: List(q"val $startPosition: Int = 0")
    val rulecode = c.untypecheck(
-     q" def $ruleName(..$allParams):ParseResult[${rule.typ}] = ${initInput(q"$startPosition", wrapCode)}") match {
+     q" def $ruleName[..${rule.typeParams}](..$allParams):ParseResult[${rule.typ}] = ${initInput(q"$startPosition", wrapCode)}") match {
+     case q"def $a[$t](..$b):$d = $e" => q"def $a[$t](..$b):$d @saveAST(${replacedTree}) = $e"
      case q"def $a(..$b):$d = $e" => q"def $a(..$b):$d @saveAST(${replacedTree}) = $e"
    }    //TODO o/w typecheck error. explain. This is retarded
    rulecode
@@ -219,8 +222,8 @@ trait RuleCombiner extends ReduceRules {
      val rule = rules(k)
      val ruleName = TermName(k)
      rule.params match {
-       case Nil =>      q"def $ruleName: Parser[${rule.typ}] = ???"
-       case params =>   q"def $ruleName(..${rule.params}): Parser[${rule.typ}] = ???"
+       case Nil =>      q"def $ruleName[..${rule.typeParams}]: Parser[${rule.typ}] = ???"
+       case params =>   q"def $ruleName[..${rule.typeParams}](..${rule.params}): Parser[${rule.typ}] = ???"
      }
 
    }
