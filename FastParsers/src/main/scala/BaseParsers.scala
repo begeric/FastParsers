@@ -179,9 +179,9 @@ trait BaseParsersImpl extends CombinatorImpl {
 
   override def prettyPrint(tree: c.Tree) = tree match {
     case q"$_.baseParsers[$d]($a)" => prettyPrint(a)
-    case q"$_.toElem(($a,$b))"     => "(" + prettyPrint(a) + ", " + prettyPrint(b) + ")"
-    case q"$_.toElem($elem)"       => prettyPrint(elem)
-    case q"$_.elemParser($elem)"   => prettyPrint(elem)
+    case q"$_.toElem(($a,$b))"     => "(" + a.toString + ", " + b.toString + ")"
+    case q"$_.toElem($elem)"       => elem.toString
+    case q"$_.elemParser($elem)"   => elem.toString
     case q"$_.accept(..$a)"        => "accept(" + a.map(prettyPrint(_)) + ")"
     case q"$_.not(..$a)"           => "not(" + a.map(prettyPrint(_)) + ")"
     case q"$_.acceptIf($f)"        => "acceptIf(" + prettyPrint(f) + ")"

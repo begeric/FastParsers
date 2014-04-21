@@ -74,64 +74,62 @@ trait InlineRules extends MapRules {
     case _ => None
   }
 
+
  /**
   * Traverse the rule tree and expand the rule when it can
   */
- def expandCallRule(tree: c.Tree, rulesMap: HashMap[String, RuleInfo], rulesPath: List[String]): c.Tree = tree match {
-   case q"if($c) $a else $b" => q"if($c) ${expandCallRule(a,rulesMap,rulesPath)} else ${expandCallRule(b,rulesMap,rulesPath)}"
-   /*case q"$a.${b: TermName}" if a.tpe <:< typeOf[FinalFastParserImpl] =>  //TODO put comments
-     c.typecheck(a).tpe.members.find(x => x.name == b) match {  // && x =:= typeOf[ParseResult]
-       case Some(rule) => rule.typeSignature.resultType match {
-         case AnnotatedType(annotations,typ) => annotations.find(_.tree.tpe =:= typeOf[saveAST]) match {
-             case Some(annot) =>
-               val code = annot.tree.children(1)
-               val codetyp = getInnerTypeOf[ParseResult[_]](typ) getOrElse c.abort(c.enclosingPosition, "wrong type for " + show(typ) + " during foreign call expansion")
-               expandCallRule(code,rulesMap,rulesPath)
-               q"compound[$codetyp](${expandCallRule(code, rulesMap, rulesPath)})"    //name :: rulesPath ?
-             case _ => c.abort(c.enclosingPosition,show(annotations.head.tree.tpe.typeSymbol.fullName) + " : is not saveAST")
-           }
-         case typ => c.abort(c.enclosingPosition,"error : " + show(rule.typeSignature) + " should be an annotated type")
-       }
-       case _ => c.abort(c.enclosingPosition, show(b) + " does not exists in" + show(a))  //should never happend actually  because wouldnt compile
-     } */
-   case q"$a.$m[..$d](..$b)" =>
-     val callee = expandCallRule(a, rulesMap, rulesPath)
-     val args = b.map(expandCallRule(_, rulesMap, rulesPath))
-     q"$callee.$m[..$d](..$args)"
-   /*case q"${ruleCall: TermName}(..$args)" =>
-     val name = ruleCall.toString
+ def expandCallRule(tree: c.Tree, rulesMap: HashMap[String, RuleInfo], rulesPath: List[String]): c.Tree = {
+
+   def expandRuleCall(ruleName: TermName, args: List[c.Tree]): Option[c.Tree] = {
+     val name = ruleName.toString
      rulesMap.get(name) match {
-       case Some(_: Rule) => c.abort(c.enclosingPosition,name + " called with parameters")
-       case Some(ParamsRule(typ, params, code)) =>
+       case Some(RuleInfo(typ, code, params)) =>
          if (params.size != args.size)
            c.abort(c.enclosingPosition,"not enough parameters for rule " + name)
          else if (!rulesPath.contains(name)) {
            val substituted = params.zip(args).foldLeft(code){(acc,c) => substitute(c._1.symbol,c._2,acc)}
-           q"compound[$typ](${expandCallRule(substituted, rulesMap, name :: rulesPath)})"
+           Some(q"compound[$typ](${expandCallRule(substituted, rulesMap, name :: rulesPath)})")
          }
          else
-          q"call[$typ]($ruleCall, ..$args)"
-       case _ => tree
-     }   */
-   case q"$f[..$d](..$b)" =>
-     val callee = expandCallRule(f, rulesMap, rulesPath) //because of repFold and al curried stuff
-     val args = b.map(expandCallRule(_, rulesMap, rulesPath))
-     q"$callee[..$d](..$args)"
-   case q"$a.${f: TermName}" =>
-     val callee = expandCallRule(a, rulesMap, rulesPath)
-     q"$callee.$f"
-   case q"${ruleCall: TermName}" =>
-     val name = ruleCall.toString
-     rulesMap.get(name) match {
-       case Some(RuleInfo(typ,code, params)) =>
-         if (!rulesPath.contains(name))
-           q"compound[$typ](${expandCallRule(code, rulesMap, name :: rulesPath)})"
-         else
-           q"call[$typ](${name})"
-       case _ =>
-         tree
+           Some(q"call[$typ]($name, ..$args)")
+       case _ => None
      }
-   case _ => tree
+   }
+
+   tree match {
+     case q"if($c) $a else $b" => q"if($c) ${expandCallRule(a,rulesMap,rulesPath)} else ${expandCallRule(b,rulesMap,rulesPath)}"
+     /*case q"$a.${b: TermName}" if a.tpe <:< typeOf[FinalFastParserImpl] =>  //TODO put comments
+       c.typecheck(a).tpe.members.find(x => x.name == b) match {  // && x =:= typeOf[ParseResult]
+         case Some(rule) => rule.typeSignature.resultType match {
+           case AnnotatedType(annotations,typ) => annotations.find(_.tree.tpe =:= typeOf[saveAST]) match {
+               case Some(annot) =>
+                 val code = annot.tree.children(1)
+                 val codetyp = getInnerTypeOf[ParseResult[_]](typ) getOrElse c.abort(c.enclosingPosition, "wrong type for " + show(typ) + " during foreign call expansion")
+                 expandCallRule(code,rulesMap,rulesPath)
+                 q"compound[$codetyp](${expandCallRule(code, rulesMap, rulesPath)})"    //name :: rulesPath ?
+               case _ => c.abort(c.enclosingPosition,show(annotations.head.tree.tpe.typeSymbol.fullName) + " : is not saveAST")
+             }
+           case typ => c.abort(c.enclosingPosition,"error : " + show(rule.typeSignature) + " should be an annotated type")
+         }
+         case _ => c.abort(c.enclosingPosition, show(b) + " does not exists in" + show(a))  //should never happend actually  because wouldnt compile
+       } */
+     case q"$a.$m[..$d](..$b)" =>
+        val callee = expandCallRule(a, rulesMap, rulesPath)
+        val args = b.map(expandCallRule(_, rulesMap, rulesPath))
+        q"$callee.$m[..$d](..$args)"
+     case q"${ruleName: TermName}(..$args)" =>
+        expandRuleCall(ruleName,args) getOrElse tree
+     case q"$f[..$d](..$b)" =>
+        val callee = expandCallRule(f, rulesMap, rulesPath) //because of repFold and al curried stuff
+        val args = b.map(expandCallRule(_, rulesMap, rulesPath))
+        q"$callee[..$d](..$args)"
+     case q"$a.${f: TermName}" =>
+        val callee = expandCallRule(a, rulesMap, rulesPath)
+        q"$callee.$f"
+     case q"${ruleName: TermName}" =>
+        expandRuleCall(ruleName,Nil) getOrElse tree
+     case _ => tree
+   }
  }
 }
 
@@ -192,11 +190,10 @@ trait ParseRules extends MapRules {
 
    val replacedTree = removeCompileTimeAnnotation(rule.code)
    val allParams: List[c.Tree] = q"input: $inputType" :: rule.params ::: List(q"val $startPosition: Int = 0")
-   val rulecode =
-     q"""
-      def $ruleName(..$allParams):ParseResult[${rule.typ}] @saveAST(${replacedTree}) =
-      ${c.untypecheck(initInput(q"$startPosition", wrapCode))}
-     """
+   val rulecode = c.untypecheck(
+     q" def $ruleName(..$allParams):ParseResult[${rule.typ}] = ${initInput(q"$startPosition", wrapCode)}") match {
+     case q"def $a(..$b):$d = $e" => q"def $a(..$b):$d @saveAST(${replacedTree}) = $e"
+   }    //TODO o/w typecheck error. explain. This is retarded
    rulecode
  }
 
