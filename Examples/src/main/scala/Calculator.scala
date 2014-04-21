@@ -3,7 +3,7 @@
  */
 object Calculator {
 
-  def main(args: Array[String])  {
+  /*def main(args: Array[String])  {
     import FastParsers._
 
     def exec(x:(Int,Option[(Function2[Int,Int,Int],Int)])):Int = x._2 match {
@@ -28,5 +28,5 @@ object Calculator {
       case Failure(msg) => println("failure : " + msg)
     }
 
-  }
+  } */
 }

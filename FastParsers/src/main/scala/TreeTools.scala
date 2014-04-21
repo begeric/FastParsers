@@ -24,4 +24,5 @@ trait TreeTools {
     case TypeRef(_, _, List(z)) if typ <:< typeOf[T] => Some(z)
     case _ => None
   }
+
 }

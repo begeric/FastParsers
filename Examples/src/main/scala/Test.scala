@@ -23,15 +23,16 @@ object Test {
 
 
    val parser = FastParser {
-     def rule1(p:Parser[(Char,Char)]) = lit("(") ~> p <~ lit(")")
-     def rule2 = rule1('a' ~ 'b')
+     def rule1(p:Parser[(Char,Char)]) = '(' ~> p <~ ')'
+     def rule2 = rule1(rule3)
+     def rule3 = 'e' ~ 'f'
    }
 
    /*val parser2 = FastParser {
      def rule1 =  'c' ~ 'f' ~ parser.rule2
    }     */
 
-   parser.rule2("(ab)a") match {
+   parser.rule2("(ef)") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

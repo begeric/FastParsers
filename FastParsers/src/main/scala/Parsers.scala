@@ -80,6 +80,18 @@ trait CombinatorImpl {
     }
   }
 
+ /* def zeroValue(typ: c.Tree) =
+  if (typ != null) typ.tpe match {
+      case t if t =:= typeOf[Char]    => q"' '"
+      case t if t =:= typeOf[Int]     => q"0"
+      case t if t =:= typeOf[Float]   => q"0"
+      case t if t =:= typeOf[Double]  => q"0.0D"
+      case t if t =:= typeOf[String]  => q""""""""
+      case t if t =:= typeOf[List[_]] => q"Nil"
+      case _                          => q"null"
+    }
+  else  q"null" */
+
 
   def expand(tree: c.Tree, r: ResultsStruct): c.Tree = c.abort(c.enclosingPosition, "Not implemented combinator " + show(tree))
 
