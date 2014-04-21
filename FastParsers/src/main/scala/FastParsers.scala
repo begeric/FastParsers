@@ -44,20 +44,10 @@ trait FastParsersImpl {
       case q"{..$body}" =>
         body.foreach {
           case q"def $name(..$params): $d = $b" =>
-            //c.abort(c.enclosingPosition,show(substitute(params.head.symbol,q"1",b)))
-            val TermName(nameString) = name
-            val in = (nameString, ParamsRule(getReturnType(d),params, b))
+            val in = (name.toString, RuleInfo(getReturnType(d), b, params))
             rulesMap += in
           case q"def $name: $d = $b" =>
-            /*b match {
-              case q"$a.$d" =>
-                c.abort(c.enclosingPosition,show(c.typecheck(a).tpe.baseClasses(1).fullName))
-              //c.abort(c.enclosingPosition,show(c.typecheck(a).tpe.typeSymbol.typeSignature))
-              //c.abort(c.enclosingPosition,show(a.tpe.members))
-              case _ =>
-            }    */
-            val TermName(nameString) = name
-            val in = (nameString, Rule(getReturnType(d), b))
+            val in = (name.toString, RuleInfo(getReturnType(d), b, Nil))
             rulesMap += in
           case q"()" =>
           case x => c.abort(c.enclosingPosition, "body must only contain rule definition with the following form : def ruleName = body : " + x)

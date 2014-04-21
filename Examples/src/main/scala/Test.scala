@@ -23,21 +23,25 @@ object Test {
 
 
    val parser = FastParser {
-     def rule1: Parser[(Char,Any)] = 'a' ~ rule3
-     def rule2 = 'b' ~ rule1
-     def rule3: Parser[Any] = 'b' || rule1
+      def rule1 = 'a' ~ 'a'
+     //def rule2(x: Int) = repN('a',x)
+
    }
-   //getAST.get(parser)
 
    /*val parser2 = FastParser {
      def rule1 =  'c' ~ 'f' ~ parser.rule2
-   } */
+   }     */
 
-   parser.rule1("aaaabbbv") match {
+   parser.rule1("aaaabb") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }
 
+  /* val parser = FastParser {
+     def rule1: Parser[(Char,Any)] = 'a' ~ rule3
+     def rule2 = 'b' ~ 'C'
+     def rule3: Parser[Any] = 'b' || rule1
+   } */
   //getAST.get(parser2)
 
    /*case class SuperStuff(x: Int) extends Positional

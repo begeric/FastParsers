@@ -14,9 +14,7 @@ trait RulesProcessing {
   type RuleCode = c.Tree
   //type RuleInfo = (RuleType, RuleCode)
 
-  abstract class RuleInfo(val typ: RuleType,val code: RuleCode)
-  case class ParamsRule(override val typ: RuleType, rawparams: List[c.Tree], override val code: RuleCode) extends RuleInfo(typ,code)
-  case class Rule(override val typ: RuleType, override val code: RuleCode) extends RuleInfo(typ,code)
+  case class RuleInfo(typ: RuleType,code: RuleCode, params: List[c.Tree])
 }
 
 /**
@@ -60,11 +58,7 @@ trait InlineRules extends MapRules {
     for (k <- rulesMap.keys) {
       val rule = rulesMap(k)
       val newRuleCode = expandCallRule(rule.code, rulesMap, List(k))
-      val newRule = rule match {
-        case r: Rule        => r.copy(code = newRuleCode)
-        case r: ParamsRule  => r.copy(code = newRuleCode)
-      }
-      expandedRulesMap += ((k, newRule))
+      expandedRulesMap += ((k, rule.copy(code = newRuleCode)))
     }
     expandedRulesMap
   }
@@ -86,7 +80,7 @@ trait InlineRules extends MapRules {
  def expandCallRule(tree: c.Tree, rulesMap: HashMap[String, RuleInfo], rulesPath: List[String]): c.Tree = tree match {
    case q"if($c) $a else $b" => q"if($c) ${expandCallRule(a,rulesMap,rulesPath)} else ${expandCallRule(b,rulesMap,rulesPath)}"
    /*case q"$a.${b: TermName}" if a.tpe <:< typeOf[FinalFastParserImpl] =>  //TODO put comments
-     c.typecheck(a).tpe.members.find(_.name == b) match {
+     c.typecheck(a).tpe.members.find(x => x.name == b) match {  // && x =:= typeOf[ParseResult]
        case Some(rule) => rule.typeSignature.resultType match {
          case AnnotatedType(annotations,typ) => annotations.find(_.tree.tpe =:= typeOf[saveAST]) match {
              case Some(annot) =>
@@ -96,7 +90,7 @@ trait InlineRules extends MapRules {
                q"compound[$codetyp](${expandCallRule(code, rulesMap, rulesPath)})"    //name :: rulesPath ?
              case _ => c.abort(c.enclosingPosition,show(annotations.head.tree.tpe.typeSymbol.fullName) + " : is not saveAST")
            }
-         case typ => c.abort(c.enclosingPosition,"error : " + show(typ) + " should be an annotated type")
+         case typ => c.abort(c.enclosingPosition,"error : " + show(rule.typeSignature) + " should be an annotated type")
        }
        case _ => c.abort(c.enclosingPosition, show(b) + " does not exists in" + show(a))  //should never happend actually  because wouldnt compile
      } */
@@ -129,13 +123,11 @@ trait InlineRules extends MapRules {
    case q"${ruleCall: TermName}" =>
      val name = ruleCall.toString
      rulesMap.get(name) match {
-       case Some(Rule(typ,code)) =>
+       case Some(RuleInfo(typ,code, params)) =>
          if (!rulesPath.contains(name))
            q"compound[$typ](${expandCallRule(code, rulesMap, name :: rulesPath)})"
          else
-           q"call[$typ](${ruleCall.toString})"
-       case Some(_: ParamsRule) =>
-         c.abort(c.enclosingPosition,name + " called without parameters")
+           q"call[$typ](${name})"
        case _ =>
          tree
      }
@@ -161,7 +153,7 @@ trait ParseRules extends MapRules {
 
    for (k <- rulesMap.keys) {
      val rule = rulesMap(k)
-     map += ((k, Rule(rule.typ, createRuleDef(k, rule))))
+     map += ((k, rule.copy(code = createRuleDef(k, rule))))
    }
 
    map
@@ -197,13 +189,14 @@ trait ParseRules extends MapRules {
        $ruleCode
        $result
    """
-   val rulecode = rule match {
-     case ParamsRule(_,params,_) =>
-       c.untypecheck(q"""def $ruleName(input: $inputType, ..$params, $startPosition: Int = 0):ParseResult[${rule.typ}] = ${initInput(q"$startPosition", wrapCode)}""")
-     case _:Rule =>
-       val replacedTree = removeCompileTimeAnnotation(rule.code)
-       q"""def $ruleName(input:$inputType,$startPosition:Int = 0):  ParseResult[${rule.typ}] @saveAST(${replacedTree}) = ${initInput(q"$startPosition", wrapCode)}"""
-   }
+
+   val replacedTree = removeCompileTimeAnnotation(rule.code)
+   val allParams: List[c.Tree] = q"input: $inputType" :: rule.params ::: List(q"val $startPosition: Int = 0")
+   val rulecode =
+     q"""
+      def $ruleName(..$allParams):ParseResult[${rule.typ}] @saveAST(${replacedTree}) =
+      ${c.untypecheck(initInput(q"$startPosition", wrapCode))}
+     """
    rulecode
  }
 
@@ -228,18 +221,19 @@ trait RuleCombiner extends ReduceRules {
    val methodsEmpty = rules.keySet.map{ k =>
      val rule = rules(k)
      val ruleName = TermName(k)
-     rule match {
-       case ParamsRule(_,params,_) => q"def $ruleName(..$params): Parser[${rule.typ}] = ???"
-       case _ =>  q"def $ruleName: Parser[${rule.typ}] = ???"
+     rule.params match {
+       case Nil =>      q"def $ruleName: Parser[${rule.typ}] = ???"
+       case params =>   q"def $ruleName(..${rule.params}): Parser[${rule.typ}] = ???"
      }
+
    }
    //
    val tree = q"""
      class $anon extends FinalFastParserImpl {
          import scala.collection.mutable.ListBuffer
          import scala.reflect.runtime.universe._
-          ..$methods
           ..$methodsEmpty
+          ..$methods
      }
      val $dmmy = 0
      new $anon
