@@ -27,16 +27,16 @@ trait BaseParsers[Elem, Input] {
 
 
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("toElem can’t be used outside FastParser")
   implicit def toElem(elem: Elem): Parser[Elem] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("toElem can’t be used outside FastParser")
   implicit def toElem(elem: (Elem, Elem)): Parser[Elem] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("range can’t be used outside FastParser")
   def range(a: Elem, b: Elem): Parser[Elem] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("accept can’t be used outside FastParser")
   def accept(p1: ElemOrRange, p2: ElemOrRange*):Parser[Elem] = ???
 
 
@@ -49,74 +49,78 @@ trait BaseParsers[Elem, Input] {
 
 
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("not can’t be used outside FastParser")
   def not(p1: ElemOrRange, p2: ElemOrRange*): Parser[Elem] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("acceptIf can’t be used outside FastParser")
   def acceptIf(f: Elem => Boolean): Parser[Elem] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("wildcard can’t be used outside FastParser")
   def wildcard: Parser[Elem] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("takeWhile can’t be used outside FastParser")
   def takeWhile(f: Elem => Boolean): Parser[Input] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("take can’t be used outside FastParser")
   def take(n: Int): Parser[Input] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("raw can’t be used outside FastParser")
   def raw[T](p:Parser[T]):Parser[InputWindow[Input]] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("guard can’t be used outside FastParser")
   def guard[T](p: Parser[T]): Parser[T] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("phrase can’t be used outside FastParser")
   def phrase[T](p: Parser[T]): Parser[T] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("failure can’t be used outside FastParser")
   def failure(msg: String): Parser[Any] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("success can’t be used outside FastParser")
   def success[T](v: T): Parser[T] = ???
 
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("position can’t be used outside FastParser")
   def position: Parser[Int] = ???
 
-  @compileTimeOnly("can’t be used outside FastParser")
+  @compileTimeOnly("positioned can’t be used outside FastParser")
   def positioned[T <: Positional](p: Parser[T]): Parser[T] = ???
 
+  def call[T](p: String,param: Any*) : Parser[T] = ???
+  def compound[T](p:Parser[T]): Parser[T] = ???
+
   trait BaseParser[T] {
-    @compileTimeOnly("can’t be used outside FastParser")
+    @compileTimeOnly("~ can’t be used outside FastParser")
     def ~[U](p2: Parser[U]): Parser[(T, U)] = ???
 
-    @compileTimeOnly("can’t be used outside FastParser")
+    @compileTimeOnly("~> can’t be used outside FastParser")
     def ~>[U](p2: Parser[U]): Parser[U] = ???
 
-    @compileTimeOnly("can’t be used outside FastParser")
+    @compileTimeOnly("<~ can’t be used outside FastParser")
     def <~[U](p2: Parser[U]): Parser[T] = ???
 
-    @compileTimeOnly("can’t be used outside FastParser")
+    @compileTimeOnly("|| can’t be used outside FastParser")
     def ||[U >: T](p2: Parser[U]): Parser[U] = ???
 
-    @compileTimeOnly("can’t be used outside FastParser")
+    @compileTimeOnly("| can’t be used outside FastParser")
     def |[U >: T](p2: Parser[U]): Parser[U] = ???
 
-    @compileTimeOnly("can’t be used outside FastParser")
+    @compileTimeOnly("^^ can’t be used outside FastParser")
     def ^^[U](f: T => U): Parser[U] = ???
 
-    @compileTimeOnly("can’t be used outside FastParser")
+    @compileTimeOnly("map can’t be used outside FastParser")
     def map[U](f: T => U): Parser[U] = ???
 
-    @compileTimeOnly("can’t be used outside FastParser")
+    @compileTimeOnly("^^^ can’t be used outside FastParser")
     def ^^^[U](f: U): Parser[U] = ???
 
-    @compileTimeOnly("can’t be used outside FastParser")
+    @compileTimeOnly("filter can’t be used outside FastParser")
     def filter[U >: T](f: T => Boolean): Parser[T] = ???
 
-    @compileTimeOnly("can’t be used outside FastParser")
+    @compileTimeOnly("withFailureMessage can’t be used outside FastParser")
     def withFailureMessage(msg: String): Parser[T] = ???
   }
+
 
   implicit class elemParser(p1: Elem) extends BaseParser[Elem]
   implicit class baseParsers[T](p1: Parser[T]) extends BaseParser[T]
@@ -161,8 +165,10 @@ trait BaseParsersImpl extends CombinatorImpl {
     case q"$a ^^^[$d] $v"                   => parseValue(a, v, d, rs)
     case q"$a filter[$d] $f"                => parseFilter(a, f, d, rs)
     case q"$a withFailureMessage $msg"      => parseWithFailureMessage(a, msg, rs)
-    case q"call[$d](${ruleCall: TermName},..$params)" => parseRuleCall(ruleCall, params, d, rs)
-    case q"compound[$d]($a)"                => parseCompound(a, d, rs)
+    case q"call[$d](${ruleCall: String},..$params)" => parseRuleCall(TermName(ruleCall), params, d, rs)   //TODO needed?
+    case q"compound[$d]($a)"                => parseCompound(a, d, rs)      //TODO needed?
+    case q"$_.call[$d](${ruleCall: String},..$params)" => parseRuleCall(TermName(ruleCall), params, d, rs)
+    case q"$_.compound[$d]($a)"                => parseCompound(a, d, rs)
     case q"if ($cond) $a else $b"           =>
       c.typecheck(tree).tpe match {
         case TypeRef(_, _, List(d)) => parseIfThnEls(cond,a,b,q"$d",rs)

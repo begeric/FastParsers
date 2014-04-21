@@ -5,7 +5,10 @@ import org.scalameter.api._
 import JsonParsers._
 import scala.collection.mutable.ListBuffer
 
-class JsonParserBenchmark extends PerformanceTest {
+import lms.parsing.gen._
+import InputWindow._
+
+object JsonParserBenchmark extends PerformanceTest {
 
   lazy val executor = LocalExecutor(
     new Executor.Warmer.Default,
@@ -16,15 +19,17 @@ class JsonParserBenchmark extends PerformanceTest {
 
   val range = Gen.enumeration("size")(10)
 
-  val files = (1 to 5).foldLeft(new ListBuffer[String]){ (acc,i) =>
+  val files = (1 to 4).foldLeft(new ListBuffer[Array[Char]]){ (acc,i) =>
     val filename = "FastParsers/src/test/resources/json" + i
     val data = scala.io.Source.fromFile(filename).getLines mkString "\n"
-    acc.append(data)
+    acc.append(data.toCharArray)
     acc
   }.toList
 
   val bigFileName = "FastParsers/src/test/resources/" + "json.big1"
   val bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
+  val bigFileArray = bigFile.toCharArray
+  val bigFileSeq = new FastCharSequence(bigFileArray)
 
 
   /* tests */
@@ -32,8 +37,8 @@ class JsonParserBenchmark extends PerformanceTest {
     measure method "value" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
-          jsonparser.value(m)
-        println("@("+j+")JsonParser:Big@FastParsers:value")
+          JSonImpl2.jsonparser.value(m)
+        //println("@("+j+")JsonParser:Big@FastParsers:value")
       }
     }
   }
@@ -42,8 +47,8 @@ class JsonParserBenchmark extends PerformanceTest {
     measure method "value" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          jsonparser.value(bigFile)
-        println("@("+j+")JsonParser:Big@FastParsers:value")
+          JSonImpl2.jsonparser.value(bigFileArray)
+        //println("@("+j+")JsonParser:Big@FastParsers:value")
       }
     }
   }
@@ -52,8 +57,8 @@ class JsonParserBenchmark extends PerformanceTest {
     measure method "value" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
-          JSON.parse(JSON.value,m)
-        println("@("+j+")JsonParser@Combinator:value")
+          JSON.parse(JSON.value,new FastCharSequence(m))
+        //println("@("+j+")JsonParser@Combinator:value")
       }
     }
   }
@@ -62,9 +67,31 @@ class JsonParserBenchmark extends PerformanceTest {
     measure method "value" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          JSON.parse(JSON.value,bigFile)
-        println("@("+j+")JsonParser:Big@Combinator:value")
+          JSON.parse(JSON.value,bigFileSeq)
+        //println("@("+j+")JsonParser:Big@Combinator:value")
       }
     }
   }
+  
+  performance of "JsonParser@LMS" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j; m <- files)
+          LMSJsonParser.apply(m)
+        //println("@("+j+")JsonParser@Combinator:value")
+      }
+    }
+  }
+
+  performance of "JsonParser:Big@LMS" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          LMSJsonParser.apply(bigFileArray)
+        //println("@("+j+")JsonParser:Big@Combinator:value")
+      }
+    }
+  }
+  
+  
 }

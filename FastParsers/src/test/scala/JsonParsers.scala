@@ -1,22 +1,37 @@
-import FastParsers._
+
 import scala.util.parsing.combinator._
 import scala.util.parsing.input._
+import InputWindow._
 
 /**
  * Created by Eric on 05.04.14.
  */
 object JsonParsers {
 
-  val jsonparser = FastParser{
-    def value:Parser[Any] = obj | arr | stringLit | decimalNumber | "null" | "true" | "false"
-    def obj:Parser[Any] = lit("{") ~> repsep(member,",") <~ "}"
-    def arr:Parser[Any] = lit("[") ~> repsep(value,",") <~ "]"
-    def member:Parser[Any] = stringLit ~> ":" ~> value
+  object JSonImpl1 {
+    import FastParsers._
+    val jsonparser = FastParser{
+      def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null" | "true" | "false")
+      def obj:Parser[Any] = '{' ~> repsep(member,",") <~ "}"
+      def arr:Parser[Any] = '[' ~> repsep(value,",") <~ "]"
+      def member:Parser[Any] = stringLit ~> ":" ~> value
+    }
+  }
+
+
+  object JSonImpl2 {
+    import FastParsersCharArray._
+    val jsonparser = FastParsersCharArray{
+      def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null".toCharArray | "true".toCharArray | "false".toCharArray)
+      def obj:Parser[Any] = '{' ~> repsep(member,",".toCharArray) <~ "}".toCharArray
+      def arr:Parser[Any] = '[' ~> repsep(value,",".toCharArray) <~ "]".toCharArray
+      def member:Parser[Any] = stringLit ~> ":".toCharArray ~> value
+    }
   }
 
   object JSON extends JavaTokenParsers {
     def value: Parser[Any] = obj | arr | stringLiteral |
-      floatingPointNumber ^^ (_.toFloat) |
+      floatingPointNumber |
       "null" | "true" | "false"
     def obj: Parser[Any] = "{" ~> repsep(member, ",") <~ "}"
     def arr: Parser[Any] = "[" ~> repsep(value, ",") <~ "]"

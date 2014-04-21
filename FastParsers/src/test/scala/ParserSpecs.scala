@@ -3,6 +3,7 @@
  */
 import org.scalatest._
 import FastParsers._
+import InputWindow._
 
 import TestsHelper._
 
@@ -48,7 +49,7 @@ class ParserSpecs extends FunSuite {
     def rule50 = rep1(stringLit)
     def rule51 = number ~ "hey" ~ number
     def rule52 = decimalNumber ^^ (_.toString)
-    def rule53 = number >> (x => take(x) ^^ (y => (x,y)))
+    def rule53 = number >> (x => take(x.toString.toInt) ^^ (y => (x,y)))
     def rule54 = ('a' || 'b') >> {case 'a' => 'b' ~ rep('1');case 'b' => number}
     def rule55 = rule52 >> {case x => ':' ~> rep(rule32) ^^ (y => (x,y))}
     def rule56 = (number ^^ (_.toString)) >> {case b => ':' ~> rep(b)}
@@ -143,6 +144,7 @@ class ParserSpecs extends FunSuite {
       "aaaaa"
     )
   }
+
   test("Rule20 test") {  //phrase((rep('a',0,3) ~ 'b') ^^ {case (x:List[Char],y:Char) => x ++ List(y)} | rep('a' || 'b'))
     shouldSucced(parser.rule20)(
       "b"     gives List('b'),
@@ -246,8 +248,8 @@ class ParserSpecs extends FunSuite {
 
   test("Rule41 test"){//'[' ~> repsep1(number,',') <~']'
     shouldSucced(parser.rule41)(
-      "[1]" gives List(1),
-      "[1, 2, 3,  40]" gives List(1,2,3,40)
+      "[1]" gives List("1"),
+      "[1, 2, 3,  40]" gives List("1","2","3","40")
     )
     shouldFail(parser.rule41) (
       "", "[]", "[1,2.3]", "[1,2,3"
@@ -330,8 +332,8 @@ class ParserSpecs extends FunSuite {
 
   test("Rule51 test"){  //number ~ "hey" ~ number
     shouldSucced(parser.rule51)(
-      "1 hey 2" gives ((1,"hey"),2),
-      "43 hey 8782" gives ((43,"hey"),8782)
+      "1 hey 2" gives (("1","hey"),"2"),
+      "43 hey 8782" gives (("43","hey"),"8782")
     )
 
     shouldFail(parser.rule51)(
@@ -342,12 +344,12 @@ class ParserSpecs extends FunSuite {
   test("Rule52 test"){  // def rule52 = decimalNumber
     shouldSucced(parser.rule52)(
       "3.3" gives "3.3",
-      "3.3000" gives "3.3",
-      "3.3020" gives "3.302",
-      "789" gives "789.0",
-      ".25" gives "0.25",
-      "45.10" gives "45.1",
-      "7." gives "7.0"
+      "3.3000" gives "3.3000",
+      "3.3020" gives "3.3020",
+      "789" gives "789",
+      ".25" gives ".25",
+      "45.10" gives "45.10",
+      "7." gives "7."
     )
 
     shouldFail(parser.rule52)(
@@ -357,9 +359,9 @@ class ParserSpecs extends FunSuite {
 
   test("Rule53 test"){//number >> (x => take(x) ^^ (y => (x,y)))
     shouldSucced(parser.rule53)(
-      "5abcde" gives (5,"abcde"),
-      "5abcdef" gives (5,"abcde"),
-      "0" gives (0,"")
+      "5abcde" gives ("5","abcde"),
+      "5abcdef" gives ("5","abcde"),
+      "0" gives ("0","")
     )
 
     shouldFail(parser.rule53)(
@@ -373,7 +375,7 @@ class ParserSpecs extends FunSuite {
       "ab1" gives ('b',List('1')),
       "ab2" gives ('b',Nil),
       "ab111" gives ('b',List('1','1','1')),
-      "b52" gives 52
+      "b52" gives "52"
     )
 
     shouldFail(parser.rule54)(

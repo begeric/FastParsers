@@ -11,6 +11,7 @@
 import scala.collection.mutable.HashMap
 import scala.language.reflectiveCalls
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 
 
 object Test {
@@ -20,7 +21,26 @@ object Test {
    import InputWindow._
    import scala.util.parsing.input._
 
-   case class SuperStuff(x: Int) extends Positional
+
+   val parser = FastParser {
+     def rule1: Parser[(Char,Any)] = 'a' ~ rule3
+     def rule2 = 'b' ~ rule1
+     def rule3: Parser[Any] = 'b' || rule1
+   }
+   //getAST.get(parser)
+
+   /*val parser2 = FastParser {
+     def rule1 =  'c' ~ 'f' ~ parser.rule2
+   } */
+
+   parser.rule1("aaaabbbv") match {
+     case Success(x) => println(x)
+     case Failure(msg) => println("failure : " + msg)
+   }
+
+  //getAST.get(parser2)
+
+   /*case class SuperStuff(x: Int) extends Positional
 
 
     val parser = FastParser{
@@ -75,11 +95,100 @@ object Test {
 
    //getAST.get(parser)
 
-   parser.rule16("aaaaaa",4) match {
+   parser.rule16("aaaa",4) match {
      //case Success(x : Positional) => println(x + " : " + x.pos)
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
+   }  */
+
+   /*
+
+   import FastParsersCharArray._
+   val parser = FastParsersCharArray {
+     def rule1 = 'a' ~ 'b' ~ 'c' ~> ident //^^ (_.toString.toInt)
    }
+
+   parser.rule1("abc sdadsaas".toCharArray) match {
+     case Success(x) => println(x)
+     case Failure(msg) => println("failure : " + msg)
+   }       */
+
+  /* val jsonparser = FastParsersCharArray{
+     def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null".toCharArray | "true".toCharArray | "false".toCharArray)
+     def obj:Parser[Any] = '{' ~> repsep(member,",".toCharArray) <~ "}".toCharArray
+     def arr:Parser[Any] = '[' ~> repsep(value,",".toCharArray) <~ "]".toCharArray
+     def member:Parser[Any] = stringLit ~> ":".toCharArray ~> value
+   }
+        */
+      /*
+   val bigFileName = "FastParsers/src/test/resources/" + "json.big1"
+   var bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
+   bigFile = bigFile.substring(0,200000) //+ bigFile + bigFile + bigFile + bigFile + bigFile + bigFile + bigFile + bigFile + bigFile + bigFile + bigFile
+   val bigFileArray = bigFile.toCharArray
+
+   val size = bigFile.size
+   import java.util._
+   import InputWindow._
+
+
+   {
+     val nb = 50
+     val start = 20
+     var average = 0.0
+     (0 to nb).foreach { i =>
+       var pos = 0
+       var tmp = ' '
+       var x = 0
+       //var lit = new InputWindow[Array[Char]](bigFileArray,0,0)
+       var lit = ""
+
+       val now = System.nanoTime
+       //val array = new Array[String](size)
+       while (pos < size){
+         tmp = bigFileArray(pos)
+         if (tmp == 'c')
+           x = x + 1
+         lit = "sdakdsaklsjldajd" + pos.toString
+         //lit = new InputWindow[Array[Char]](bigFileArray,0,10)
+         //lit = array(pos)
+         pos += 1
+       }
+       val micros = (System.nanoTime - now) /1e6
+       if (i >= start)
+         average += micros
+     }
+     println(average / (nb - start))
+   }
+
+   {
+     val nb = 50
+     val start = 20
+     var average = 0.0
+     (0 to nb).foreach { i =>
+       var pos = 0
+       var tmp = ' '
+       var x = 0
+       var lit = ""
+
+       val now = System.nanoTime
+       //val array = new Array[String](size)
+       while (pos < size){
+         tmp = bigFile.charAt(pos)
+         if (tmp == 'c')
+           x = x + 1
+         lit = "sdakdsaklsjldajd" + pos.toString
+         //lit = bigFile.slice(0,10)
+         //lit = new InputWindow[String](bigFile,0,10)
+         //lit = new String("sdakdsaklsjldajd")
+         //lit = array(pos)
+         pos += 1
+       }
+       val micros = (System.nanoTime - now) /1e6
+       if (i >= start)
+         average += micros
+     }
+     println(average / (nb - start))
+   }   */
 
    /*object IntArrayParser extends FastArrayParsers[Int]
    import IntArrayParser._

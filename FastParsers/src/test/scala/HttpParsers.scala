@@ -213,7 +213,7 @@ object HttpParsers {
     def headerName = takeWhile(x => (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || x == '-')
     def header = (headerName <~ ':' ~ whitespaces) ~ restOfLine
     def headers = (header <~ '\n').foldLeft[HashMap[String, String]](new HashMap[String, String](),(acc,c) => acc += (c._1 -> c._2))
-    def status = lit("HTTP/") ~ decimalNumber ~ whitespaces ~> number <~ restOfLine
+    def status = lit("HTTP/") ~ decimalNumber ~ whitespaces ~> (number ^^ (_.toString.toInt)) <~ restOfLine
     def response = (status <~ '\n') ~ headers <~ '\n' ^^ processResp
     def respAndMessage = response >> (r => (take(r.contentLength) ^^ (y => (r,y))))
   }

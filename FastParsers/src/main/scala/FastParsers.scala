@@ -4,7 +4,6 @@ import scala.reflect.macros.whitebox.Context
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.collection.mutable._
 
-class saveAST extends StaticAnnotation
 
 /**
  * General trait which create the basic needs of a FastParsers implementation.
@@ -47,11 +46,18 @@ trait FastParsersImpl {
           case q"def $name(..$params): $d = $b" =>
             //c.abort(c.enclosingPosition,show(substitute(params.head.symbol,q"1",b)))
             val TermName(nameString) = name
-            val in = (nameString, ParamsRule(getReturnType(b),params, b))
+            val in = (nameString, ParamsRule(getReturnType(d),params, b))
             rulesMap += in
           case q"def $name: $d = $b" =>
+            /*b match {
+              case q"$a.$d" =>
+                c.abort(c.enclosingPosition,show(c.typecheck(a).tpe.baseClasses(1).fullName))
+              //c.abort(c.enclosingPosition,show(c.typecheck(a).tpe.typeSymbol.typeSignature))
+              //c.abort(c.enclosingPosition,show(a.tpe.members))
+              case _ =>
+            }    */
             val TermName(nameString) = name
-            val in = (nameString, Rule(getReturnType(b), b))
+            val in = (nameString, Rule(getReturnType(d), b))
             rulesMap += in
           case q"()" =>
           case x => c.abort(c.enclosingPosition, "body must only contain rule definition with the following form : def ruleName = body : " + x)
@@ -67,7 +73,7 @@ trait FastParsersImpl {
 /**
  * Example of a parser working on string.
  */
-object FastParsers extends BaseParsers[Char, String] with RepParsers with TokenParsers with FlatMapParsers {
+object FastParsers extends BaseParsers[Char, String] with RepParsers with TokenParsers[String] with FlatMapParsers {
   def FastParser(rules: => Unit): Any = macro BaseImpl.FastParser
 }
 
@@ -104,13 +110,28 @@ object ArrayParserImpl {
   }
 }
 
+/**
+ *
+ */
+object FastParsersCharArray extends BaseParsers[Char, Array[Char]] with RepParsers with TokenParsers[Array[Char]] with FlatMapParsers {
+  def FastParsersCharArray(rules: => Unit): Any = macro CharArrayImpl.FastParser
+}
+
+class CharArrayImpl(val c: Context) extends FastParsersImpl with InlineRules
+  with ParseRules with BaseParsersImpl with RepParsersImpl with FlatMapImpl with RuleCombiner
+  with TokenParsersImpl with CharArrayInput {
+  override def FastParser(rules: c.Tree) = super.FastParser(rules) //why ??
+}
+
+
 object getAST {
   def get(parser: Any):Any = macro getImpl
 
   def getImpl(c: Context)(parser: c.Tree): c.Tree = {
     import c.universe._
 
-    c.abort(c.enclosingPosition,show(parser.tpe))
+    val tmp = q"$parser"
+    c.abort(c.enclosingPosition,show(tmp.tpe))
   }
 }
 

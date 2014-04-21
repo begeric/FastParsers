@@ -12,6 +12,7 @@ trait ParseInput {
 
   def inputType: c.Tree
   def inputElemType: c.Tree
+  def inputWindowType: c.Tree = tq"InputWindow.InputWindow[$inputElemType]"
 
   def initInput(startpos: c.Tree, then: c.Tree): c.Tree
 
@@ -34,6 +35,8 @@ trait ParseInput {
   def inputsize: c.Tree
 
   def getPositionned(offset: c.Tree): c.Tree = q"NoPosition"
+
+  def getInputWindow(start: c.Tree, end: c.Tree): c.Tree = q"new InputWindow.InputWindow[$inputElemType](input, $start, $end)"
 }
 
 /**
@@ -80,33 +83,51 @@ trait ArrayLikeInput extends ParseInput {
   }
 }
 
+
 /**
  * ArrayInput which work on Strings
  */
-trait StringInput extends ArrayLikeInput {
+trait StringLikeInput extends ArrayLikeInput {
 
   import c.universe._
 
   type Elem = Char
-  type Input = String
-
-  def inputType = tq"String"
   def inputElemType = tq"Char"
 
   override def initInput(startpos: c.Tree, then: c.Tree) =
     super.initInput(startpos,
       q"""
-        val inputpositioned = new StringToPosition(input)
+        val inputpositioned = new ToPosition.IndexedCharSeqToPosition(input)
         $then
       """
     )
 
-  override def currentInput = q"input.charAt(inputpos)"
+  override def currentInput = q"input(inputpos)"
 
   override def slice(begin: c.Tree, end: c.Tree) = {
-    q"input.substring($begin,$end)"
+    q"input.slice($begin,$end)"
   }
   override def getPositionned(offset: c.Tree): c.Tree = q"inputpositioned.get($offset)"
+}
+
+trait StringInput extends StringLikeInput {
+  import c.universe._
+
+  type Input = String
+  def inputType = tq"String"
+  override def inputWindowType: c.Tree = tq"InputWindow.StringStruct"
+
+  override def getInputWindow(start: c.Tree, end: c.Tree): c.Tree = q"new InputWindow.StringStruct(input, $start, $end)"
+}
+
+trait CharArrayInput extends StringLikeInput {
+  import c.universe._
+
+  type Input = Array[Char]
+  def inputType = tq"Array[Char]"
+  override def inputWindowType: c.Tree = tq"InputWindow.CharArrayStruct"
+
+  override def getInputWindow(start: c.Tree, end: c.Tree): c.Tree = q"new InputWindow.CharArrayStruct(input, $start, $end)"
 }
 
 trait ArrayInput extends ArrayLikeInput {

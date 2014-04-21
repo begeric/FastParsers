@@ -18,7 +18,7 @@ object Calculator {
       def op2 = lit("*") ^^^ ((x:Int,y:Int) => x * y) |
                 lit("/") ^^^ ((x:Int,y:Int) => x / y)
 
-      def factor:Parser[Int] = number | lit("(") ~> expr <~ ")"
+      def factor:Parser[Int] = number ^^(_.toString.toInt) | lit("(") ~> expr <~ ")"
       def term:Parser[Int] = factor ~ opt(op2 ~ term) ^^ exec
       def expr:Parser[Int] = term ~ opt(op1 ~ expr) ^^ exec
     }

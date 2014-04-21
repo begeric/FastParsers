@@ -28,9 +28,9 @@ object MacroBuild extends Build {
 
 		libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.11.0-RC4",
 		
-		libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.11.0-RC4"/*,
+		libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.11.0-RC4",
 		
-		testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")*/
+		testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
 		
    )
 }

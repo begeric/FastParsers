@@ -13,7 +13,7 @@ object Calculator2 {
     var numRes = 0
     def getNextVar = {numRes += 1;"res" + numRes}
 
-    def getVar(v:String) = values.get(v) match {
+    def getVar(v:String): Int = values.get(v) match {
       case None => 0
       case Some(x) => x
     }
@@ -54,12 +54,12 @@ object Calculator2 {
     val parser = FastParser{
         def op1 = lit("+") ^^^ '+' | lit("-") ^^^ '-'
         def op2 = lit("*") ^^^ '*' | lit("/") ^^^ '/'
-        def funccall = ident ~ (lit("(") ~> repsep(expr,",") <~ ")") ^^ (x => func(x._1,x._2))
-        def factor:Parser[Int] = number | lit("(") ~> expr <~ ")" | funccall | ident ^^ getVar
+        def funccall = ident ~ (lit("(") ~> repsep(expr,",") <~ ")") ^^ (x => func(x._1.toString,x._2))
+        def factor:Parser[Int] = number ^^(_.toString.toInt) | lit("(") ~> expr <~ ")" | funccall | (ident ^^ (x => getVar(x.toString)))
         def term:Parser[Int] = factor ~ opt(op2 ~ term) ^^ exec
         def expr:Parser[Int] = term ~ opt(op1 ~ expr) ^^ exec
         def assign = ident ~ (lit("=") ~ whitespaces ~> expr)
-        def start = phrase(assign ^^ (x => setVar(x._1,x._2)) | expr ^^ setRes) //the order is important !! (because of opt(op1 ~ expr))
+        def start = phrase(assign ^^ (x => setVar(x._1.toString,x._2)) | expr ^^ setRes) //the order is important !! (because of opt(op1 ~ expr))
     }
 
     println("Please enter an expression (or enter an empty line to quit)")
@@ -72,7 +72,7 @@ object Calculator2 {
           parser.start(line) match {
             case Success((res,value)) =>
               println(res + " = " + value)
-            case Failure(msg) => println("failure : " + msg)
+            case Failure(msg) => println("failure: " + msg)
           }
       }
     }
