@@ -13,7 +13,7 @@ import scala.collection.mutable._
  * be combined to form the final object by the RuleCombiner.
  * It must also be composed with a ParseInput to allow access on the input.
  */
-trait FastParsersImpl {
+trait FastParsersImpl extends TreeTools {
   self: MapRules with RuleCombiner with ParseInput =>
   val c: Context
 

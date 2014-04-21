@@ -12,6 +12,7 @@ trait RulesProcessing {
   val c: Context
   type RuleType = c.Type
   type RuleCode = c.Tree
+  type ParamInfo = (c.TermName, c.Type)
   //type RuleInfo = (RuleType, RuleCode)
 
   case class RuleInfo(typ: RuleType,code: RuleCode, params: List[c.Tree], typeParams: List[c.universe.TypeDef])
@@ -44,7 +45,7 @@ trait ReduceRules extends RulesProcessing {
  *
  * If it cannot be inlined (recursive rules) then the rule will be simply called
  */
-trait InlineRules extends MapRules {
+trait InlineRules extends MapRules { self: TreeTools =>
 
   import c.universe._
   import c.universe.internal._
@@ -57,38 +58,31 @@ trait InlineRules extends MapRules {
     val expandedRulesMap = new HashMap[String, RuleInfo]()
     for (k <- rulesMap.keys) {
       val rule = rulesMap(k)
-      val newRuleCode = expandCallRule(rule.code, rulesMap, List(k))
+      val parserParamsMap = rule.params.map{case ValDef(_,name,tpt,_) => (name,tpt.tpe)}
+                          .filter(_._2 <:< typeOf[Parser[_]])
+                          .map(x => (x._1,getInnerTypeOf[Parser[_]](x._2).get)) //TODO what do you mean its super ugly ?
+      val newRuleCode = expandCallRule(rule.code, parserParamsMap, rulesMap, List(k))
       expandedRulesMap += ((k, rule.copy(code = newRuleCode)))
     }
     expandedRulesMap
   }
 
-  def substitute(symbol: Symbol, value: c.Tree, in: c.Tree) = new Transformer {
-    override def transform(tree: c.Tree): c.Tree =
-      if (tree.symbol == symbol) value
-      else  super.transform(tree)
-  }.transform(in)
-
-  def getInnerTypeOf[T : TypeTag](typ: c.Type): Option[c.Type] = typ match {
-    case TypeRef(_, _, List(z)) if typ <:< typeOf[T] => Some(z)
-    case _ => None
-  }
 
 
  /**
   * Traverse the rule tree and expand the rule when it can
   */
- def expandCallRule(tree: c.Tree, rulesMap: HashMap[String, RuleInfo], rulesPath: List[String]): c.Tree = {
+ def expandCallRule(tree: c.Tree, paramsMap: List[ParamInfo], rulesMap: HashMap[String, RuleInfo], rulesPath: List[String]): c.Tree = {
 
    def expandRuleCall(ruleName: TermName, args: List[c.Tree]): Option[c.Tree] = {
      val name = ruleName.toString
-     rulesMap.get(name) match {
+     rulesMap.get(name) match {//TODO what about overloading ?
        case Some(RuleInfo(typ, code, params, typParams)) =>
          if (params.size != args.size)
            c.abort(c.enclosingPosition,"not enough parameters for rule " + name + " : " + show(params) + " : " + show(args))
          else if (!rulesPath.contains(name)) {
-           val substituted = params.zip(args).foldLeft(code){(acc,c) => substitute(c._1.symbol,c._2,acc)}
-           Some(q"compound[$typ](${expandCallRule(substituted, rulesMap, name :: rulesPath)})")
+           val substituted = params.zip(args).foldLeft(code){(acc,c) => substituteSymbol(c._1.symbol, _ => c._2,acc)}
+           Some(q"compound[$typ](${expandCallRule(substituted,paramsMap, rulesMap, name :: rulesPath)})")
          }
          else
            Some(q"call[$typ]($name, ..$args)")
@@ -96,8 +90,13 @@ trait InlineRules extends MapRules {
      }
    }
 
+   def expandParamCall(paramName: TermName, args: List[c.Tree]) : Option[c.Tree] = paramsMap.find(_._1 == paramName) match {
+     case Some((_, tpe)) => Some(q"call[${tpe}](${paramName.toString}, ..$args)")//TODO check for param errors
+     case None =>  None
+   }
+
    tree match {
-     case q"if($c) $a else $b" => q"if($c) ${expandCallRule(a,rulesMap,rulesPath)} else ${expandCallRule(b,rulesMap,rulesPath)}"
+     case q"if($c) $a else $b" => q"if($c) ${expandCallRule(a, paramsMap,rulesMap,rulesPath)} else ${expandCallRule(b, paramsMap,rulesMap,rulesPath)}"
      /*case q"$a.${b: TermName}" if a.tpe <:< typeOf[FinalFastParserImpl] =>  //TODO put comments
        c.typecheck(a).tpe.members.find(x => x.name == b) match {  // && x =:= typeOf[ParseResult]
          case Some(rule) => rule.typeSignature.resultType match {
@@ -114,22 +113,22 @@ trait InlineRules extends MapRules {
          case _ => c.abort(c.enclosingPosition, show(b) + " does not exists in" + show(a))  //should never happend actually  because wouldnt compile
        } */
      case q"$a.$m[..$d](..$b)" =>
-        val callee = expandCallRule(a, rulesMap, rulesPath)
-        val args = b.map(expandCallRule(_, rulesMap, rulesPath))
+        val callee = expandCallRule(a, paramsMap, rulesMap, rulesPath)
+        val args = b.map(expandCallRule(_, paramsMap, rulesMap, rulesPath))
         q"$callee.$m[..$d](..$args)"
      case q"${ruleName: TermName}[$_](..$args)" =>
-       expandRuleCall(ruleName,args) getOrElse tree
+       expandParamCall(ruleName, args) getOrElse (expandRuleCall(ruleName,args) getOrElse tree)
      case q"${ruleName: TermName}(..$args)" =>
         expandRuleCall(ruleName,args) getOrElse tree
      case q"$f[..$d](..$b)" =>
-        val callee = expandCallRule(f, rulesMap, rulesPath) //because of repFold and al curried stuff
-        val args = b.map(expandCallRule(_, rulesMap, rulesPath))
+        val callee = expandCallRule(f, paramsMap, rulesMap, rulesPath) //because of repFold and al curried stuff
+        val args = b.map(expandCallRule(_, paramsMap, rulesMap, rulesPath))
         q"$callee[..$d](..$args)"
      case q"$a.${f: TermName}" =>
-        val callee = expandCallRule(a, rulesMap, rulesPath)
+        val callee = expandCallRule(a, paramsMap, rulesMap, rulesPath)
         q"$callee.$f"
      case q"${ruleName: TermName}" =>
-        expandRuleCall(ruleName,Nil) getOrElse tree
+       expandParamCall(ruleName, Nil) getOrElse (expandRuleCall(ruleName,Nil) getOrElse tree)
      case _ => tree
    }
  }
@@ -140,7 +139,7 @@ trait InlineRules extends MapRules {
 * Create the "final" code for each rule
 */
 trait ParseRules extends MapRules {
-  self: ParseInput with CombinatorImpl =>
+  self: ParseInput with CombinatorImpl with TreeTools =>
 
   import c.universe._
   import c.universe.internal._
@@ -172,6 +171,10 @@ trait ParseRules extends MapRules {
 
 
  private def createRuleDef(name: String, rule: RuleInfo): c.Tree = {
+
+
+   val parserParams = rule.params.map{case ValDef(_,name,tpt,_) => (name,tpt.tpe)}.filter(_._2 <:< typeOf[Parser[_]])
+
    val ruleName = TermName(name)
    val startPosition = TermName(c.freshName)
    val rs = new ResultsStruct(new ListBuffer[Result]())
@@ -190,13 +193,21 @@ trait ParseRules extends MapRules {
        $result
    """
 
+   val rewriteParams = rule.params.map{
+     case valdef @ ValDef(m,n,t,v)  => getInnerTypeOf[Parser[_]](t.tpe) match {
+       case Some(innerType) => ValDef(m,n,tq"($inputType, Int) => ParseResult[$innerType]",v)
+       case None => valdef
+     }
+   }
+
    val replacedTree = removeCompileTimeAnnotation(rule.code)
-   val allParams: List[c.Tree] = q"input: $inputType" :: rule.params ::: List(q"val $startPosition: Int = 0")
+   val allParams: List[c.Tree] = q"input: $inputType" :: (rewriteParams :+ q"val $startPosition: Int = 0")
    val rulecode = c.untypecheck(
      q" def $ruleName[..${rule.typeParams}](..$allParams):ParseResult[${rule.typ}] = ${initInput(q"$startPosition", wrapCode)}") match {
      case q"def $a[$t](..$b):$d = $e" => q"def $a[$t](..$b):$d @saveAST(${replacedTree}) = $e"
      case q"def $a(..$b):$d = $e" => q"def $a(..$b):$d @saveAST(${replacedTree}) = $e"
    }    //TODO o/w typecheck error. explain. This is retarded
+
    rulecode
  }
 
