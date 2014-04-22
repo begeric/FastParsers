@@ -43,8 +43,8 @@ trait FastParsersImpl extends TreeTools {
     rules match {
       case q"{..$body}" =>
         body.foreach {
-          case q"def $name[..$t](..$params): $d = $b" =>
-            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params,t)
+          /*case q"def $name[..$t](..$params): $d = $b" =>
+            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params,t)*///not supported yet
           case q"def $name(..$params): $d = $b" =>
             rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params, Nil)
           case q"def $name: $d = $b" =>

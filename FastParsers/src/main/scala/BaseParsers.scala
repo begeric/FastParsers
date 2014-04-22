@@ -167,7 +167,7 @@ trait BaseParsersImpl extends CombinatorImpl {
     case q"$a withFailureMessage $msg"      => parseWithFailureMessage(a, msg, rs)
     case q"call[$d](${ruleCall: String},..$params)" => parseRuleCall(TermName(ruleCall), params, d, rs)   //TODO needed?
     case q"compound[$d]($a)"                => parseCompound(a, d, rs)      //TODO needed?
-    case q"$_.call[$d](${ruleCall: String},..$params)" => parseRuleCall(TermName(ruleCall), params, d, rs)
+    //case q"$_.call[$d](${ruleCall: String},..$params)" => parseRuleCall(TermName(ruleCall), params, d, rs)
     case q"$_.compound[$d]($a)"                => parseCompound(a, d, rs)
     case q"if ($cond) $a else $b"           =>
       c.typecheck(tree).tpe match {

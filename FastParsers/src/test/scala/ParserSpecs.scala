@@ -179,7 +179,7 @@ class ParserSpecs extends FunSuite {
 
   test("Rule34 test") {  //rule33 ~ rule33  -> rep(rep(0 - 9,3),2)
     shouldSucced(parser.rule34)(
-      "123321" gives (List('1','2','3'),List('3','2','1'))
+      "123325" gives (List('1','2','3'),List('3','2','5'))
     )
     shouldFail(parser.rule34) (
       "1","12", "543","24334"

@@ -67,6 +67,7 @@ trait InlineRules extends MapRules { self: TreeTools with ParseInput =>
     for (k <- rulesMap.keys){
       expandRule(k)
     }
+
     expandedRulesMap
   }
 
@@ -85,10 +86,10 @@ trait InlineRules extends MapRules { self: TreeTools with ParseInput =>
    def convertParsersArgs(params: List[c.Tree]) = params.map{ p =>
      getInnerTypeOf[Parser[_]](p.tpe) match {
        case Some(innerType) => p match {
-         case q"${ruleName : TermName}" =>
+         /*case q"${ruleName : TermName}" =>
            /*c.abort(c.enclosingPosition,show(tq"($inputType,Int) => ParseResult[$innerType]".tpe))
            c.untypecheck(setSymbol(p, NoSymbol)) */
-           setSymbol(p, NoSymbol)
+           setSymbol(p, NoSymbol) */
          case _ => //then need to create another anonymous rule
            val newCode = expandCallRule(p,enclosingRule, rulesMap, expandedRules, rulesPath)
            val newRule = RuleInfo(innerType,newCode,enclosingRule.params, enclosingRule.typeParams)
@@ -111,7 +112,7 @@ trait InlineRules extends MapRules { self: TreeTools with ParseInput =>
            Some(q"compound[$typ](${expandCallRule(substituted,paramsMap, rulesMap, name :: rulesPath)})")
          }*/
          else {
-           Some(q"call[$typ]($name, ..${convertParsersArgs(args)})") //TODO check that stuff
+           Some(q"call[$typ](${ruleName.toString}, ..${convertParsersArgs(args)})") //TODO check that stuff
          }
        case _ => None
      }
@@ -181,14 +182,20 @@ trait ParseRules extends MapRules {
    val rulesMap = super.process(rules)
 
    val map = new HashMap[String, RuleInfo]()
-
    for (k <- rulesMap.keys) {
      val rule = rulesMap(k)
      map += ((k, rule.copy(code = createRuleDef(k, rule))))
    }
-
    map
  }
+
+  def convertParsersParams(params: List[c.Tree]) = params.map{
+    case valdef @ ValDef(m,n,t,v)  => getInnerTypeOf[Parser[_]](t.tpe) match {
+      case Some(innerType) =>
+        ValDef(m,n,tq"($inputType, Int) => ParseResult[$innerType]",v)
+      case None => valdef
+    }
+  }
 
   def removeCompileTimeAnnotation(tree: c.Tree): c.Tree = new Transformer {
     override def transform(tree: c.Tree): c.Tree = tree match {
@@ -199,14 +206,6 @@ trait ParseRules extends MapRules {
     }
   }.transform(c.typecheck(tree)) //typecheck or not typecheck ?
 
-
-  def convertParsersParams(params: List[c.Tree]) = params.map{
-    case valdef @ ValDef(m,n,t,v)  => getInnerTypeOf[Parser[_]](t.tpe) match {
-      case Some(innerType) =>
-        ValDef(m,n,tq"($inputType, Int) => ParseResult[$innerType]",v)
-      case None => valdef
-    }
-  }
 
   private def createRuleDef(name: String, rule: RuleInfo): c.Tree = {
    val ruleName = TermName(name)
@@ -229,13 +228,14 @@ trait ParseRules extends MapRules {
 
    val rewriteParams = convertParsersParams(rule.params)
 
-   val replacedTree = rule.code//removeCompileTimeAnnotation(rule.code)// @saveAST(${replacedTree})
+   val replacedTree = removeCompileTimeAnnotation(c.untypecheck(rule.code))// @saveAST(${replacedTree})
+    //c.abort(c.enclosingPosition, show(replacedTree))
    val allParams = q"input: $inputType" :: (rewriteParams :+ q"val $startPosition: Int = 0")
    val rulecode = c.untypecheck(
-     q" def $ruleName[..${rule.typeParams}](..$allParams):ParseResult[${rule.typ}] = ${initInput(q"$startPosition", wrapCode)}") match {
-     case q"def $a[$t](..$b):$d = $e" => q"def $a[$t](..$b):$d = $e"
-     case q"def $a(..$b):$d = $e" => q"def $a(..$b):$d  = $e"
-   }    //TODO o/w typecheck error. explain. This is retarded  Proxy for x error
+     q" def $ruleName[..${rule.typeParams}](..$allParams):ParseResult[${rule.typ}] = ${initInput(q"$startPosition", wrapCode)}" )match {
+     case q"def $a[$t](..$b):$d = $e" => q"def $a[$t](..$b):$d  @saveAST(${replacedTree}) = $e"
+     case q"def $a(..$b):$d = $e" => q"def $a(..$b):$d @saveAST(${replacedTree})  = $e"
+   }   //TODO o/w typecheck error. explain. This is retarded  Proxy for x error
    //c.abort(c.enclosingPosition, show(rulecode))
    rulecode
  }
@@ -250,29 +250,33 @@ trait FinalFastParserImpl
 trait RuleCombiner extends ReduceRules {
  val c: Context
 
- import c.universe._
+  import c.universe._
+  import c.universe.internal._
 
- def combine(rules: HashMap[String, RuleInfo]) = {
+
+  def combine(rules: HashMap[String, RuleInfo]) = {
    val anon = TypeName(c.freshName)
    val dmmy = TermName(c.freshName) //no joke : see http://stackoverflow.com/questions/14370842/getting-a-structural-type-with-an-anonymous-classs-methods-from-a-macro
 
    val methods = rules.values.map(_.code)
 
    val methodsEmpty = rules.keySet.map{ k =>
-     val rule = rules(k)
-     val ruleName = TermName(k)
-     rule.params match {
-       case Nil =>      q"def $ruleName[..${rule.typeParams}]: Parser[${rule.typ}] = ???"
-       case params =>   q"def $ruleName[..${rule.typeParams}](..${rule.params}): Parser[${rule.typ}] = ???"
-     }
+    val rule = rules(k)
+    val ruleName = TermName(k)
+    rule.params match {
+      case Nil =>      q"def $ruleName[..${rule.typeParams}]: Parser[${rule.typ}] = ???"
+      case params =>   q"def $ruleName[..${rule.typeParams}](..${rule.params}): Parser[${rule.typ}] = ???"
+    }
    }
+
+   //
 
    val tree = q"""
      class $anon extends FinalFastParserImpl {
          import scala.collection.mutable.ListBuffer
          import scala.reflect.runtime.universe._
-          ..$methodsEmpty
-          ..$methods
+         ..$methodsEmpty
+         ..$methods
      }
      val $dmmy = 0
      new $anon
