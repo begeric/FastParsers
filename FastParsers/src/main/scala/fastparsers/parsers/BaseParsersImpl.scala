@@ -1,133 +1,7 @@
-import scala.annotation.compileTimeOnly
-import scala.language.implicitConversions
-import scala.collection.mutable.ListBuffer
-import scala.reflect.macros.whitebox.Context
-import scala.util.parsing.input.Positional
+package fastparsers.parsers
 
-/**
- * Base Parsers
- */
-
-trait BaseParsers[Elem, Input] {
-
-  import InputWindow._
-
-  object ~ {
-    def unapply[T, U](x: Tuple2[T, U]): Option[Tuple2[T, U]] = Some((x._1, x._2))
-  }
-
-  abstract class ElemOrRange
-
-  @compileTimeOnly("can’t be used outside FastParser")
-  implicit def toElemOrRange(elem: Elem): ElemOrRange = ???
-
-  @compileTimeOnly("can’t be used outside FastParser")
-  implicit def toElemOrRange(elem: (Elem,Elem)): ElemOrRange = ???
-
-
-
-
-  @compileTimeOnly("toElem can’t be used outside FastParser")
-  implicit def toElem(elem: Elem): Parser[Elem] = ???
-
-  @compileTimeOnly("toElem can’t be used outside FastParser")
-  implicit def toElem(elem: (Elem, Elem)): Parser[Elem] = ???
-
-  @compileTimeOnly("range can’t be used outside FastParser")
-  def range(a: Elem, b: Elem): Parser[Elem] = ???
-
-  @compileTimeOnly("accept can’t be used outside FastParser")
-  def accept(p1: ElemOrRange, p2: ElemOrRange*):Parser[Elem] = ???
-
-
-
-  /*@compileTimeOnly("can’t be used outside FastParser")
-  def acceptRec(p1: ElemOrRange, p2: ElemOrRange*):Parser[Nothing] = ???
-
-  @compileTimeOnly("can’t be used outside FastParser")
-  def notRec(p1: ElemOrRange, p2: ElemOrRange*):Parser[Nothing] = ??? */
-
-
-
-  @compileTimeOnly("not can’t be used outside FastParser")
-  def not(p1: ElemOrRange, p2: ElemOrRange*): Parser[Elem] = ???
-
-  @compileTimeOnly("acceptIf can’t be used outside FastParser")
-  def acceptIf(f: Elem => Boolean): Parser[Elem] = ???
-
-  @compileTimeOnly("wildcard can’t be used outside FastParser")
-  def wildcard: Parser[Elem] = ???
-
-  @compileTimeOnly("takeWhile can’t be used outside FastParser")
-  def takeWhile(f: Elem => Boolean): Parser[Input] = ???
-
-  @compileTimeOnly("take can’t be used outside FastParser")
-  def take(n: Int): Parser[Input] = ???
-
-  @compileTimeOnly("raw can’t be used outside FastParser")
-  def raw[T](p:Parser[T]):Parser[InputWindow[Input]] = ???
-
-  @compileTimeOnly("guard can’t be used outside FastParser")
-  def guard[T](p: Parser[T]): Parser[T] = ???
-
-  @compileTimeOnly("phrase can’t be used outside FastParser")
-  def phrase[T](p: Parser[T]): Parser[T] = ???
-
-  @compileTimeOnly("failure can’t be used outside FastParser")
-  def failure(msg: String): Parser[Any] = ???
-
-  @compileTimeOnly("success can’t be used outside FastParser")
-  def success[T](v: T): Parser[T] = ???
-
-
-  @compileTimeOnly("position can’t be used outside FastParser")
-  def position: Parser[Int] = ???
-
-  @compileTimeOnly("positioned can’t be used outside FastParser")
-  def positioned[T <: Positional](p: Parser[T]): Parser[T] = ???
-
-  def call[T](p: Any,params: Any*) : Parser[T] = ???
-  def compound[T](p:Parser[T]): Parser[T] = ???
-  def foreignCall[T](p: Any, ruleName: Any, params: Any*) = ???
-
-  trait BaseParser[T] {
-    @compileTimeOnly("~ can’t be used outside FastParser")
-    def ~[U](p2: Parser[U]): Parser[(T, U)] = ???
-
-    @compileTimeOnly("~> can’t be used outside FastParser")
-    def ~>[U](p2: Parser[U]): Parser[U] = ???
-
-    @compileTimeOnly("<~ can’t be used outside FastParser")
-    def <~[U](p2: Parser[U]): Parser[T] = ???
-
-    @compileTimeOnly("|| can’t be used outside FastParser")
-    def ||[U >: T](p2: Parser[U]): Parser[U] = ???
-
-    @compileTimeOnly("| can’t be used outside FastParser")
-    def |[U >: T](p2: Parser[U]): Parser[U] = ???
-
-    @compileTimeOnly("^^ can’t be used outside FastParser")
-    def ^^[U](f: T => U): Parser[U] = ???
-
-    @compileTimeOnly("map can’t be used outside FastParser")
-    def map[U](f: T => U): Parser[U] = ???
-
-    @compileTimeOnly("^^^ can’t be used outside FastParser")
-    def ^^^[U](f: U): Parser[U] = ???
-
-    @compileTimeOnly("filter can’t be used outside FastParser")
-    def filter[U >: T](f: T => Boolean): Parser[T] = ???
-
-    @compileTimeOnly("withFailureMessage can’t be used outside FastParser")
-    def withFailureMessage(msg: String): Parser[T] = ???
-  }
-
-
-  implicit class elemParser(p1: Elem) extends BaseParser[Elem]
-  implicit class baseParsers[T](p1: Parser[T]) extends BaseParser[T]
-
-}
-
+import fastparsers.input._
+import fastparsers.framework._
 
 /**
  * Expansion of Basic combinators
@@ -175,7 +49,7 @@ trait BaseParsersImpl extends ParserImplHelper {
     case q"if ($cond) $a else $b"           =>
       c.typecheck(tree).tpe match {
         case TypeRef(_, _, List(d)) => parseIfThnEls(cond,a,b,q"$d",rs)
-        case x => c.abort(c.enclosingPosition,"Ill formed if, type must be Parser[_] it is now : " + show(x))
+        case x => c.abort(c.enclosingPosition,"Ill formed if, type must be fastparsers.parsers.Parser[_] it is now : " + show(x))
       }
     case _                                  => super.expand(tree, rs) //q"""println(show(reify($tree).tree))"""
   }
@@ -358,7 +232,7 @@ trait BaseParsersImpl extends ParserImplHelper {
       val $beginpos = $pos
       ${expand(a,results_tmp)}
       if (success) {
-        $result = new InputWindow(input,$beginpos,$pos)
+        $result = new fastparsers.input.InputWindow.InputWindow(fastparsers.input,$beginpos,$pos)
       }
       else {
         msg = "raw(" + ${prettyPrint(a)} +  ") failure at " + $pos
@@ -366,7 +240,7 @@ trait BaseParsersImpl extends ParserImplHelper {
     """
     results_tmp.setNoUse
     rs.append(results_tmp)
-    rs.append((result, tq"InputWindow[$inputType]", true))
+    rs.append((result, tq"fastparsers.input.InputWindow.InputWindow[$inputType]", true))
     tree
   }
 
@@ -558,7 +432,7 @@ trait BaseParsersImpl extends ParserImplHelper {
     val callResult = TermName(c.freshName)
     val result = TermName(c.freshName)
 
-    // val $callResult = $ruleCall(input.substring($offset),0)
+    // val $callResult = $ruleCall(fastparsers.input.substring($offset),0)
     //${advanceTo(q"$callResult.inputPos")}
     val call = params match {
       case Nil => q"$ruleCall(input,$pos)"

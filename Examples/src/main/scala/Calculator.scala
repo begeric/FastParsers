@@ -18,9 +18,9 @@ object Calculator {
       def op2 = lit("*") ^^^ ((x:Int,y:Int) => x * y) |
                 lit("/") ^^^ ((x:Int,y:Int) => x / y)
 
-      def factor:Parser[Int] = number ^^(_.toString.toInt) | lit("(") ~> expr <~ ")"
-      def term:Parser[Int] = factor ~ opt(op2 ~ term) ^^ exec
-      def expr:Parser[Int] = term ~ opt(op1 ~ expr) ^^ exec
+      def factor:fastparsers.parsers.Parser[Int] = number ^^(_.toString.toInt) | lit("(") ~> expr <~ ")"
+      def term:fastparsers.parsers.Parser[Int] = factor ~ opt(op2 ~ term) ^^ exec
+      def expr:fastparsers.parsers.Parser[Int] = term ~ opt(op1 ~ expr) ^^ exec
     }
 
     parser.expr("21+(5+1 ) * 2 +2 *8") match {

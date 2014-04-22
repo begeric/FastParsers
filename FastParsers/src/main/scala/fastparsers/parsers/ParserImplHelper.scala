@@ -1,15 +1,11 @@
-import scala.annotation.compileTimeOnly
-import scala.collection.mutable.ListBuffer
+package fastparsers.parsers
+
+import fastparsers.input.ParseInput
 import scala.reflect.macros.whitebox.Context
+import scala.collection.mutable.ListBuffer
 
 /**
- * Façade of a Parser. It only appears in the tree given to the macro in order to be expanded
- */
-trait Parser[+T]
-
-
-/**
- * Provide the interface and the basics method needed to implement the transformation on parsers
+ * Provide the interface and the basics method needed to implement the transformation on fastparsers.parsers
  */
 trait ParserImplHelper { self: ParseInput =>
   val c: Context

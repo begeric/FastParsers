@@ -1,24 +1,19 @@
+package fastparsers.parsers
 
-import scala.annotation.compileTimeOnly
 import scala.collection.mutable.HashMap
-import scala.reflect.macros.whitebox.Context
+import fastparsers.framework._
+import fastparsers.input._
+import fastparsers.tools._
+import fastparsers.framework.ruleprocessing.InlineRules
 
-trait FlatMapParsers {
-
-  implicit class flatmapparsers[T](p: Parser[T]) {
-    @compileTimeOnly("can’t be used outside FastParser")
-    def flatMap[U](f: T => Parser[U]): Parser[U] = ???
-
-    @compileTimeOnly("can’t be used outside FastParser")
-    def >>[U](f: T => Parser[U]): Parser[U] = ???
-  }
-
-}
-
+/**
+ * Created by Eric on 22.04.14.
+ */
 trait FlatMapImpl extends InlineRules with ParserImplHelper {
   self: ParseInput with TreeTools =>
 
   import c.universe._
+
 
   override def expandCallRule(tree: c.Tree,
                               enclosingRule: RuleInfo,

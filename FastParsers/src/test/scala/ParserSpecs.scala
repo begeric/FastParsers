@@ -1,10 +1,14 @@
 /**
  * Created by Eric on 05.04.14.
  */
+
+import fastparsers.framework.implementations.FastParsers
+import fastparsers.input.InputWindow
 import org.scalatest._
 import FastParsers._
 import InputWindow._
 
+import fastparsers.parsers.Parser
 import TestsHelper._
 
 import scala.language.reflectiveCalls
@@ -257,8 +261,8 @@ class ParserSpecs extends FunSuite {
   }
 
   test("Rule42 test"){/*
-    def rule42:Parser[(Char,Any)] = 'a' ~ rule43
-    def rule43:Parser[Any] = 'b' || rule42
+    def rule42:fastparsers.parsers.Parser[(Char,Any)] = 'a' ~ rule43
+    def rule43:fastparsers.parsers.Parser[Any] = 'b' || rule42
   */
     shouldSucced(parser.rule42)(
       "ab" gives ('a','b'),

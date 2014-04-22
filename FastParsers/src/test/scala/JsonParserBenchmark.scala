@@ -1,6 +1,8 @@
 /**
  * Created by Eric on 05.04.14.
  */
+
+import fastparsers.input.InputWindow
 import org.scalameter.api._
 import JsonParsers._
 import scala.collection.mutable.ListBuffer

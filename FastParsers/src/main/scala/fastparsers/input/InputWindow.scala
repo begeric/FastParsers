@@ -1,3 +1,5 @@
+package fastparsers.input
+
 import scala.language.implicitConversions
 
 object InputWindow {

@@ -1,3 +1,5 @@
+package fastparsers.tools
+
 /**
  * Created by Eric on 10.04.14.
  */
@@ -35,7 +37,7 @@ object ToPosition {
   }
 
   /*
-    Almost copy pasted from scala.util.parsing.input.OffsetPosition @ https://github.com/scala/scala/blob/v2.10.2/src/library/scala/util/parsing/input/OffsetPosition.scala
+    Almost copy pasted from scala.util.parsing.fastparsers.input.OffsetPosition @ https://github.com/scala/scala/blob/v2.10.2/src/library/scala/util/parsing/fastparsers.input/OffsetPosition.scala
    */
   class IndexedCharSeqToPosition[T](input: IndexedCharSeq[T]) extends ToPosition[IndexedCharSeq[T]] {
 

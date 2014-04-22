@@ -8,6 +8,10 @@
 
 //because warnings
 
+import fastparsers.framework.implementations.FastParsers
+import fastparsers.framework.parseresult.{Failure, Success}
+import fastparsers.framework.parseresult._
+import fastparsers.input.InputWindow
 import scala.collection.mutable.HashMap
 import scala.language.reflectiveCalls
 import scala.language.implicitConversions
@@ -43,9 +47,9 @@ object Test {
    }*/
 
   /* val parser = FastParser {
-     def rule1: Parser[(Char,Any)] = 'a' ~ rule3
+     def rule1: fastparsers.parsers.Parser[(Char,Any)] = 'a' ~ rule3
      def rule2 = 'b' ~ 'C'
-     def rule3: Parser[Any] = 'b' || rule1
+     def rule3: fastparsers.parsers.Parser[Any] = 'b' || rule1
    } */
   //getAST.get(parser2)
 
@@ -65,7 +69,7 @@ object Test {
 
       def rule7 = raw(range('a','z') ~ ':' ~ rep(range('a','z') || range('0','9')))
 
-      def rule8:Parser[Int] = for (x <- number if x > 10) yield x
+      def rule8:fastparsers.parsers.Parser[Int] = for (x <- number if x > 10) yield x
 
       def rule9 = for (a <- number;
                        op <- '+' ^^^ ((x:Int,y:Int) => x + y) | '-' ^^^ ((x:Int,y:Int) => x - y);
@@ -90,7 +94,7 @@ object Test {
 
       def rule18 = rule17 | 'e' ~ 'f'
 
-      //def rule19[T](p: Parser[T]) = '5' ~ 'b'
+      //def rule19[T](p: fastparsers.parsers.Parser[T]) = '5' ~ 'b'
 
 
       //def rule13 = acceptRec('a',('x','y'),('0','9')) || acceptRec('b') ~ acceptRec('b') ^^ (x => x)
@@ -123,10 +127,10 @@ object Test {
    }       */
 
   /* val jsonparser = FastParsersCharArray{
-     def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null".toCharArray | "true".toCharArray | "false".toCharArray)
-     def obj:Parser[Any] = '{' ~> repsep(member,",".toCharArray) <~ "}".toCharArray
-     def arr:Parser[Any] = '[' ~> repsep(value,",".toCharArray) <~ "]".toCharArray
-     def member:Parser[Any] = stringLit ~> ":".toCharArray ~> value
+     def value:fastparsers.parsers.Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null".toCharArray | "true".toCharArray | "false".toCharArray)
+     def obj:fastparsers.parsers.Parser[Any] = '{' ~> repsep(member,",".toCharArray) <~ "}".toCharArray
+     def arr:fastparsers.parsers.Parser[Any] = '[' ~> repsep(value,",".toCharArray) <~ "]".toCharArray
+     def member:fastparsers.parsers.Parser[Any] = stringLit ~> ":".toCharArray ~> value
    }
         */
       /*
@@ -199,10 +203,10 @@ object Test {
      println(average / (nb - start))
    }   */
 
-   /*object IntArrayParser extends FastArrayParsers[Int]
+   /*object IntArrayParser extends fastparsers.framework.implementations.FastArrayParsers[Int]
    import IntArrayParser._
    val arrayParser = IntArrayParser {
-     def rule1: Parser[_] = rep(0 ~ 2) ~ 5
+     def rule1: fastparsers.parsers.Parser[_] = rep(0 ~ 2) ~ 5
    }
 
    arrayParser.rule1(Array(0,2,5)) match {

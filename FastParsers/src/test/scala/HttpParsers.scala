@@ -1,7 +1,10 @@
+import fastparsers.framework.implementations.FastParsers
 import FastParsers._
+import fastparsers.framework.implementations.FastParsers
 import scala.collection.mutable.HashMap
 import scala.util.parsing.combinator._
 import scala.util.parsing.input._
+import fastparsers.input.InputWindow
 
 /**
  * Created by Eric on 05.04.14.
@@ -59,7 +62,7 @@ object HttpParsers {
 
     def hexToInt(s: String) = Integer.parseInt(s, 16)
 
-    //def message: Parser[Any] = /*request | */ response
+    //def message: fastparsers.parsers.Parser[Any] = /*request | */ response
 
     //using the amazing bind operator!
     def respAndMessage: Parser[(Response, String)] = response >> {
@@ -76,7 +79,7 @@ object HttpParsers {
      * to match line terminators with ".", suggestion by
      * http://stackoverflow.com/questions/3222649/any-character-including-newline-java-regex
      *
-     * TODO: if the rest of the input is smaller than i, deal with it.
+     * TODO: if the rest of the fastparsers.input is smaller than i, deal with it.
      */
     def body(i: Int): Parser[String] = ("(?s:.{" + i + "})").r
 

@@ -1,3 +1,7 @@
+import fastparsers.framework.implementations.FastParsers
+import fastparsers.framework.parseresult.{Success, Failure}
+import fastparsers.framework.parseresult._
+import fastparsers.parsers.Parser
 import scala.collection.immutable.HashMap
 
 /**

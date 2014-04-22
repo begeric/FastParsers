@@ -1,7 +1,8 @@
 
+import fastparsers.input.InputWindow
+import fastparsers.parsers.Parser
 import scala.util.parsing.combinator._
 import scala.util.parsing.input._
-import InputWindow._
 
 /**
  * Created by Eric on 05.04.14.
@@ -9,7 +10,7 @@ import InputWindow._
 object JsonParsers {
 
   object JSonImpl1 {
-    import FastParsers._
+    import fastparsers.framework.implementations.FastParsers._
     val jsonparser = FastParser{
       def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null" | "true" | "false")
       def obj:Parser[Any] = '{' ~> repsep(member,",") <~ "}"
@@ -20,7 +21,7 @@ object JsonParsers {
 
 
   object JSonImpl2 {
-    import FastParsersCharArray._
+    import fastparsers.framework.implementations.FastParsersCharArray._
     val jsonparser = FastParsersCharArray{
       def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null".toCharArray | "true".toCharArray | "false".toCharArray)
       def obj:Parser[Any] = '{' ~> repsep(member,",".toCharArray) <~ "}".toCharArray
