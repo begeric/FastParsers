@@ -15,7 +15,7 @@ trait FlatMapParsers {
 
 }
 
-trait FlatMapImpl extends InlineRules with CombinatorImpl {
+trait FlatMapImpl extends InlineRules with ParserImplHelper {
   self: ParseInput with TreeTools =>
 
   import c.universe._

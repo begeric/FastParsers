@@ -87,7 +87,6 @@ trait BaseParsers[Elem, Input] {
   def positioned[T <: Positional](p: Parser[T]): Parser[T] = ???
 
   def call[T](p: Any,params: Any*) : Parser[T] = ???
-  //def call[T](p: String,param: Any*) : Parser[T] = ???
   def compound[T](p:Parser[T]): Parser[T] = ???
   def foreignCall[T](p: Any, ruleName: Any, params: Any*) = ???
 
@@ -133,7 +132,7 @@ trait BaseParsers[Elem, Input] {
 /**
  * Expansion of Basic combinators
  */
-trait BaseParsersImpl extends CombinatorImpl {
+trait BaseParsersImpl extends ParserImplHelper {
   self: ParseInput =>
 
   import c.universe._

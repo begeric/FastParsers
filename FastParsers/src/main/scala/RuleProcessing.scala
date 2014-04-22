@@ -1,7 +1,6 @@
 import scala.annotation.StaticAnnotation
 import scala.collection.mutable.{ListBuffer, HashMap}
 import scala.reflect.macros.whitebox.Context
-import scala.tools.nsc.doc.DocParser.Tree
 
 
 class saveAST(code: Any) extends StaticAnnotation
@@ -64,9 +63,8 @@ trait InlineRules extends MapRules { self: TreeTools with ParseInput =>
       expandedRulesMap += (name -> rule.copy(code = newRuleCode))
     }
 
-    for (k <- rulesMap.keys){
+    for (k <- rulesMap.keys)
       expandRule(k)
-    }
 
     expandedRulesMap
   }
@@ -195,7 +193,7 @@ trait InlineRules extends MapRules { self: TreeTools with ParseInput =>
 * Create the "final" code for each rule
 */
 trait ParseRules extends MapRules {
-  self: ParseInput with CombinatorImpl with TreeTools =>
+  self: ParseInput with ParserImplHelper with TreeTools =>
 
   import c.universe._
   import c.universe.internal._
@@ -259,7 +257,6 @@ trait ParseRules extends MapRules {
      case q"def $a[$t](..$b):$d = $e" => q"def $a[$t](..$b):$d  @saveAST(${replacedTree}) = $e"
      case q"def $a(..$b):$d = $e" => q"def $a(..$b):$d @saveAST(${replacedTree})  = $e"
    }   //TODO o/w typecheck error. explain. This is retarded  Proxy for x error
-   //c.abort(c.enclosingPosition, show(rulecode))
    rulecode
  }
 

@@ -26,7 +26,7 @@ trait TokenParsers[StringRepr] {
 
 }
 
-trait TokenParsersImpl extends CombinatorImpl {
+trait TokenParsersImpl extends ParserImplHelper {
   self: StringLikeInput =>
 
   import c.universe._

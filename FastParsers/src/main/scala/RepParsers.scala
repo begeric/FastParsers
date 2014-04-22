@@ -43,7 +43,7 @@ trait RepParsers {
 
 }
 
-trait RepParsersImpl extends CombinatorImpl {
+trait RepParsersImpl extends ParserImplHelper {
   self: ParseInput =>
 
   import c.universe._

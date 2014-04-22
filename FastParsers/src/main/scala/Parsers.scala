@@ -11,8 +11,7 @@ trait Parser[+T]
 /**
  * Provide the interface and the basics method needed to implement the transformation on parsers
  */
-trait CombinatorImpl {
-  self: ParseInput =>
+trait ParserImplHelper { self: ParseInput =>
   val c: Context
 
   import c.universe._
