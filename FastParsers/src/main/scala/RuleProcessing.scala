@@ -101,16 +101,17 @@ trait InlineRules extends MapRules { self: TreeTools with ParseInput =>
      }
    }
 
+
    def expandRuleCall(ruleName: TermName, typeArgs: List[c.Type], args: List[c.Tree]): Option[c.Tree] = {
      val name = ruleName.toString
      rulesMap.get(name) match {//TODO what about overloading ?
        case Some(RuleInfo(typ, code, params, typParams)) =>
          if (params.size != args.size)
            c.abort(c.enclosingPosition,"not enough parameters for rule " + name + " : " + show(params) + " : " + show(args))
-         /*else if (!rulesPath.contains(name)) {
-           val substituted = params.zip(args).foldLeft(code){(acc,c) => substituteSymbol(c._1.symbol, _ => c._2,acc)}
-           Some(q"compound[$typ](${expandCallRule(substituted,paramsMap, rulesMap, name :: rulesPath)})")
-         }*/
+         else if (!rulesPath.contains(name)) {
+           val substituted = subsituteParams(params.map(_.symbol), args, code)
+           Some(q"compound[$typ](${expandCallRule(substituted,enclosingRule, rulesMap, expandedRules, name :: rulesPath)})")
+         }
          else {
            Some(q"call[$typ](${ruleName.toString}, ..${convertParsersArgs(args)})") //TODO check that stuff
          }
@@ -132,8 +133,12 @@ trait InlineRules extends MapRules { self: TreeTools with ParseInput =>
           case Some(annot) =>
             val codetyp = getInnerTypeOf[ParseResult[_]](typ) getOrElse c.abort(c.enclosingPosition, "wrong type for " + show(typ) + " during foreign call expansion")
             val concatName = obj.toString + "." + ruleName.toString
+            val params = rule.typeSignature.paramLists.head//cool this is for curried things i guess, really cool
+            val ruleParams = params.slice(1,params.size - 1)
+            if (ruleParams.size != args.size)
+              c.abort(c.enclosingPosition,"not enough parameters for rule " + concatName + " : " + show(params) + " : " + show(args))
             //same logic as in normal rule call
-            if (!rulesPath.contains(concatName)) {
+            if (!rulesPath.contains(concatName)) { //never supposed to be false... for now
               //we have to substitute parameters AND other rule calls
               val code = annot.tree.children(1)
               def substituteCall(in: c.Tree) = new Transformer {
@@ -142,17 +147,12 @@ trait InlineRules extends MapRules { self: TreeTools with ParseInput =>
                   case _ => super.transform(tree)
                 }
               }.transform(in)
-              q"compound[$codetyp](${substituteCall(code)})" //this suppose that the code is already expanded, maybe everything would be easier if it wasn't...
+              val substitued = substituteCall(subsituteParams2(ruleParams.map(_.name.toTermName), args, code))
+              q"compound[$codetyp]($substitued)" //this suppose that the code is already expanded, maybe everything would be easier if it wasn't...
             }
             else
               q"foreignCall[$codetyp]($obj,${ruleName.toString},..$args)"
-
-            /*c.abort(c.enclosingPosition, "yey")
-            val code = annot.tree.children(1)
-            val codetyp = getInnerTypeOf[ParseResult[_]](typ) getOrElse c.abort(c.enclosingPosition, "wrong type for " + show(typ) + " during foreign call expansion")
-            expandCallRule(code,enclosingRule,rulesMap,expandedRules,rulesPath)
-            q"compound[$codetyp](${expandCallRule(code, enclosingRule,rulesMap,expandedRules,rulesPath)})"    //name :: rulesPath ?
-          case _ => c.abort(c.enclosingPosition,show(annotations.head.tree.tpe.typeSymbol.fullName) + " : is not saveAST") */
+          case _ => c.abort(c.enclosingPosition,"unexpected behaviour during foreign call expansion") //TODO
         }
         case typ => c.abort(c.enclosingPosition,"error : " + show(rule.typeSignature) + " should be an annotated type")
       }
