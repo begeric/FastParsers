@@ -131,7 +131,22 @@ trait InlineRules extends MapRules { self: TreeTools with ParseInput =>
         case AnnotatedType(annotations,typ) => annotations.find(_.tree.tpe =:= typeOf[saveAST]) match {
           case Some(annot) =>
             val codetyp = getInnerTypeOf[ParseResult[_]](typ) getOrElse c.abort(c.enclosingPosition, "wrong type for " + show(typ) + " during foreign call expansion")
-            q"foreignCall[$codetyp]($obj,${ruleName.toString},..$args)"
+            val concatName = obj.toString + "." + ruleName.toString
+            //same logic as in normal rule call
+            if (!rulesPath.contains(concatName)) {
+              //we have to substitute parameters AND other rule calls
+              val code = annot.tree.children(1)
+              def substituteCall(in: c.Tree) = new Transformer {
+                override def transform(tree: c.Tree): c.Tree = tree match {
+                  case q"$_.call[$t](..$a)" => q"foreignCall[$t]($obj,..$a)"
+                  case _ => super.transform(tree)
+                }
+              }.transform(in)
+              q"compound[$codetyp](${substituteCall(code)})" //this suppose that the code is already expanded, maybe everything would be easier if it wasn't...
+            }
+            else
+              q"foreignCall[$codetyp]($obj,${ruleName.toString},..$args)"
+
             /*c.abort(c.enclosingPosition, "yey")
             val code = annot.tree.children(1)
             val codetyp = getInnerTypeOf[ParseResult[_]](typ) getOrElse c.abort(c.enclosingPosition, "wrong type for " + show(typ) + " during foreign call expansion")

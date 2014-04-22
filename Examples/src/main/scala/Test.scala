@@ -24,7 +24,7 @@ object Test {
 
    val parser = FastParser {
      def rule1(x: Int) = '(' ~> repN('a',x) <~ ')'
-     def rule2 = rule1(2)
+     def rule2 = rule1(3)
      def rule3 = 'e' ~ 'f'
    }
 
@@ -33,7 +33,7 @@ object Test {
      def rule1 =  'c' ~ 'f' ~ parser.rule2
    }
 
-   parser2.rule1("cf(aa)") match {
+   parser2.rule1("cf(aaa)j") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }
