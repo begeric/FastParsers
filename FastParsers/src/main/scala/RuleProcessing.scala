@@ -125,24 +125,32 @@ trait InlineRules extends MapRules { self: TreeTools with ParseInput =>
      case None =>  None
    }
 
+   def expandForeignCall(obj: c.Tree, ruleName: TermName, args: List[c.Tree]) =
+    c.typecheck(obj).tpe.members.find(x => x.name == ruleName) match {
+      case Some(rule) => rule.typeSignature.resultType match {
+        case AnnotatedType(annotations,typ) => annotations.find(_.tree.tpe =:= typeOf[saveAST]) match {
+          case Some(annot) =>
+            val codetyp = getInnerTypeOf[ParseResult[_]](typ) getOrElse c.abort(c.enclosingPosition, "wrong type for " + show(typ) + " during foreign call expansion")
+            q"foreignCall[$codetyp]($obj,${ruleName.toString},..$args)"
+            /*c.abort(c.enclosingPosition, "yey")
+            val code = annot.tree.children(1)
+            val codetyp = getInnerTypeOf[ParseResult[_]](typ) getOrElse c.abort(c.enclosingPosition, "wrong type for " + show(typ) + " during foreign call expansion")
+            expandCallRule(code,enclosingRule,rulesMap,expandedRules,rulesPath)
+            q"compound[$codetyp](${expandCallRule(code, enclosingRule,rulesMap,expandedRules,rulesPath)})"    //name :: rulesPath ?
+          case _ => c.abort(c.enclosingPosition,show(annotations.head.tree.tpe.typeSymbol.fullName) + " : is not saveAST") */
+        }
+        case typ => c.abort(c.enclosingPosition,"error : " + show(rule.typeSignature) + " should be an annotated type")
+      }
+      case _ => c.abort(c.enclosingPosition, show(ruleName) + " does not exists in" + show(obj))  //should never happend actually  because wouldnt compile
+    }
+
    tree match {
      case q"if($c) $a else $b" =>
        q"if($c) ${expandCallRule(a, enclosingRule,rulesMap,expandedRules,rulesPath)} else ${expandCallRule(b, enclosingRule,rulesMap,expandedRules,rulesPath)}"
-     /*case q"$a.${b: TermName}" if a.tpe <:< typeOf[FinalFastParserImpl] =>  //TODO put comments
-       c.typecheck(a).tpe.members.find(x => x.name == b) match {  // && x =:= typeOf[ParseResult]
-         case Some(rule) => rule.typeSignature.resultType match {
-           case AnnotatedType(annotations,typ) => annotations.find(_.tree.tpe =:= typeOf[saveAST]) match {
-               case Some(annot) =>
-                 val code = annot.tree.children(1)
-                 val codetyp = getInnerTypeOf[ParseResult[_]](typ) getOrElse c.abort(c.enclosingPosition, "wrong type for " + show(typ) + " during foreign call expansion")
-                 expandCallRule(code,rulesMap,rulesPath)
-                 q"compound[$codetyp](${expandCallRule(code, rulesMap, rulesPath)})"    //name :: rulesPath ?
-               case _ => c.abort(c.enclosingPosition,show(annotations.head.tree.tpe.typeSymbol.fullName) + " : is not saveAST")
-             }
-           case typ => c.abort(c.enclosingPosition,"error : " + show(rule.typeSignature) + " should be an annotated type")
-         }
-         case _ => c.abort(c.enclosingPosition, show(b) + " does not exists in" + show(a))  //should never happend actually  because wouldnt compile
-       } */
+     case q"$a.${b: TermName}(..$args)" if a.tpe <:< typeOf[FinalFastParserImpl] =>  //TODO put comments
+       expandForeignCall(a,b,args)
+     case q"$a.${b: TermName}" if a.tpe <:< typeOf[FinalFastParserImpl] =>  //TODO put comments
+       expandForeignCall(a,b,Nil)
      case q"$a.$m[..$d](..$b)" =>
         val callee = expandCallRule(a, enclosingRule, rulesMap,expandedRules, rulesPath)
         val args = b.map(expandCallRule(_, enclosingRule, rulesMap,expandedRules, rulesPath))

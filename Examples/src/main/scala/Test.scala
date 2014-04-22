@@ -29,11 +29,11 @@ object Test {
    }
 
    //getAST.get(parser)
-   /*val parser2 = FastParser {
+   val parser2 = FastParser {
      def rule1 =  'c' ~ 'f' ~ parser.rule2
-   }     */
+   }
 
-   parser.rule2("(aa)") match {
+   parser2.rule1("cf(aa)") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

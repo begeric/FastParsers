@@ -86,8 +86,10 @@ trait BaseParsers[Elem, Input] {
   @compileTimeOnly("positioned can’t be used outside FastParser")
   def positioned[T <: Positional](p: Parser[T]): Parser[T] = ???
 
-  def call[T](p: String,param: Any*) : Parser[T] = ???
+  def call[T](p: Any,params: Any*) : Parser[T] = ???
+  //def call[T](p: String,param: Any*) : Parser[T] = ???
   def compound[T](p:Parser[T]): Parser[T] = ???
+  def foreignCall[T](p: Any, ruleName: Any, params: Any*) = ???
 
   trait BaseParser[T] {
     @compileTimeOnly("~ can’t be used outside FastParser")
@@ -165,10 +167,12 @@ trait BaseParsersImpl extends CombinatorImpl {
     case q"$a ^^^[$d] $v"                   => parseValue(a, v, d, rs)
     case q"$a filter[$d] $f"                => parseFilter(a, f, d, rs)
     case q"$a withFailureMessage $msg"      => parseWithFailureMessage(a, msg, rs)
-    case q"call[$d](${ruleCall: String},..$params)" => parseRuleCall(TermName(ruleCall), params, d, rs)   //TODO needed?
+    case q"call[$d](${ruleCall: String},..$params)" => parseRuleCall(q"${TermName(ruleCall)}", params, d, rs)   //TODO needed?
     case q"compound[$d]($a)"                => parseCompound(a, d, rs)      //TODO needed?
-    //case q"$_.call[$d](${ruleCall: String},..$params)" => parseRuleCall(TermName(ruleCall), params, d, rs)
+    case q"foreignCall[$d]($obj,${ruleCall: String},..$params)" => parseRuleCall(q"$obj.${TermName(ruleCall)}", params, d, rs)
+    case q"$_.call[$d](${ruleCall: String},..$params)" => parseRuleCall(q"${TermName(ruleCall)}", params, d, rs)
     case q"$_.compound[$d]($a)"                => parseCompound(a, d, rs)
+    case q"$_.foreignCall[$d]($obj,${ruleCall: String},..$params)" => parseRuleCall(q"$obj.${TermName(ruleCall)}", params, d, rs)
     case q"if ($cond) $a else $b"           =>
       c.typecheck(tree).tpe match {
         case TypeRef(_, _, List(d)) => parseIfThnEls(cond,a,b,q"$d",rs)
@@ -551,7 +555,7 @@ trait BaseParsersImpl extends CombinatorImpl {
     """
   }
 
-  private def parseRuleCall(ruleCall: TermName, params: List[c.Tree], typ: c.Tree, rs: ResultsStruct) = {
+  private def parseRuleCall(ruleCall: c.Tree, params: List[c.Tree], typ: c.Tree, rs: ResultsStruct) = {
     val callResult = TermName(c.freshName)
     val result = TermName(c.freshName)
 
