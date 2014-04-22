@@ -20,11 +20,15 @@ trait FlatMapImpl extends InlineRules with CombinatorImpl {
 
   import c.universe._
 
-  override def expandCallRule(tree: c.Tree, paramsMap: List[ParamInfo], rulesMap: HashMap[String, RuleInfo], rulesPath: List[String]): c.Tree = {
+  override def expandCallRule(tree: c.Tree,
+                              enclosingRule: RuleInfo,
+                              rulesMap: HashMap[String, RuleInfo],
+                              expandedRules: HashMap[String, RuleInfo],
+                              rulesPath: List[String]): c.Tree = {
 
     def expandCallRuleFlatMap(tree: c.Tree): c.Tree = {
       def expandBody(body: c.Tree) = body match {
-        case q"{..$body;$parser}" => q"{..$body;${expandCallRule(parser, paramsMap, rulesMap, rulesPath)}}"
+        case q"{..$body;$parser}" => q"{..$body;${expandCallRule(parser, enclosingRule, rulesMap, expandedRules, rulesPath)}}"
         case _ => c.abort(c.enclosingPosition, "ill-formed body")
       }
       tree match {
@@ -39,9 +43,9 @@ trait FlatMapImpl extends InlineRules with CombinatorImpl {
     }
 
     tree match {
-      case q"$a flatMap[$d]($f)"  => q"${expandCallRule(a, paramsMap, rulesMap, rulesPath)} flatMap[$d](${expandCallRuleFlatMap(f)})"
-      case q"$a >>[$d]($f)"       => q"${expandCallRule(a, paramsMap, rulesMap, rulesPath)} >>[$d](${expandCallRuleFlatMap(f)})"
-      case _                      => super.expandCallRule(tree, paramsMap, rulesMap, rulesPath)
+      case q"$a flatMap[$d]($f)"  => q"${expandCallRule(a, enclosingRule, rulesMap, expandedRules, rulesPath)} flatMap[$d](${expandCallRuleFlatMap(f)})"
+      case q"$a >>[$d]($f)"       => q"${expandCallRule(a, enclosingRule, rulesMap, expandedRules, rulesPath)} >>[$d](${expandCallRuleFlatMap(f)})"
+      case _                      => super.expandCallRule(tree, enclosingRule, rulesMap, expandedRules, rulesPath)
     }
   }
 

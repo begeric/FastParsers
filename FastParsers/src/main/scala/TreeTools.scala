@@ -25,4 +25,8 @@ trait TreeTools {
     case _ => None
   }
 
+  def getParserParams(params: List[c.Tree]) =
+    params.map{case ValDef(_,name,tpt,_) => (name,tpt.tpe)}
+      .filter(_._2 <:< typeOf[Parser[_]])
+      .map(x => (x._1,getInnerTypeOf[Parser[_]](x._2).get)) //TODO what do you mean its super ugly ?
 }
