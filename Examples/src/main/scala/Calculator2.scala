@@ -76,7 +76,7 @@ object Calculator2 {
           parser.start(line) match {
             case Success((res,value)) =>
               println(res + " = " + value)
-            case Failure(msg) => println("failure: " + msg)
+            case Failure(msg) => println("failure : " + msg)
           }
       }
     }

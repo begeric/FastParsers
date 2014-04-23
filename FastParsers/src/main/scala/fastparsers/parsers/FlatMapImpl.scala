@@ -4,18 +4,18 @@ import scala.collection.mutable.HashMap
 import fastparsers.framework._
 import fastparsers.input._
 import fastparsers.tools._
-import fastparsers.framework.ruleprocessing.InlineRules
+import fastparsers.framework.ruleprocessing.RulesTransformer
 
 /**
  * Created by Eric on 22.04.14.
  */
-trait FlatMapImpl extends InlineRules with ParserImplHelper {
+trait FlatMapImpl extends RulesTransformer with ParserImplHelper {
   self: ParseInput with TreeTools =>
 
   import c.universe._
 
 
-  override def expandCallRule(tree: c.Tree,
+  override def transformRuleCalls(tree: c.Tree,
                               enclosingRule: RuleInfo,
                               rulesMap: HashMap[String, RuleInfo],
                               expandedRules: HashMap[String, RuleInfo],
@@ -23,7 +23,7 @@ trait FlatMapImpl extends InlineRules with ParserImplHelper {
 
     def expandCallRuleFlatMap(tree: c.Tree): c.Tree = {
       def expandBody(body: c.Tree) = body match {
-        case q"{..$body;$parser}" => q"{..$body;${expandCallRule(parser, enclosingRule, rulesMap, expandedRules, rulesPath)}}"
+        case q"{..$body;$parser}" => q"{..$body;${transformRuleCalls(parser, enclosingRule, rulesMap, expandedRules, rulesPath)}}"
         case _ => c.abort(c.enclosingPosition, "ill-formed body")
       }
       tree match {
@@ -38,9 +38,9 @@ trait FlatMapImpl extends InlineRules with ParserImplHelper {
     }
 
     tree match {
-      case q"$a flatMap[$d]($f)"  => q"${expandCallRule(a, enclosingRule, rulesMap, expandedRules, rulesPath)} flatMap[$d](${expandCallRuleFlatMap(f)})"
-      case q"$a >>[$d]($f)"       => q"${expandCallRule(a, enclosingRule, rulesMap, expandedRules, rulesPath)} >>[$d](${expandCallRuleFlatMap(f)})"
-      case _                      => super.expandCallRule(tree, enclosingRule, rulesMap, expandedRules, rulesPath)
+      case q"$a flatMap[$d]($f)"  => q"${transformRuleCalls(a, enclosingRule, rulesMap, expandedRules, rulesPath)} flatMap[$d](${expandCallRuleFlatMap(f)})"
+      case q"$a >>[$d]($f)"       => q"${transformRuleCalls(a, enclosingRule, rulesMap, expandedRules, rulesPath)} >>[$d](${expandCallRuleFlatMap(f)})"
+      case _                      => super.transformRuleCalls(tree, enclosingRule, rulesMap, expandedRules, rulesPath)
     }
   }
 

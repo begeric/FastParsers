@@ -5,14 +5,14 @@ import scala.reflect.macros.whitebox.Context
 import fastparsers.framework.ruleprocessing._
 import fastparsers.parsers.{FlatMapImpl, RepParsersImpl, BaseParsersImpl}
 import fastparsers.input.ArrayInput
-import fastparsers.framework.ruleprocessing.{InlineRules, RuleCombiner, ParseRules}
+import fastparsers.framework.ruleprocessing.{RulesTransformer, RuleCombiner, ParseRules}
 
 /**
  * Created by Eric on 22.04.14.
  */
 object ArrayParserImpl {
   def ArrayParserImpl[T: context.WeakTypeTag](context: Context)(rules: context.Tree): context.Tree =  {
-    new FastParsersImpl with InlineRules
+    new FastParsersImpl with RulesTransformer
       with ParseRules with BaseParsersImpl with RepParsersImpl
       with FlatMapImpl with RuleCombiner with ArrayInput {
 
