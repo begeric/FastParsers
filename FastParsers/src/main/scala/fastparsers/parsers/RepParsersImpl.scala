@@ -60,7 +60,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
               success = $counter >= $min
               $cont = false
               if (!success)
-                error = "expected at least " + $min + " occurence(s) for rep(" + ${prettyPrint(a)} + ", " + $min + ", " + $max + ") at " + $pos
+                ${pushError("expected at least " + show(min) + " occurence(s) for rep(" + prettyPrint(a) + ", " + show(min) + ", " + show(max) + ")", pos)}
               else
                 $rollback
           }
@@ -285,7 +285,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
        }
        else {
         success = false
-        error = ${prettyPrint(a)} + ".reduceLeft failed"
+        ${pushError(prettyPrint(a) + " reduceLeft failed", pos)}
         $rollback
        }
       """
@@ -298,7 +298,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
         q"""
         if ($buffer.size == 0){
           success = false
-          error = ${prettyPrint(a)} + ".reduceRight failed"
+          ${pushError(prettyPrint(a) + " reduceRight failed", pos)}
         }
         else {
          success = true

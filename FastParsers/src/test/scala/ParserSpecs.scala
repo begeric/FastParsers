@@ -400,7 +400,7 @@ class ParserSpecs extends FunSuite {
 
   test("Rule56 test"){ //(number ^^ (_.toString)) >> {case b => ':' ~> rep(b)}
     shouldSucced(parser.rule56)(
-      "1:11111" gives repeat("1",5),
+      "1:111111" gives repeat("1",6),
       "52:" gives Nil,
       "52:52" gives List("52"),
       "52:53" gives Nil,

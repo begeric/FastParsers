@@ -58,11 +58,12 @@ trait ParseRules extends MapRules {
    val wrapCode =
      q"""
      var success = false
-     var error = ""
        ..$initResults
        $ruleCode
        $result
-   """
+    """
+
+   val code = initError(initInput(q"$startPosition", wrapCode))
 
    val rewriteParams = convertParsersParams(rule.params)
 
@@ -70,7 +71,7 @@ trait ParseRules extends MapRules {
     //c.abort(c.enclosingPosition, show(replacedTree))
    val allParams = q"input: $inputType" :: (rewriteParams :+ q"val $startPosition: Int = 0")
    val rulecode = c.untypecheck(
-     q" def $ruleName[..${rule.typeParams}](..$allParams):fastparsers.framework.parseresult.ParseResult[${rule.typ}, $errorType] = ${initInput(q"$startPosition", wrapCode)}" )match {
+     q" def $ruleName[..${rule.typeParams}](..$allParams):fastparsers.framework.parseresult.ParseResult[${rule.typ}, $errorType] = $code" )match {
      case q"def $a[$t](..$b):$d = $e" => q"def $a[$t](..$b):$d  @fastparsers.framework.saveAST(${replacedTree}) = $e"
      case q"def $a(..$b):$d = $e" => q"def $a(..$b):$d @fastparsers.framework.saveAST(${replacedTree})  = $e"
    }   //TODO o/w typecheck error. explain. This is retarded  Proxy for x error

@@ -100,7 +100,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
        }
        else {
           success = false
-          error = "expected '" + $a + " at " + $pos
+          ${pushError("expected '" + show(a), pos)}
         }
      """
   }
@@ -114,7 +114,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
      }
      else {
         success = false
-        error = "expected in range ('" + $a + "', '" + $b + "')  at " + $pos
+        ${pushError("expected in range ('" + show(a) + "', '" + show(b) + "')", pos)}
      }
     """
   }
@@ -130,7 +130,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
        }
        else {
           success = false
-          error = "expected element in " + ${a.map(prettyPrint(_)).mkString} + " at " + $pos
+          ${pushError("expected element in " + a.map(prettyPrint(_)).mkString, pos)}
         }
      """
   }
@@ -152,7 +152,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
      }
      else {
         success = false
-        error = "acceptIf combinator failed at " + $pos
+        ${pushError("acceptIf combinator failed", pos)}
      }
      """
   }
@@ -202,7 +202,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     }
     else {
       success = false
-      error = "take(" + $n + ") cannot proceed, only " + ($inputsize - $pos) + " elements left at " + $pos
+      ${pushError("take(" + show(n) + ") cannot proceed, only " + show(q"$inputsize - $pos") + " elements left", pos)}
     }
     """
   }
@@ -217,6 +217,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
       }
       else {
         error = "raw(" + ${prettyPrint(a)} +  ") failure at " + $pos
+        ${pushError("raw(" + prettyPrint(a) +  ") failure", pos)}
       }
     """
   }
@@ -227,7 +228,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     if (success) {
       if (!$isEOI){
         success = false
-        error = "not all the input is consummed, at pos " + $pos
+        ${pushError("not all the input is consummed", pos)}
       }
     }
     """
@@ -237,7 +238,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   private def parseFailure(a: c.Tree, rs: ResultsStruct) = {
     q"""
       success = false
-      error = $a
+      ${pushError(show(a), pos)}
     """
   }
   private def  parseSuccess(a: c.Tree,typ: c.Tree, rs: ResultsStruct) = {
@@ -254,8 +255,8 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   private def parsePositioned(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     val beginpos = TermName(c.freshName)
     val result = TermName(c.freshName)
-    val results_tmp = new ResultsStruct()
-    val tree =
+    val results_tmp = rs.temporary
+    rs.append(result, typ)
     q"""
      val $beginpos = $pos
      ${expand(a,results_tmp)}
@@ -264,10 +265,6 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
         $result setPos ${getPositionned(q"$beginpos")}
      }
      """
-    results_tmp.setNoUse
-    rs.append(results_tmp)
-    rs.append((result, typ, true))
-    tree
   }
 
 
@@ -352,6 +349,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
        else {
         success = false
         error = "incorrect result for " + ${prettyPrint(a)} + ".filter at " + $pos
+        ${pushError("incorrect result for " + prettyPrint(a) + " filter", pos)}
         $rollback
        }
       """
@@ -363,7 +361,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     q"""
      ${expand(a, rs)}
       if (!success)
-         error = $msg
+        ${pushError(show(msg), pos)}
     """
   }
 

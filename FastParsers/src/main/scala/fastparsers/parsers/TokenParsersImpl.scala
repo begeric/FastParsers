@@ -41,7 +41,8 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
     val tmpstr = TermName(c.freshName)
     val inputsize = TermName(c.freshName)
     val i = TermName(c.freshName)
-    mark {rollback =>
+    //error = "`" + $str + "' expected but " + (if ($isEOI) "EOF" else $currentInput) + " found at " + $pos
+    mark { rollback =>
      q"""
       var $i = 0
       val $inputsize = $str.length
@@ -56,7 +57,7 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
       }
       else {
         success = false
-        error = "`" + $str + "' expected but " + (if ($isEOI) "EOF" else $currentInput) + " found at " + $pos
+        ${pushError("`" + show(str) + "' expected but ... found", pos)}
         $rollback
       }
     """
@@ -108,13 +109,13 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
         }
         else {
           success = false
-          error = "expected '\"' got EOF at " + $pos
+          ${pushError("expected '\"' got EOF", pos)}
           $rollback
         }
       }
       else {
         success = false
-        error = "expected '\"' at " + $pos
+        ${pushError("expected '\"' got EOF", pos)}
         $rollback
       }
     """
@@ -141,7 +142,7 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
       }
       else {
         success = false
-        error = "expected integer at" + $pos
+        ${pushError("expected '\"' got EOF", pos)}
         $rollback
       }
     """

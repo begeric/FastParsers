@@ -5,12 +5,13 @@ import fastparsers.framework._
 import fastparsers.input._
 import fastparsers.tools._
 import fastparsers.framework.ruleprocessing.RulesTransformer
+import fastparsers.error.ParseError
 
 /**
  * Created by Eric on 22.04.14.
  */
 trait FlatMapImpl extends RulesTransformer with ParserImplBase {
-  self: ParseInput with TreeTools =>
+  self: ParseInput with ParseError with TreeTools =>
 
   import c.universe._
 
