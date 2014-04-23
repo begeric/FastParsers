@@ -7,7 +7,7 @@ import scala.collection.mutable.ListBuffer
 /**
  * Provide the interface and the basics method needed to implement the transformation on fastparsers.parsers
  */
-trait ParserImplHelper { self: ParseInput =>
+trait ParserImplBase { self: ParseInput =>
   val c: Context
 
   import c.universe._
@@ -22,35 +22,51 @@ trait ParserImplHelper { self: ParseInput =>
     def this() = this(new ListBuffer[Result]())
 
     def setNoUse = results = results.map(x => (x._1, x._2, false))
+    def append(r: Result):Unit = results.append(r)
+    def append(t: TermName, typ: c.Tree):Unit = append((t, typ, true))
+    def append(rs: ResultsStruct):Unit = rs.results.foreach(append(_))
 
-    def append(r: Result) = results.append(r)
-
-    def append(t: TermName, typ: c.Tree) = results.append((t, typ, true))
-
-    def append(rs: ResultsStruct) = results.appendAll(rs.results)
-  }
-
-  /**
-   * Combine a list of results into either a tuple of result or into the same result
-   * @param results
-   * @return
-   */
-  def combineResults(results: ListBuffer[Result]): c.Tree = {
-    val usedResults = results.toList.filter(_._3)
-    if (usedResults.size > 1) {
-      //q"(..${usedResults.map(x => q"${x._1}")})"
-      val first = usedResults(0)
-      val sec = usedResults(1)
-      val rest = usedResults.drop(2)
-      rest.foldLeft(q"(${first._1},${sec._1})")((acc, e) => q"($acc,${e._1})")
+    def assignNew(code: c.Tree, typ: c.Tree): c.Tree = {
+      val result = TermName(c.freshName)
+      append(result,typ)
+      q"$result = $code"
     }
-    else if (usedResults.size == 1)
-      q"${usedResults(0)._1}"
-    else
-      q"Nil"
+
+    def temporary = new TemporaryResults(this)
+
+    /**
+     * Combine a list of results into either a tuple of result or into the same result
+     */
+    def combine: c.Tree = {
+      val usedResults = results.toList.filter(_._3)
+      if (usedResults.size > 1) {
+        //q"(..${usedResults.map(x => q"${x._1}")})"
+        val first = usedResults(0)
+        val sec = usedResults(1)
+        val rest = usedResults.drop(2)
+        rest.foldLeft(q"(${first._1},${sec._1})")((acc, e) => q"($acc,${e._1})")
+      }
+      else if (usedResults.size == 1)
+        q"${usedResults(0)._1}"
+      else
+        q"Nil"
+    }
   }
 
-  def combineResults(rs: ResultsStruct): c.Tree = combineResults(rs.results)
+  class TemporaryResults(dependence: ResultsStruct) extends ResultsStruct {
+    override def append(r: Result) = {
+      super.append(r)
+      dependence.append((r._1,r._2,false))
+    }
+  }
+
+  trait IgnoreResult { self : ResultsStruct =>
+    override def assignNew(code: c.Tree, typ: c.Tree) = q""
+    override def combine = c.abort(c.enclosingPosition, "cannot combine results while ignoring them")
+    override def temporary = new TemporaryResults(this) with IgnoreResult
+  }
+
+
 
   /**
    * Get the "zero" value of a certain type

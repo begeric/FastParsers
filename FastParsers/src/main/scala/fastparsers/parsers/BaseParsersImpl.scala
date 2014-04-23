@@ -6,7 +6,7 @@ import fastparsers.framework._
 /**
  * Expansion of Basic combinators
  */
-trait BaseParsersImpl extends ParserImplHelper {
+trait BaseParsersImpl extends ParserImplBase {
   self: ParseInput =>
 
   import c.universe._
@@ -92,11 +92,9 @@ trait BaseParsersImpl extends ParserImplHelper {
 
 
   private def parseElem(a: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    rs.append((result, inputElemType, true))
     q"""
       if ($isNEOI && $currentInput == $a){
-        $result = $a
+        ${rs.assignNew(a, inputElemType)}
         $advance
         success = true
        }
@@ -108,11 +106,9 @@ trait BaseParsersImpl extends ParserImplHelper {
   }
 
   private def parseRange(a: c.Tree, b: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    rs.append((result, inputElemType, true))
     q"""
      if ($isNEOI && $currentInput >= $a && $currentInput <= $b){
-      $result = $currentInput
+      ${rs.assignNew(currentInput, inputElemType)}
       $advance
       success = true
      }
@@ -124,13 +120,11 @@ trait BaseParsersImpl extends ParserImplHelper {
   }
 
   private def parseAccept(a: List[c.Tree],negate: Boolean,rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    rs.append((result, inputElemType, true))
     val ranges = if (negate)  q"!(${getAcceptedElem(a)})"
                  else q"(${getAcceptedElem(a)})"
     q"""
       if ($isNEOI && $ranges){
-        $result = $currentInput
+        ${rs.assignNew(currentInput, inputElemType)}
         $advance
         success = true
        }
@@ -150,11 +144,9 @@ trait BaseParsersImpl extends ParserImplHelper {
   }
 
   private def parseAcceptIf(f: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    rs.append((result, inputElemType, true))
     q"""
      if ($isNEOI && $f($currentInput)){
-      $result = $currentInput
+      ${rs.assignNew(currentInput, inputElemType)}
       $advance
       success = true
      }
@@ -166,11 +158,9 @@ trait BaseParsersImpl extends ParserImplHelper {
   }
 
   private def parseWildcard(rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    rs.append((result, inputElemType, true))
     q"""
       if ($isNEOI){
-        $result = $currentInput
+        ${rs.assignNew(currentInput, inputElemType)}
         $advance
         success = true
       }
@@ -182,39 +172,33 @@ trait BaseParsersImpl extends ParserImplHelper {
 
 
   private def parseGuard(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val tree = mark {
-      rollback =>
+    mark { rollback =>
         q"""
          ${expand(a, rs)}
          $rollback
        """
     }
-    tree
   }
 
 
   private def parseTakeWhile(f: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
     val tmp_f = TermName(c.freshName)
     val beginpos = TermName(c.freshName)
-    rs.append((result, inputType, true))
     q"""
       val $tmp_f = $f
       val $beginpos = $pos
       while ($isNEOI && $tmp_f($currentInput))
         $advance
-      $result = ${slice(q"$beginpos", q"$pos")}
+      ${rs.assignNew(slice(q"$beginpos", q"$pos"), inputType)}
       success = true
     """
   }
 
   private def parseTake(n: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    rs.append((result, inputType, true))
     q"""
     if ($pos + $n <= $inputsize) {
       success = true
-      $result = ${slice(pos, q"$pos + $n")}
+      ${rs.assignNew(slice(pos, q"$pos + $n"), inputType)}
     }
     else {
       success = false
@@ -225,23 +209,16 @@ trait BaseParsersImpl extends ParserImplHelper {
 
   private def parseRaw(a: c.Tree, rs: ResultsStruct) = {
     val beginpos = TermName(c.freshName)
-    val result = TermName(c.freshName)
-    val results_tmp = new ResultsStruct()
-    //${slice(q"$beginpos", q"$pos")}
-    val tree = q"""
+    q"""
       val $beginpos = $pos
-      ${expand(a,results_tmp)}
+      ${expand(a,rs.temporary)}
       if (success) {
-        $result = new fastparsers.input.InputWindow.InputWindow(fastparsers.input,$beginpos,$pos)
+        ${rs.assignNew(q"new fastparsers.input.InputWindow.InputWindow(input,$beginpos,$pos)", tq"fastparsers.input.InputWindow.InputWindow[$inputType]")}
       }
       else {
         msg = "raw(" + ${prettyPrint(a)} +  ") failure at " + $pos
       }
     """
-    results_tmp.setNoUse
-    rs.append(results_tmp)
-    rs.append((result, tq"fastparsers.input.InputWindow.InputWindow[$inputType]", true))
-    tree
   }
 
   private def parsePhrase(a: c.Tree, rs: ResultsStruct) = {
@@ -264,32 +241,27 @@ trait BaseParsersImpl extends ParserImplHelper {
     """
   }
   private def  parseSuccess(a: c.Tree,typ: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    rs.append((result, typ, true))
     q"""
       success = true
-      $result = $a
+      ${rs.assignNew(a,typ)}
     """
   }
 
   private def parsePosition(rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    rs.append((result, q"Int", true))
-    q"$result = $pos"
+    rs.assignNew(pos,tq"Int")
   }
 
   private def parsePositioned(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     val beginpos = TermName(c.freshName)
     val result = TermName(c.freshName)
     val results_tmp = new ResultsStruct()
-    //if ($result.pos == NoPosition)
     val tree =
     q"""
      val $beginpos = $pos
      ${expand(a,results_tmp)}
      if (success) {
-        $result = ${combineResults(results_tmp)}
-          $result setPos ${getPositionned(q"$beginpos")}
+        $result = ${results_tmp.combine}
+        $result setPos ${getPositionned(q"$beginpos")}
      }
      """
     results_tmp.setNoUse
@@ -309,104 +281,74 @@ trait BaseParsersImpl extends ParserImplHelper {
   }
 
   private def parseIgnoreLeft(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val results_tmp = new ResultsStruct()
-    val tree =
-      q"""
-      ${expand(a, results_tmp)}
+    q"""
+      ${expand(a, rs.temporary)}
       if (success) {
         ${expand(b, rs)}
       }
      """
-    results_tmp.setNoUse
-    rs.append(results_tmp)
-    tree
   }
 
   private def parseIgnoreRight(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val results_tmp = new ResultsStruct()
-    val tree =
-      q"""
+    q"""
       ${expand(a, rs)}
       if (success) {
-        ${expand(b, results_tmp)}
+        ${expand(b, rs.temporary)}
       }
      """
-    results_tmp.setNoUse
-    rs.append(results_tmp)
-    tree
   }
 
   def parseOr(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     val result = TermName(c.freshName)
-    var results_tmp1 = new ResultsStruct()
-    var results_tmp2 = new ResultsStruct()
-    val tree = mark {
-      rollback =>
+    var results_tmp1 = rs.temporary
+    var results_tmp2 = rs.temporary
+    rs.append(result, typ)
+    mark { rollback =>
         q"""
           ${expand(a, results_tmp1)}
           if (!success) {
             $rollback
             ${expand(b, results_tmp2)}
             if (success)
-              $result = ${combineResults(results_tmp2)}
+              $result = ${results_tmp2.combine}
           }
           else {
-            $result = ${combineResults(results_tmp1)}
+            $result = ${results_tmp1.combine}
           }
         """
     }
-
-    results_tmp1.setNoUse
-    results_tmp2.setNoUse
-    rs.append((result, typ, true)) //tq"typ"    Ident(TypeName("Any"))
-    rs.append(results_tmp1)
-    rs.append(results_tmp2)
-    tree
   }
 
   private def parseMap(a: c.Tree, f: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
     val tmp_f = TermName(c.freshName)
-    val results_tmp = new ResultsStruct()
+    val results_tmp = rs.temporary
     val tree =
       q"""
       val $tmp_f = $f
       ${expand(a, results_tmp)}
        if (success)
-         $result = $tmp_f.apply(${combineResults(results_tmp)})
+         ${rs.assignNew(q"$tmp_f.apply(${results_tmp.combine})", typ)}
       """
-    results_tmp.setNoUse
-    rs.append(results_tmp)
-    rs.append((result, typ, true))
     c.untypecheck(tree)
   }
 
   private def parseValue(a: c.Tree, v: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    val results_tmp = new ResultsStruct()
-    val tree =
-      q"""
-      ${expand(a, results_tmp)}
-       if (success)
-         $result = $v
-      """
-    results_tmp.setNoUse
-    rs.append(results_tmp)
-    rs.append((result, typ, true))
-    tree
+    q"""
+      ${expand(a, rs.temporary)}
+      if (success)
+       ${rs.assignNew(v, typ)}
+    """
   }
 
   private def parseFilter(a: c.Tree, f: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
     val tmp_f = TermName(c.freshName)
-    val results_tmp = new ResultsStruct()
-    val tree = mark {
-      rollback =>
-        q"""
+    val results_tmp = rs.temporary
+    val tree = mark { rollback =>
+    q"""
       val $tmp_f = $f
       ${expand(a, results_tmp)}
-       if (success && $tmp_f(${combineResults(results_tmp)}))
-         $result = ${combineResults(results_tmp)}
+       if (success && $tmp_f(${results_tmp.combine}))
+         ${rs.assignNew(results_tmp.combine,typ)}
        else {
         success = false
         msg = "incorrect result for " + ${prettyPrint(a)} + ".filter at " + $pos
@@ -414,9 +356,6 @@ trait BaseParsersImpl extends ParserImplHelper {
        }
       """
     }
-    results_tmp.setNoUse
-    rs.append(results_tmp)
-    rs.append((result, typ, true))
     c.untypecheck(tree)
   }
 
@@ -430,62 +369,48 @@ trait BaseParsersImpl extends ParserImplHelper {
 
   private def parseRuleCall(ruleCall: c.Tree, params: List[c.Tree], typ: c.Tree, rs: ResultsStruct) = {
     val callResult = TermName(c.freshName)
-    val result = TermName(c.freshName)
-
-    // val $callResult = $ruleCall(fastparsers.input.substring($offset),0)
-    //${advanceTo(q"$callResult.inputPos")}
     val call = params match {
       case Nil => q"$ruleCall(input,$pos)"
       case p => q"$ruleCall(input,..$p,$pos)"
     }
+
     val tree = q"""
         val $callResult = $call
         success = $callResult.success
         if (success){
           ${setpos(q"$callResult.inputPos")}
-          $result = $callResult.result
+          ${rs.assignNew(q"$callResult.result",typ)}
          }
         else
           msg = $callResult.msg
         """
-    rs.append((result, typ, true))
     c.untypecheck(tree)
   }
 
   private def parseCompound(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    var results_tmp = new ResultsStruct()
+    var results_tmp = rs.temporary
     val tree =
       q"""
         ${expand(a, results_tmp)}
-        $result = ${combineResults(results_tmp)}
+        ${rs.assignNew(results_tmp.combine, typ)}
       """
-    results_tmp.setNoUse
-    rs.append((result, typ, true))
-    rs.append(results_tmp)
     tree
   }
 
   private def parseIfThnEls(cond: c.Tree,a: c.Tree,b: c.Tree,typ: c.Tree, rs: ResultsStruct) = {
     val result = TermName(c.freshName)
-    var results_tmp1 = new ResultsStruct()
-    var results_tmp2 = new ResultsStruct()
-    val tree =
+    var results_tmp1 = rs.temporary
+    var results_tmp2 = rs.temporary
+    rs.append(result, typ)
     q"""
     if ($cond){
       ${expand(a,results_tmp1)}
-      $result = ${combineResults(results_tmp1)}
+      $result = ${results_tmp1.combine}
      }
     else {
       ${expand(b,results_tmp2)}
-      $result = ${combineResults(results_tmp2)}
+      $result = ${results_tmp2.combine}
      }
     """
-    results_tmp1.setNoUse
-    results_tmp2.setNoUse
-    rs.append((result, typ, true))
-    rs.append(results_tmp1)
-    rs.append(results_tmp2)
-    tree
   }
 }

@@ -5,7 +5,7 @@ import fastparsers.input.StringLikeInput
 /**
  * Created by Eric on 22.04.14.
  */
-trait TokenParsersImpl extends ParserImplHelper {
+trait TokenParsersImpl extends ParserImplBase {
   self: StringLikeInput =>
 
   import c.universe._
@@ -38,14 +38,11 @@ trait TokenParsersImpl extends ParserImplHelper {
   }
 
   private def parseLit(str: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
     val tmpstr = TermName(c.freshName)
     val inputsize = TermName(c.freshName)
     val i = TermName(c.freshName)
-    rs.append((result, inputType, true))
-    mark {
-      rollback =>
-        q"""
+    mark {rollback =>
+     q"""
       var $i = 0
       val $inputsize = $str.length
       $skipWhiteSpace
@@ -55,7 +52,7 @@ trait TokenParsersImpl extends ParserImplHelper {
       }
       if ($i == $inputsize){
         success = true
-        $result = $str
+        ${rs.assignNew(str, inputType)}
       }
       else {
         success = false
@@ -68,11 +65,8 @@ trait TokenParsersImpl extends ParserImplHelper {
 
   private def parseIdentifier(rs: ResultsStruct) = {
     val beginpos = TermName(c.freshName)
-    val result = TermName(c.freshName)
-    rs.append((result, inputWindowType, true))
-    mark {
-      rollback =>
-        q"""
+    mark { rollback =>
+     q"""
       $skipWhiteSpace
       val $beginpos = $pos
       if ($isNEOI && Character.isJavaIdentifierStart($currentInput)){
@@ -80,7 +74,7 @@ trait TokenParsersImpl extends ParserImplHelper {
         while ($isNEOI && Character.isJavaIdentifierPart($currentInput)) {
           $advance
         }
-        $result = ${getInputWindow(q"$beginpos", q"$pos")}
+        ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
         success = true
       }
       else {
@@ -94,9 +88,8 @@ trait TokenParsersImpl extends ParserImplHelper {
   private def parseStringLit(rs: ResultsStruct) = {
     val beginpos = TermName(c.freshName)
     val result = TermName(c.freshName)
-    rs.append((result, inputWindowType, true))
-    mark {
-      rollback => q"""
+    mark { rollback =>
+     q"""
       $skipWhiteSpace
       val $beginpos = $pos
       if ($isNEOI && $currentInput == '\"'){
@@ -111,7 +104,7 @@ trait TokenParsersImpl extends ParserImplHelper {
         if ($isNEOI) {
           success = true
           $advance
-          $result = ${getInputWindow(q"$beginpos", q"$pos")}
+          ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
         }
         else {
           success = false
@@ -128,49 +121,13 @@ trait TokenParsersImpl extends ParserImplHelper {
     }
   }
 
- /* private def parseNumber(rs: ResultsStruct) = {
-    val isNeg = TermName(c.freshName)
-    val result = TermName(c.freshName)
-    rs.append((result, tq"Int", true))
-    mark {
-      rollback =>
-        q"""
-      $skipWhiteSpace
-      var $isNeg = false
-      if ($isNEOI && $currentInput == '-'){
-        $isNeg = true
-        $advance
-      }
-      if ($isNEOI && $currentInput >= '0' && $currentInput <= '9') {
-        $result = $currentInput.asDigit
-        $advance
-        while ($isNEOI && $currentInput >= '0' && $currentInput <= '9'){
-          $result = $result * 10 + $currentInput.asDigit
-          $advance
-        }
-        success = true
-        if ($isNeg)
-          $result = -$result
-      }
-      else {
-        success = false
-        msg = "expected integer at" + $pos
-        $rollback
-      }
-    """
-    }
-  }  */
 
   private def parseNumber(rs: ResultsStruct) = {
-    val isNeg = TermName(c.freshName)
-    val result = TermName(c.freshName)
-    val beginPos = TermName(c.freshName)
-    rs.append((result, inputWindowType, true))
-    mark {
-      rollback =>
-        q"""
+    val beginpos = TermName(c.freshName)
+    mark {rollback =>
+     q"""
       $skipWhiteSpace
-      val $beginPos = $pos
+      val $beginpos = $pos
       if ($isNEOI && $currentInput == '-'){
         $advance
       }
@@ -180,7 +137,7 @@ trait TokenParsersImpl extends ParserImplHelper {
           $advance
         }
         success = true
-        $result = ${getInputWindow(q"$beginPos", q"$pos")}
+        ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
       }
       else {
         success = false
@@ -195,10 +152,9 @@ trait TokenParsersImpl extends ParserImplHelper {
     val isNeg = TermName(c.freshName)
     val beginPos = TermName(c.freshName)
     val result = TermName(c.freshName)
-    rs.append((result, inputWindowType, true))
-    mark {
-      rollback =>
-        q"""
+    rs.append(result, inputWindowType)
+    mark {  rollback =>
+     q"""
       $skipWhiteSpace
       var $isNeg = false
       val $beginPos = $pos
@@ -234,92 +190,13 @@ trait TokenParsersImpl extends ParserImplHelper {
   }
 
   private def parseWhiteSpaces(rs: ResultsStruct) = {
-    val beginPos = TermName(c.freshName)
-    val result = TermName(c.freshName)
-    rs.append((result, inputWindowType, true))
-    q"""
-      val $beginPos = $pos
-      $skipWhiteSpace
-      $result = ${getInputWindow(q"$beginPos", q"$pos")}
-      success = true
-    """
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////////////////////
-
-  /*private def parseWhiteSpaces2(rs: ResultsStruct) = {
-    q"""
-      $skipWhiteSpace
-      success = true
-    """
-  }  */
-
-  /*private def parseStringLit2(rs: ResultsStruct) = {
     val beginpos = TermName(c.freshName)
     val result = TermName(c.freshName)
-    rs.append((result, tq"String", true))
-    mark {
-      rollback => q"""
-      $skipWhiteSpace
+    q"""
       val $beginpos = $pos
-      if ($isNEOI && $currentInput == '\"'){
-        $advance
-        while ($isNEOI && $currentInput != '\"'){
-          if ($currentInput == '\\'){
-            $advance
-          }
-          $advance
-        }
-
-        if ($isNEOI) {
-          success = true
-          $advance
-          $result = new StringStruct(fastparsers.input,$beginpos, $pos)
-        }
-        else {
-          success = false
-          msg = "expected '\"' got EOF at " + $pos
-          $rollback
-        }
-      }
-      else {
-        success = false
-        msg = "expected '\"' at " + $pos
-        $rollback
-      }
-    """
-    }
-  }
-
-  private def parseStringLit3(rs: ResultsStruct) = {
-    mark {
-      rollback => q"""
       $skipWhiteSpace
-      if ($isNEOI && $currentInput == '\"'){
-        $advance
-        while ($isNEOI && $currentInput != '\"'){
-          if ($currentInput == '\\'){
-            $advance
-          }
-          $advance
-        }
-
-        if ($isNEOI) {
-          success = true
-          $advance
-        }
-        else {
-          success = false
-          msg = "expected '\"' got EOF at " + $pos
-          $rollback
-        }
-      }
-      else {
-        success = false
-        msg = "expected '\"' at " + $pos
-        $rollback
-      }
+      ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
+      success = true
     """
-    }
-  }  */
+  }
 }

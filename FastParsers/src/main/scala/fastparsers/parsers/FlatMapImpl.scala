@@ -9,7 +9,7 @@ import fastparsers.framework.ruleprocessing.RulesTransformer
 /**
  * Created by Eric on 22.04.14.
  */
-trait FlatMapImpl extends RulesTransformer with ParserImplHelper {
+trait FlatMapImpl extends RulesTransformer with ParserImplBase {
   self: ParseInput with TreeTools =>
 
   import c.universe._
@@ -62,16 +62,17 @@ trait FlatMapImpl extends RulesTransformer with ParserImplHelper {
 
   private def parseFlatMap(a: c.Tree, f: c.Tree, typ: c.Tree, rs: ResultsStruct) = f match {
     case q"(..$params => $body)" =>
-      var results_tmp = new ResultsStruct()
+      var results_tmp = rs.temporary
       val result = TermName(c.freshName)
       val fm = TermName(c.freshName)
-      val tree = c.untypecheck(mark {
+      rs.append(result, typ)
+      c.untypecheck(mark {
         rollback =>
           q"""
         ${expand(a, results_tmp)}
         if (success) {
           val $fm = (..$params => ${expandFunction(body, result, rs)})
-          $fm.apply(${combineResults(results_tmp)})
+          $fm.apply(${results_tmp.combine})
           if (!success)
             $rollback
         }
@@ -80,25 +81,19 @@ trait FlatMapImpl extends RulesTransformer with ParserImplHelper {
         }
       """
       })
-      results_tmp.setNoUse
-      rs.append(results_tmp)
-      rs.append(result, typ)
-      tree
 
     case _ => c.abort(c.enclosingPosition, "invalid function in rhs of flatMap")
   }
 
   private def expandFunction(func: c.Tree, result: TermName, rs: ResultsStruct) = {
     def expandBody(body: List[c.Tree], parser: c.Tree)(wrap: c.Tree => c.Tree) = {
-      var results_tmp = new ResultsStruct()
+      var results_tmp = rs.temporary
       val tree = wrap(
         q"""{
         ..$body
         ${expand(parser, results_tmp)}
-        $result = ${combineResults(results_tmp)}
+        $result = ${results_tmp.combine}
       } """)
-      results_tmp.setNoUse
-      rs.append(results_tmp)
       tree
     }
 

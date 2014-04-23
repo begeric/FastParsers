@@ -34,12 +34,12 @@ object Test {
    }
 
    val parser2 = FastParser {
-     def rule1 =  'c' ~ 'f' ~ parser.rule1(2)
+     def rule1 =  'c' ~ 'f' ~ parser.rule2
    }
 
-   parser2.rule1("cf(aa)dn") match {
+   parser2.rule1("cf(aaa)") match {
      case Success(x) => println(x)
-     case Failure(msg) => println("failure: " + msg)
+     case Failure(msg) => println("failure : " + msg)
    }
    /*parser = FastParser {
      def rule1[T](x: Int, y: Int) = repN('v',x) ~ repN('b',y)

@@ -5,7 +5,7 @@ import fastparsers.input.ParseInput
 /**
  * Created by Eric on 22.04.14.
  */
-trait RepParsersImpl extends ParserImplHelper {
+trait RepParsersImpl extends ParserImplBase {
   self: ParseInput =>
 
   import c.universe._
@@ -43,18 +43,17 @@ trait RepParsersImpl extends ParserImplHelper {
   }
 
   private def parseRep(a: c.Tree, typ: c.Tree, min: c.Tree, max: c.Tree, rs: ResultsStruct) = {
-    val counter = TermName(c.freshName)
-    val cont = TermName(c.freshName)
-    val result = TermName(c.freshName)
-    val tmp_result = TermName(c.freshName)
-    var results_tmp = new ResultsStruct()
+    val counter     = TermName(c.freshName)
+    val cont        = TermName(c.freshName)
+    val tmp_result  = TermName(c.freshName)
+    var results_tmp = rs.temporary
 
     val innerWhileTree = mark {
       rollback =>
         q"""
           ${expand(a, results_tmp)}
           if (success) {
-              $tmp_result.append(${combineResults(results_tmp)})
+              $tmp_result.append(${results_tmp.combine})
               if ($counter + 1 == $max) $cont = false
           }
           else {
@@ -64,13 +63,11 @@ trait RepParsersImpl extends ParserImplHelper {
                 msg = "expected at least " + $min + " occurence(s) for rep(" + ${prettyPrint(a)} + ", " + $min + ", " + $max + ") at " + $pos
               else
                 $rollback
-
           }
         """
     }
 
-    val tree = mark {
-      rollback =>
+    mark { rollback =>
         q"""
           var $counter = 0
           var $cont = true
@@ -84,25 +81,21 @@ trait RepParsersImpl extends ParserImplHelper {
             $rollback
           }
           else {
-             $result = $tmp_result.toList
+             ${rs.assignNew(q"$tmp_result.toList",tq"List[$typ]")}
           }
         """
     }
-    results_tmp.setNoUse
-    rs.append((result, tq"List[$typ]", true))
-    rs.append(results_tmp)
-    tree
   }
 
   private def parseOpt(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     val result = TermName(c.freshName)
-    var results_tmp = new ResultsStruct()
-    val tree = mark {
-      rollback =>
+    var results_tmp = rs.temporary
+    rs.append((result, tq"Option[$typ]", true))
+    mark { rollback =>
         q"""
         ${expand(a, results_tmp)}
         if (success) {
-          $result = Some(${combineResults(results_tmp)})
+          $result = Some(${results_tmp.combine})
         }
         else {
           $rollback
@@ -111,18 +104,15 @@ trait RepParsersImpl extends ParserImplHelper {
         }
       """
     }
-    results_tmp.setNoUse
-    rs.append((result, tq"Option[$typ]", true))
-    rs.append(results_tmp)
-    tree
   }
 
   private def parseRepsep(a: c.Tree, sep: c.Tree, typ: c.Tree, atLeastOnce: Boolean, rs: ResultsStruct) = {
-    var results_tmp = new ResultsStruct()
-    var results_tmp2 = new ResultsStruct()
+    var results_tmp = rs.temporary
+    var results_tmp2 = rs.temporary
     val cont = TermName(c.freshName)
     val tmp_result = TermName(c.freshName)
     val result = TermName(c.freshName)
+    rs.append(result, tq"List[$typ]")
 
     val innertree2 = mark {
       rollback =>
@@ -140,7 +130,7 @@ trait RepParsersImpl extends ParserImplHelper {
         q"""
           ${expand(a, results_tmp)}
           if (success) {
-             $tmp_result.append(${combineResults(results_tmp)})
+             $tmp_result.append(${results_tmp.combine})
              $innertree2
           }
           else {
@@ -152,8 +142,7 @@ trait RepParsersImpl extends ParserImplHelper {
 
     val assignSuccess =
       if (atLeastOnce)
-        mark {
-          rollback =>
+        mark { rollback =>
             q"""
           if ($tmp_result.size == 0) {
             $rollback
@@ -172,8 +161,7 @@ trait RepParsersImpl extends ParserImplHelper {
       """
       }
 
-    val tree =
-      q"""
+    q"""
       var $cont = true
       val $tmp_result = new ListBuffer[$typ]()
       while($cont) {
@@ -181,26 +169,17 @@ trait RepParsersImpl extends ParserImplHelper {
       }
       $assignSuccess
     """
-
-    results_tmp.setNoUse
-    results_tmp2.setNoUse
-    rs.append(results_tmp)
-    rs.append(results_tmp2)
-    rs.append((result, tq"List[$typ]", true))
-    tree
   }
 
   private def parseUntil(a: c.Tree, end: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    var results_tmp = new ResultsStruct()
-    var results_tmp2 = new ResultsStruct()
+    var results_tmp = rs.temporary
 
     val cont = TermName(c.freshName)
     val tmp_result = TermName(c.freshName)
-    val result = TermName(c.freshName)
 
     val innertree2 = mark { rollback =>
       q"""
-        ${expand(end, results_tmp2)}
+        ${expand(end, rs.temporary)}
         if (success)
           $cont = false
         else
@@ -212,7 +191,7 @@ trait RepParsersImpl extends ParserImplHelper {
       q"""
         ${expand(a,results_tmp)}
         if (success) {
-          $tmp_result.append(${combineResults(results_tmp)})
+          $tmp_result.append(${results_tmp.combine})
           $innertree2
         }
         else {
@@ -222,44 +201,37 @@ trait RepParsersImpl extends ParserImplHelper {
       """
     }
 
-    val tree =
     q"""
       var $cont = true
       val $tmp_result = new ListBuffer[$typ]()
       while($cont) {
         $innertree
       }
-      $result = $tmp_result.toList
+      ${rs.assignNew(q"$tmp_result.toList", tq"List[$typ]")}
       success = true
     """
-    results_tmp.setNoUse
-    results_tmp2.setNoUse
-    rs.append(results_tmp)
-    rs.append(results_tmp2)
-    rs.append((result, tq"List[$typ]", true))
-    tree
   }
 
   private def parseFoldLeft(a: c.Tree, init: c.Tree, f: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    var results_tmp = new ResultsStruct()
+    var results_tmp = rs.temporary
     val result = TermName(c.freshName)
     val cont = TermName(c.freshName)
     val tmp_f = TermName(c.freshName)
+    rs.append((result, typ, true))
 
     val inner = mark {
       rollback =>
         q"""
         ${expand(a, results_tmp)}
          if (success)
-           $result = $tmp_f($result,${combineResults(results_tmp)})
+           $result = $tmp_f($result,${results_tmp.combine})
          else {
           $cont = false
           $rollback
          }
       """
     }
-    val tree =
-      q"""
+    q"""
       val $tmp_f = $f
       var $cont = true
       $result = $init
@@ -268,65 +240,50 @@ trait RepParsersImpl extends ParserImplHelper {
       }
       success = true
     """
-    results_tmp.setNoUse
-    rs.append(results_tmp)
-    rs.append((result, typ, true))
-    tree
   }
 
   private def buffer(a: c.Tree, typ: c.Tree, rs: ResultsStruct)(process: TermName => c.Tree) = {
-    var results_tmp = new ResultsStruct()
+    var results_tmp = rs.temporary
     val cont = TermName(c.freshName)
     val buffer = TermName(c.freshName)
 
-    val buffering = mark {
-      rollback =>
+    val buffering = mark { rollback =>
         q"""
         ${expand(a, results_tmp)}
         if (success)
-          $buffer.append(${combineResults(results_tmp)})
+          $buffer.append(${results_tmp.combine})
         else
           $cont = false
       """
     }
 
-    val tree =
-      q"""
+    q"""
      var $cont = true
      val $buffer = new ListBuffer[$typ]()
      while($cont){
        $buffering
      }
-
      ${process(buffer)}
     """
-    results_tmp.setNoUse
-    rs.append(results_tmp)
-    tree
   }
 
 
   private def parseFoldRight(a: c.Tree, init: c.Tree, f: c.Tree, typ: c.Tree, parserType: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    val tree = buffer(a, parserType, rs) {
-      buffer =>
-        q"""
-       $result = $buffer.foldRight[$typ]($init)($f)
+    buffer(a, parserType, rs) { buffer =>
+      q"""
+       ${rs.assignNew(q"$buffer.foldRight[$typ]($init)($f)", typ)}
        success = true
       """
     }
-    rs.append((result, typ, true))
-    tree
   }
 
   private def parseReduceLeft(a: c.Tree, f: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    var results_tmp = new ResultsStruct()
-    val tree = mark {
-      rollback =>
-        q"""
+    var results_tmp = rs.temporary
+    mark { rollback =>
+      q"""
        ${expand(a, results_tmp)}
        if (success){
-          ${parseFoldLeft(a, combineResults(results_tmp), f, typ, rs)}
+          ${parseFoldLeft(a, results_tmp.combine, f, typ, rs)}
        }
        else {
         success = false
@@ -335,16 +292,11 @@ trait RepParsersImpl extends ParserImplHelper {
        }
       """
     }
-    results_tmp.setNoUse
-    rs.append(results_tmp)
-    tree
   }
 
 
   private def parseReduceRight(a: c.Tree, f: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    val tree = buffer(a, typ, rs) {
-      buffer =>
+    buffer(a, typ, rs) { buffer =>
         q"""
         if ($buffer.size == 0){
           success = false
@@ -352,12 +304,10 @@ trait RepParsersImpl extends ParserImplHelper {
         }
         else {
          success = true
-         $result = $buffer.reduceRight[$typ]($f)
+         ${rs.assignNew(q"$buffer.reduceRight[$typ]($f)", typ)}
         }
       """
     }
-    rs.append((result, typ, true))
-    tree
   }
 
 }

@@ -1,7 +1,7 @@
 package fastparsers.framework.ruleprocessing
 
 import fastparsers.input.ParseInput
-import fastparsers.parsers.{Parser, ParserImplHelper}
+import fastparsers.parsers.{Parser, ParserImplBase}
 import fastparsers.tools.TreeTools
 import scala.collection.mutable.{ListBuffer, HashMap}
 
@@ -9,7 +9,7 @@ import scala.collection.mutable.{ListBuffer, HashMap}
 * Create the "final" code for each rule
 */
 trait ParseRules extends MapRules {
-  self: ParseInput with ParserImplHelper with TreeTools =>
+  self: ParseInput with ParserImplBase with TreeTools =>
 
   import c.universe._
   import c.universe.internal._
@@ -50,7 +50,7 @@ trait ParseRules extends MapRules {
    val rs = new ResultsStruct(new ListBuffer[Result]())
    val ruleCode = expand(rule.code, rs)
    val initResults = rs.results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
-   val tupledResults = combineResults(rs.results)
+   val tupledResults = rs.combine
 
    val result = q"""fastparsers.framework.parseresult.ParseResult(success,msg,if (success) $tupledResults else ${zeroValue(tq"${rule.typ}")},$pos)"""
 
