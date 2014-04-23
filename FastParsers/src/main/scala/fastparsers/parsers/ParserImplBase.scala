@@ -1,5 +1,6 @@
 package fastparsers.parsers
 
+import fastparsers.error._
 import fastparsers.input.ParseInput
 import scala.reflect.macros.whitebox.Context
 import scala.collection.mutable.ListBuffer
@@ -7,7 +8,7 @@ import scala.collection.mutable.ListBuffer
 /**
  * Provide the interface and the basics method needed to implement the transformation on fastparsers.parsers
  */
-trait ParserImplBase { self: ParseInput =>
+trait ParserImplBase { self: ParseInput with ParseError =>
   val c: Context
 
   import c.universe._
@@ -21,9 +22,11 @@ trait ParserImplBase { self: ParseInput =>
   class ResultsStruct(var results: ListBuffer[Result]) {
     def this() = this(new ListBuffer[Result]())
 
+    @deprecated("will be removed")
     def setNoUse = results = results.map(x => (x._1, x._2, false))
     def append(r: Result):Unit = results.append(r)
     def append(t: TermName, typ: c.Tree):Unit = append((t, typ, true))
+    @deprecated("will be removed")
     def append(rs: ResultsStruct):Unit = rs.results.foreach(append(_))
 
     def assignNew(code: c.Tree, typ: c.Tree): c.Tree = {

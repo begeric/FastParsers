@@ -1,5 +1,6 @@
 package fastparsers.framework.ruleprocessing
 
+import fastparsers.error._
 import fastparsers.input.ParseInput
 import fastparsers.parsers.{Parser, ParserImplBase}
 import fastparsers.tools.TreeTools
@@ -9,7 +10,7 @@ import scala.collection.mutable.{ListBuffer, HashMap}
 * Create the "final" code for each rule
 */
 trait ParseRules extends MapRules {
-  self: ParseInput with ParserImplBase with TreeTools =>
+  self: ParseInput with ParserImplBase with ParseError with TreeTools =>
 
   import c.universe._
   import c.universe.internal._
@@ -28,8 +29,8 @@ trait ParseRules extends MapRules {
 
   def convertParsersParams(params: List[c.Tree]) = params.map{
     case valdef @ ValDef(m,n,t,v)  => getInnerTypeOf[Parser[_]](t.tpe) match {
-      case Some(innerType) =>
-        ValDef(m,n,tq"($inputType, Int) => fastparsers.framework.parseresult.ParseResult[$innerType]",v)
+      case Some(List(innerType)) =>
+        ValDef(m,n,tq"($inputType, Int) => fastparsers.framework.parseresult.ParseResult[$innerType, $errorType]",v)
       case None => valdef
     }
   }
@@ -52,12 +53,12 @@ trait ParseRules extends MapRules {
    val initResults = rs.results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
    val tupledResults = rs.combine
 
-   val result = q"""fastparsers.framework.parseresult.ParseResult(success,msg,if (success) $tupledResults else ${zeroValue(tq"${rule.typ}")},$pos)"""
+   val result = q"""fastparsers.framework.parseresult.ParseResult(success,error,if (success) $tupledResults else ${zeroValue(tq"${rule.typ}")},$pos)"""
 
    val wrapCode =
      q"""
      var success = false
-     var msg = ""
+     var error = ""
        ..$initResults
        $ruleCode
        $result
@@ -69,7 +70,7 @@ trait ParseRules extends MapRules {
     //c.abort(c.enclosingPosition, show(replacedTree))
    val allParams = q"input: $inputType" :: (rewriteParams :+ q"val $startPosition: Int = 0")
    val rulecode = c.untypecheck(
-     q" def $ruleName[..${rule.typeParams}](..$allParams):fastparsers.framework.parseresult.ParseResult[${rule.typ}] = ${initInput(q"$startPosition", wrapCode)}" )match {
+     q" def $ruleName[..${rule.typeParams}](..$allParams):fastparsers.framework.parseresult.ParseResult[${rule.typ}, $errorType] = ${initInput(q"$startPosition", wrapCode)}" )match {
      case q"def $a[$t](..$b):$d = $e" => q"def $a[$t](..$b):$d  @fastparsers.framework.saveAST(${replacedTree}) = $e"
      case q"def $a(..$b):$d = $e" => q"def $a(..$b):$d @fastparsers.framework.saveAST(${replacedTree})  = $e"
    }   //TODO o/w typecheck error. explain. This is retarded  Proxy for x error

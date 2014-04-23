@@ -59,9 +59,9 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
    //same hack as for annotation stuff
    def convertParsersArgs(params: List[c.Tree]) = params.map{ p =>
      getInnerTypeOf[Parser[_]](p.tpe) match {
-       case Some(innerType) => p match {
+       case Some(List(innerType)) => p match {
          /*case q"${ruleName : TermName}" =>
-           /*c.abort(c.enclosingPosition,show(tq"($inputType,Int) => fastparsers.framework.parseresult.ParseResult[$innerType]".tpe))
+           /*c.abort(c.enclosingPosition,show(tq"($inputType,Int) => fastparsers.framework.parseresult.ParseResult[$innerType, $errorType]".tpe))
            c.untypecheck(setSymbol(p, NoSymbol)) */
            setSymbol(p, NoSymbol) */
          case _ => //then need to create another anonymous rule
@@ -101,7 +101,7 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
       case Some(rule) => rule.typeSignature.resultType match {
         case AnnotatedType(annotations,typ) => annotations.find(_.tree.tpe =:= typeOf[saveAST]) match {
           case Some(annot) =>
-            val codetyp = getInnerTypeOf[ParseResult[_]](typ) getOrElse c.abort(c.enclosingPosition, "wrong type for " + show(typ) + " during foreign call expansion")
+            val codetyp = getInnerTypeOf[ParseResult[_,_]](typ) getOrElse c.abort(c.enclosingPosition, "wrong type for " + show(typ) + " during foreign call expansion")
             val concatName = obj.toString + "." + ruleName.toString
             val params = rule.typeSignature.paramLists.head//cool this is for curried things i guess, really cool
             val ruleParams = params.slice(1,params.size - 1)
@@ -113,7 +113,7 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
               val code = annot.tree.children(1)
               val substituedParams = subsituteParams2(ruleParams.map(_.name.toTermName), args, code)
               val substitued = substituteCallByForeignCall(obj, substituedParams)
-              q"compound[$codetyp]($substitued)" //this suppose that the code is already expanded, maybe everything would be easier if it wasn't...
+              q"compound[${codetyp.head}]($substitued)" //this suppose that the code is already expanded, maybe everything would be easier if it wasn't...
             }
             else
               q"foreignCall[$codetyp]($obj,${ruleName.toString},..$args)"

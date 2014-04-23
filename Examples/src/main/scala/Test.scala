@@ -111,7 +111,7 @@ object Test {
    parser.rule16("aaaa",4) match {
      //case Success(x : Positional) => println(x + " : " + x.pos)
      case Success(x) => println(x)
-     case Failure(msg) => println("failure : " + msg)
+     case Failure(error) => println("failure : " + error)
    }  */
 
    /*
@@ -123,7 +123,7 @@ object Test {
 
    parser.rule1("abc sdadsaas".toCharArray) match {
      case Success(x) => println(x)
-     case Failure(msg) => println("failure : " + msg)
+     case Failure(error) => println("failure : " + error)
    }       */
 
   /* val jsonparser = FastParsersCharArray{
@@ -211,7 +211,7 @@ object Test {
 
    arrayParser.rule1(Array(0,2,5)) match {
      case Success(x) => println(x)
-     case Failure(msg) => println("failure: " + msg)
+     case Failure(error) => println("failure: " + error)
    } */
  }
 }

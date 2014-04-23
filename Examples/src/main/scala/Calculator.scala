@@ -25,7 +25,7 @@ object Calculator {
 
     parser.expr("21+(5+1 ) * 2 +2 *8") match {
       case Success(x) => println(x)
-      case Failure(msg) => println("failure : " + msg)
+      case Failure(error) => println("failure : " + error)
     }
 
   } */

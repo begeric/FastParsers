@@ -1,12 +1,12 @@
 package fastparsers.parsers
 
 import fastparsers.input.ParseInput
+import fastparsers.error.ParseError
 
 /**
  * Created by Eric on 22.04.14.
  */
-trait RepParsersImpl extends ParserImplBase {
-  self: ParseInput =>
+trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError =>
 
   import c.universe._
 
@@ -60,7 +60,7 @@ trait RepParsersImpl extends ParserImplBase {
               success = $counter >= $min
               $cont = false
               if (!success)
-                msg = "expected at least " + $min + " occurence(s) for rep(" + ${prettyPrint(a)} + ", " + $min + ", " + $max + ") at " + $pos
+                error = "expected at least " + $min + " occurence(s) for rep(" + ${prettyPrint(a)} + ", " + $min + ", " + $max + ") at " + $pos
               else
                 $rollback
           }
@@ -114,8 +114,7 @@ trait RepParsersImpl extends ParserImplBase {
     val result = TermName(c.freshName)
     rs.append(result, tq"List[$typ]")
 
-    val innertree2 = mark {
-      rollback =>
+    val innertree2 = mark {  rollback =>
         q"""
           ${expand(sep, results_tmp2)}
            if (!success) {
@@ -125,8 +124,7 @@ trait RepParsersImpl extends ParserImplBase {
         """
     }
 
-    val innertree1 = mark {
-      rollback =>
+    val innertree1 = mark { rollback =>
         q"""
           ${expand(a, results_tmp)}
           if (success) {
@@ -217,7 +215,7 @@ trait RepParsersImpl extends ParserImplBase {
     val result = TermName(c.freshName)
     val cont = TermName(c.freshName)
     val tmp_f = TermName(c.freshName)
-    rs.append((result, typ, true))
+    rs.append(result, typ)
 
     val inner = mark {
       rollback =>
@@ -287,7 +285,7 @@ trait RepParsersImpl extends ParserImplBase {
        }
        else {
         success = false
-        msg = ${prettyPrint(a)} + ".reduceLeft failed"
+        error = ${prettyPrint(a)} + ".reduceLeft failed"
         $rollback
        }
       """
@@ -300,7 +298,7 @@ trait RepParsersImpl extends ParserImplBase {
         q"""
         if ($buffer.size == 0){
           success = false
-          msg = ${prettyPrint(a)} + ".reduceRight failed"
+          error = ${prettyPrint(a)} + ".reduceRight failed"
         }
         else {
          success = true

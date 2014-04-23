@@ -2,12 +2,12 @@ package fastparsers.parsers
 
 import fastparsers.input._
 import fastparsers.framework._
+import fastparsers.error.ParseError
 
 /**
  * Expansion of Basic combinators
  */
-trait BaseParsersImpl extends ParserImplBase {
-  self: ParseInput =>
+trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError =>
 
   import c.universe._
 
@@ -100,7 +100,7 @@ trait BaseParsersImpl extends ParserImplBase {
        }
        else {
           success = false
-          msg = "expected '" + $a + " at " + $pos
+          error = "expected '" + $a + " at " + $pos
         }
      """
   }
@@ -114,7 +114,7 @@ trait BaseParsersImpl extends ParserImplBase {
      }
      else {
         success = false
-        msg = "expected in range ('" + $a + "', '" + $b + "')  at " + $pos
+        error = "expected in range ('" + $a + "', '" + $b + "')  at " + $pos
      }
     """
   }
@@ -130,7 +130,7 @@ trait BaseParsersImpl extends ParserImplBase {
        }
        else {
           success = false
-          msg = "expected element in " + ${a.map(prettyPrint(_)).mkString} + " at " + $pos
+          error = "expected element in " + ${a.map(prettyPrint(_)).mkString} + " at " + $pos
         }
      """
   }
@@ -152,7 +152,7 @@ trait BaseParsersImpl extends ParserImplBase {
      }
      else {
         success = false
-        msg = "acceptIf combinator failed at " + $pos
+        error = "acceptIf combinator failed at " + $pos
      }
      """
   }
@@ -202,7 +202,7 @@ trait BaseParsersImpl extends ParserImplBase {
     }
     else {
       success = false
-      msg = "take(" + $n + ") cannot proceed, only " + ($inputsize - $pos) + " elements left at " + $pos
+      error = "take(" + $n + ") cannot proceed, only " + ($inputsize - $pos) + " elements left at " + $pos
     }
     """
   }
@@ -216,7 +216,7 @@ trait BaseParsersImpl extends ParserImplBase {
         ${rs.assignNew(q"new fastparsers.input.InputWindow.InputWindow(input,$beginpos,$pos)", tq"fastparsers.input.InputWindow.InputWindow[$inputType]")}
       }
       else {
-        msg = "raw(" + ${prettyPrint(a)} +  ") failure at " + $pos
+        error = "raw(" + ${prettyPrint(a)} +  ") failure at " + $pos
       }
     """
   }
@@ -227,7 +227,7 @@ trait BaseParsersImpl extends ParserImplBase {
     if (success) {
       if (!$isEOI){
         success = false
-        msg = "not all the input is consummed, at pos " + $pos
+        error = "not all the input is consummed, at pos " + $pos
       }
     }
     """
@@ -237,7 +237,7 @@ trait BaseParsersImpl extends ParserImplBase {
   private def parseFailure(a: c.Tree, rs: ResultsStruct) = {
     q"""
       success = false
-      msg = $a
+      error = $a
     """
   }
   private def  parseSuccess(a: c.Tree,typ: c.Tree, rs: ResultsStruct) = {
@@ -351,7 +351,7 @@ trait BaseParsersImpl extends ParserImplBase {
          ${rs.assignNew(results_tmp.combine,typ)}
        else {
         success = false
-        msg = "incorrect result for " + ${prettyPrint(a)} + ".filter at " + $pos
+        error = "incorrect result for " + ${prettyPrint(a)} + ".filter at " + $pos
         $rollback
        }
       """
@@ -363,7 +363,7 @@ trait BaseParsersImpl extends ParserImplBase {
     q"""
      ${expand(a, rs)}
       if (!success)
-         msg = $msg
+         error = $msg
     """
   }
 
@@ -382,19 +382,17 @@ trait BaseParsersImpl extends ParserImplBase {
           ${rs.assignNew(q"$callResult.result",typ)}
          }
         else
-          msg = $callResult.msg
+          error = $callResult.error
         """
     c.untypecheck(tree)
   }
 
   private def parseCompound(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     var results_tmp = rs.temporary
-    val tree =
-      q"""
-        ${expand(a, results_tmp)}
-        ${rs.assignNew(results_tmp.combine, typ)}
-      """
-    tree
+    q"""
+      ${expand(a, results_tmp)}
+      ${rs.assignNew(results_tmp.combine, typ)}
+    """
   }
 
   private def parseIfThnEls(cond: c.Tree,a: c.Tree,b: c.Tree,typ: c.Tree, rs: ResultsStruct) = {

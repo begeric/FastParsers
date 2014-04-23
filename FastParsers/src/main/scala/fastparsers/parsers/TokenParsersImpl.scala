@@ -1,12 +1,12 @@
 package fastparsers.parsers
 
 import fastparsers.input.StringLikeInput
+import fastparsers.error.ParseError
 
 /**
  * Created by Eric on 22.04.14.
  */
-trait TokenParsersImpl extends ParserImplBase {
-  self: StringLikeInput =>
+trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with ParseError =>
 
   import c.universe._
 
@@ -56,7 +56,7 @@ trait TokenParsersImpl extends ParserImplBase {
       }
       else {
         success = false
-        msg = "`" + $str + "' expected but " + (if ($isEOI) "EOF" else $currentInput) + " found at " + $pos
+        error = "`" + $str + "' expected but " + (if ($isEOI) "EOF" else $currentInput) + " found at " + $pos
         $rollback
       }
     """
@@ -108,13 +108,13 @@ trait TokenParsersImpl extends ParserImplBase {
         }
         else {
           success = false
-          msg = "expected '\"' got EOF at " + $pos
+          error = "expected '\"' got EOF at " + $pos
           $rollback
         }
       }
       else {
         success = false
-        msg = "expected '\"' at " + $pos
+        error = "expected '\"' at " + $pos
         $rollback
       }
     """
@@ -141,7 +141,7 @@ trait TokenParsersImpl extends ParserImplBase {
       }
       else {
         success = false
-        msg = "expected integer at" + $pos
+        error = "expected integer at" + $pos
         $rollback
       }
     """

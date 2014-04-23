@@ -20,7 +20,7 @@ object TestsHelper extends FunSuite {
 
   case class InputAndResult(in:String, res:Any)
 
-  def shouldSucced[T](rule:(String,Int) => ParseResult[Any])(tests:InputAndResult*) = {
+  def shouldSucced[T](rule:(String,Int) => ParseResult[Any,_])(tests:InputAndResult*) = {
     tests.foreach{
       x => rule(x.in,0) match {
         case Success(result) => assert(result == x.res, "on " + x.in + " expected " + x.res + " got " + result)
@@ -29,7 +29,7 @@ object TestsHelper extends FunSuite {
     }
   }
 
-  def shouldFail(rule:(String,Int) => ParseResult[Any])(tests:String*) = {
+  def shouldFail(rule:(String,Int) => ParseResult[Any,_])(tests:String*) = {
     tests.foreach{
       str => rule(str,0) match {
         case Success(result) => fail("Wasn't supposed to succeed, result : " + result)

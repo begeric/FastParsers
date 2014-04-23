@@ -5,6 +5,7 @@ import scala.reflect.macros.whitebox.Context
 import fastparsers.parsers.{FlatMapImpl, TokenParsersImpl, RepParsersImpl, BaseParsersImpl}
 import fastparsers.input.StringInput
 import fastparsers.framework.ruleprocessing.{RulesInliner, RuleCombiner, ParseRules, RulesTransformer}
+import fastparsers.error.DefaultParseError
 
 /**
  * Here is where the FastParsers implementation is composed to make an actual useful FastParsers
@@ -13,7 +14,7 @@ import fastparsers.framework.ruleprocessing.{RulesInliner, RuleCombiner, ParseRu
 class BaseImpl(val c: Context) extends FastParsersImpl with RulesTransformer with RulesInliner
             with ParseRules with BaseParsersImpl with RepParsersImpl
             with TokenParsersImpl with FlatMapImpl with RuleCombiner
-            with StringInput {
+            with StringInput with DefaultParseError{
 
   override def FastParser(rules: c.Tree) = super.FastParser(rules) //why ??
 }

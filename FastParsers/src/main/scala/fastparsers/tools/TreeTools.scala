@@ -34,13 +34,14 @@ trait TreeTools {
      params.zip(args).foldLeft(in){(acc,c) => substituteTermName(c._1, _ => c._2,acc)}
    }
 
-   def getInnerTypeOf[T : TypeTag](typ: c.Type): Option[c.Type] = typ match {
-     case TypeRef(_, _, List(z)) if typ <:< typeOf[T] => Some(z)
+   def getInnerTypeOf[T : TypeTag](typ: c.Type): Option[List[c.Type]] = typ match {
+     case TypeRef(_, _, Nil) => None
+     case TypeRef(_, _, z) if typ <:< typeOf[T] => Some(z)
      case _ => None
    }
 
    def getParserParams(params: List[c.Tree]) =
      params.map{case ValDef(_,name,tpt,_) => (name,tpt.tpe)}
        .filter(_._2 <:< typeOf[Parser[_]])
-       .map(x => (x._1,getInnerTypeOf[Parser[_]](x._2).get)) //TODO what do you mean its super ugly ?
+       .map(x => (x._1,getInnerTypeOf[Parser[_]](x._2).get.head)) //TODO what do you mean its super ugly ?
  }
