@@ -24,7 +24,7 @@ object MacroBuild extends Build {
 		
 		libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
 		
-		libraryDependencies += "com.github.axel22" % "scalameter_2.11" % "0.5-SNAPSHOT" % "test",
+		libraryDependencies += "com.github.axel22" % "scalameter_2.10" % "0.5-SNAPSHOT" % "test",
 
 		libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.11.0-RC4",
 		
