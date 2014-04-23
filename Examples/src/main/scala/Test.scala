@@ -37,7 +37,7 @@ object Test {
      def rule1 =  'c' ~ 'f' ~ parser.rule2
    }
 
-   parser2.rule1("cf(aaa)i") match {
+   parser2.rule1("cf(aa)i") match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure : " + msg)
    }

@@ -10,7 +10,7 @@ trait DefaultParseError extends ParseError{
 
   override def initError(cont: c.Tree): c.Tree = {
     q"""
-      var error = ""
+      var error = " "
       $cont
     """
   }
