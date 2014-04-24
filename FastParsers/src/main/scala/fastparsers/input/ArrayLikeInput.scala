@@ -1,7 +1,7 @@
 package fastparsers.input
 
 /**
- * Input on a array.
+ * Input on a array-like.
  *
  * Elem, Input, inputType and inputElemType must be set
  */

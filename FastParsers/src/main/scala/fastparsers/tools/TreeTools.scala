@@ -5,17 +5,32 @@ import fastparsers.parsers.Parser
 
 /**
   * Created by Eric on 21.04.14.
+ * Diverse tool to deal with ASTs
   */
 trait TreeTools {
    val c: Context
    import c.universe._
 
+  /**
+   * Substitute a symbol by a value in a tree
+   * @param symbol
+   * @param value
+   * @param in
+   * @return
+   */
   def substituteSymbol(symbol: Symbol, value: c.Tree => c.Tree, in: c.Tree) = new Transformer {
      override def transform(tree: c.Tree): c.Tree =
        if (tree.symbol == symbol) value(tree)
        else  super.transform(tree)
    }.transform(in)
 
+  /**
+   * Substitute a TermName by a value in a tree
+   * @param name
+   * @param value
+   * @param in
+   * @return
+   */
    def substituteTermName(name: TermName, value: c.Tree => c.Tree, in: c.Tree) = new Transformer {
      override def transform(tree: c.Tree): c.Tree = tree match {
        case q"${treeName: TermName}" if treeName == name => value(tree)
@@ -34,12 +49,24 @@ trait TreeTools {
      params.zip(args).foldLeft(in){(acc,c) => substituteTermName(c._1, _ => c._2,acc)}
    }
 
+  /**
+   * Get the template types of another Type.
+   * getInnerTypeOf[Parser[_]](..Parser[String]..) get you Some(List(String))
+   * @param typ The type in which we want to recuperate the generic part
+   * @tparam T
+   * @return
+   */
    def getInnerTypeOf[T : TypeTag](typ: c.Type): Option[List[c.Type]] = typ match {
      case TypeRef(_, _, Nil) => None
      case TypeRef(_, _, z) if typ <:< typeOf[T] => Some(z)
      case _ => None
    }
 
+  /**
+   *
+   * @param params
+   * @return
+   */
    def getParserParams(params: List[c.Tree]) =
      params.map{case ValDef(_,name,tpt,_) => (name,tpt.tpe)}
        .filter(_._2 <:< typeOf[Parser[_]])

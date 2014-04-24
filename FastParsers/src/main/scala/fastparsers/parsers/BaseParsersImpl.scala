@@ -5,7 +5,7 @@ import fastparsers.framework._
 import fastparsers.error.ParseError
 
 /**
- * Expansion of Basic combinators
+ * Implementation of Basic combinators
  */
 trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError =>
 

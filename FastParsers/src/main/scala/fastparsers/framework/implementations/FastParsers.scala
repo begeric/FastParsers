@@ -5,6 +5,7 @@ import fastparsers.parsers.{FlatMapParsers, TokenParsers, RepParsers, BaseParser
 
 /**
  * Example of a parser working on string.
+ * Interface for BaseImpl
  */
 object FastParsers extends BaseParsers[Char, String] with RepParsers with TokenParsers[String] with FlatMapParsers {
   def FastParser(rules: => Unit): Any = macro BaseImpl.FastParser

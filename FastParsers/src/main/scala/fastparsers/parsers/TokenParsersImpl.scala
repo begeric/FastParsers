@@ -5,6 +5,7 @@ import fastparsers.error.ParseError
 
 /**
  * Created by Eric on 22.04.14.
+ * Implementation of TokenParsers
  */
 trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with ParseError =>
 

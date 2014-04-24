@@ -9,6 +9,8 @@ import fastparsers.error.{IgnoreParseError, DefaultParseError}
 
 /**
  * Created by Eric on 22.04.14.
+ * Implementation of Parsers that deal with CharArray (different from ArrayParser[Char] in that it can deal with
+ * TokenParsers
  */
 class CharArrayImpl(val c: Context) extends FastParsersImpl with RulesTransformer with RulesInliner
   with ParseRules with BaseParsersImpl with RepParsersImpl with FlatMapImpl with RuleCombiner

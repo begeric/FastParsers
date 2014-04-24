@@ -8,6 +8,9 @@ import java.util
 import scala.collection.mutable.ArrayBuffer
 import scala.util.parsing.input._
 
+/**
+ * Create a position object for an input
+ */
 object ToPosition {
 
   trait ToPosition[T] {

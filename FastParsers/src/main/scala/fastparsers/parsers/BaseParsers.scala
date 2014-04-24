@@ -6,12 +6,15 @@ import scala.annotation.compileTimeOnly
 import scala.util.parsing.input.Positional
 
 /**
- * Base fastparsers.parsers
+ * Interface for Base parsers
  */
 
 trait BaseParsers[Elem, Input] {
 
 
+  /*
+    Used to deconstruct tuples, i.e write case a~b =>  instead of case (a,b) =>
+  */
   object ~ {
     def unapply[T, U](x: Tuple2[T, U]): Option[Tuple2[T, U]] = Some((x._1, x._2))
   }

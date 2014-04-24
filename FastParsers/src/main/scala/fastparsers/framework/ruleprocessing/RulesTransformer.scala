@@ -7,7 +7,9 @@ import fastparsers.parsers.Parser
 import fastparsers.framework._
 import fastparsers.framework.parseresult._
 
-
+/**
+ * Trait used to Transform rules so that calls to other rules and foreign calls are correctly handled
+ */
 trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
 
   import c.universe._

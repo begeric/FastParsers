@@ -4,6 +4,10 @@ import scala.language.implicitConversions
 
 object InputWindow {
 
+  /**
+   * Class used to represent a result by taking a reference to the original input and the position of its
+   * subsequence in it
+   */
   class InputWindow[Input](val in: Input,val start: Int,val end: Int){
     override def equals(x: Any) = x match {
       case s: InputWindow[Input] => s.in == in && s.start == start && s.end == end

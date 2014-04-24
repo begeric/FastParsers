@@ -6,6 +6,8 @@ import scala.annotation.compileTimeOnly
 
 /**
  * Created by Eric on 22.04.14.
+ * Parsers which parse tokens
+ * StringRepr can be, for example, a String or an Array[Char]
  */
 trait TokenParsers[StringRepr] {
 

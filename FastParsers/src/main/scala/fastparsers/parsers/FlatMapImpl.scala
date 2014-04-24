@@ -9,6 +9,8 @@ import fastparsers.error.ParseError
 
 /**
  * Created by Eric on 22.04.14.
+ * Implements FlatMap for fastparsers in the macro world.
+ * A preprocessing phase is needed to modify the code inside the lambda/partial function
  */
 trait FlatMapImpl extends RulesTransformer with ParserImplBase {
   self: ParseInput with ParseError with TreeTools =>

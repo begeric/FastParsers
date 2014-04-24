@@ -6,7 +6,7 @@ import scala.reflect.macros.whitebox.Context
 import scala.collection.mutable.ListBuffer
 
 /**
- * Provide the interface and the basics method needed to implement the transformation on fastparsers.parsers
+ * Provide the interface and the basics method needed to implement the transformation on parsers
  */
 trait ParserImplBase { self: ParseInput with ParseError =>
   val c: Context
@@ -14,21 +14,35 @@ trait ParserImplBase { self: ParseInput with ParseError =>
   import c.universe._
 
 
+  /**
+   * Represent a result variable
+   * _1 : Variable name
+   * _2 : Variable type
+   * _3 : wheter or not it is temporary, which mean that it won't be used anymore to construct another result
+   */
   type Result = (TermName, c.Tree, Boolean)
 
   /**
    * Structure to deal with the results of a rule expansion
+   * Put inside all variables which will need to be initialized at the begining of the rule expansion
    */
   class ResultsStruct(var results: ListBuffer[Result]) {
     def this() = this(new ListBuffer[Result]())
 
     @deprecated("will be removed")
     def setNoUse = results = results.map(x => (x._1, x._2, false))
-    def append(r: Result):Unit = results.append(r)
-    def append(t: TermName, typ: c.Tree):Unit = append((t, typ, true))
+    def append(r: Result): Unit = results.append(r)
+    def append(t: TermName, typ: c.Tree): Unit = append((t, typ, true))
     @deprecated("will be removed")
-    def append(rs: ResultsStruct):Unit = rs.results.foreach(append(_))
+    def append(rs: ResultsStruct): Unit = rs.results.foreach(append(_))
 
+    /**
+     * Automatically create a variable, assign it with code and register it
+     * @todo change typ: c.Tree to typ: c.Type
+     * @param code The code to assign to the newly created variable
+     * @param typ The typ of the variable
+     * @return The code representing the assignation
+     */
     def assignNew(code: c.Tree, typ: c.Tree): c.Tree = {
       val result = TermName(c.freshName)
       append(result,typ)
@@ -56,6 +70,11 @@ trait ParserImplBase { self: ParseInput with ParseError =>
     }
   }
 
+  /**
+   * Class which automatically append its result to its parents as already used results
+   * @todo clarify
+   * @param dependence
+   */
   class TemporaryResults(dependence: ResultsStruct) extends ResultsStruct {
     override def append(r: Result) = {
       super.append(r)
@@ -73,6 +92,7 @@ trait ParserImplBase { self: ParseInput with ParseError =>
 
   /**
    * Get the "zero" value of a certain type
+   * @todo not make it work on strings
    * @param typ
    * @return
    */
@@ -106,8 +126,17 @@ trait ParserImplBase { self: ParseInput with ParseError =>
     }
   else  q"null" */
 
-
+  /**
+   * Expand a combinator into an imperative code
+   * @param tree the combinator to expand
+   * @param r  ResultsStruct used to register the results
+   * @return  The expanded code
+   */
   def expand(tree: c.Tree, r: ResultsStruct): c.Tree = c.abort(c.enclosingPosition, "Not implemented combinator " + show(tree))
 
-  def prettyPrint(tree: c.Tree): String = "_" //TODO change ?
+  /**
+   * Prints a combinator in a readable way
+   * @param tree Code containing the combinator to print
+   */
+  def prettyPrint(tree: c.Tree): String = "?" //TODO change ?
 }

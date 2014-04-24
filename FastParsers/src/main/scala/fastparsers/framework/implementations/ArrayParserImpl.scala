@@ -11,6 +11,9 @@ import fastparsers.error.DefaultParseError
 /**
  * Created by Eric on 22.04.14.
  */
+/**
+ * An implementation of Parser combinator that deal with Array[T] inputs
+ */
 object ArrayParserImpl {
   def ArrayParserImpl[T: context.WeakTypeTag](context: Context)(rules: context.Tree): context.Tree =  {
     new FastParsersImpl with RulesTransformer

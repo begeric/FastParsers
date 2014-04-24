@@ -5,6 +5,7 @@ import fastparsers.input.ParseInput
 import scala.collection.mutable.HashMap
 
 /**
+ * Created by Eric on 23.04.14.
  * Inline rule calls.
  *
  * def rule1 = a ~ rule2
@@ -16,10 +17,6 @@ import scala.collection.mutable.HashMap
  * def rule2 = b ~ c
  *
  * If it cannot be inlined (recursive rules) then the rule will be simply called
- */
-
-/**
- * Created by Eric on 23.04.14.
  */
 trait RulesInliner extends RulesTransformer {
   self: TreeTools with ParseInput  =>

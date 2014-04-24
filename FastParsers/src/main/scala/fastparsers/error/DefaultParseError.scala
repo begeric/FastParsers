@@ -3,6 +3,9 @@ package fastparsers.error
 /**
  * Created by Eric on 23.04.14.
  */
+/**
+ * An error manager that replicate the one used in Scala Parser combinators, so not really helpful.
+ */
 trait DefaultParseError extends ParseError{
   import c.universe._
 
