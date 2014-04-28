@@ -2,6 +2,7 @@ import sbt._
 import Keys._
 
 object MacroBuild extends Build {
+
    lazy val Examples = project.in(file("Examples")) dependsOn(FastParsers) settings(
 	   // include the macro classes and resources in the main jar
 	   scalaVersion := "2.11.0-RC4" ,
@@ -10,6 +11,7 @@ object MacroBuild extends Build {
 	   // include the macro sources in the main source jar
 	   mappings in (Compile, packageSrc) ++= mappings.in(FastParsers, Compile, packageSrc).value
 	)
+	
    lazy val FastParsers = project.in(file("FastParsers")) settings(
 		scalaVersion := "2.11.0-RC4" ,
 		
@@ -31,6 +33,5 @@ object MacroBuild extends Build {
 		libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.11.0-RC4",
 		
 		testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
-		
    )
 }

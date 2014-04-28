@@ -1,10 +1,11 @@
-package lms.parsing.gen
+package lms
+
+case class Anon6507737(kind: Int, data: Any)
 
 case class Tuple2StringAnon6507737(_1: java.lang.String, _2: Anon6507737)
 
 case class OptionChar(value: Char, defined: Boolean)
 
-case class Anon6507737(kind: Int, data: Any)
 
 case class ParseResultAnon6507737(res: Anon6507737, empty: Boolean, next: Int)
 

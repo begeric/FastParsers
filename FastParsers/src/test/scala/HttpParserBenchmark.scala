@@ -4,7 +4,7 @@
 import org.scalameter.api._
 import HttpParsers._
 import scala.collection.mutable.ListBuffer
-import lms.parsing.gen._
+import lms._
 
 object HttpParserBenchmark extends PerformanceTest {
 

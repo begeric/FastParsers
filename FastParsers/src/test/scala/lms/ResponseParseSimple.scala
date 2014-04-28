@@ -1,4 +1,4 @@
-package lms.parsing.gen
+package lms
 
 import java.io.{ BufferedReader, FileReader, Serializable }
 import scala.collection.mutable.ArrayBuffer

@@ -7,7 +7,7 @@ import org.scalameter.api._
 import JsonParsers._
 import scala.collection.mutable.ListBuffer
 
-import lms.parsing.gen._
+import lms._
 import InputWindow._
 
 object JsonParserBenchmark extends PerformanceTest {
