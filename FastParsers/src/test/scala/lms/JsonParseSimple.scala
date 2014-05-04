@@ -17,7 +17,7 @@ object LMSJsonParser extends JsonParse(
  */
 class JsonParse(px1820: Int, px1821: Array[Char], px1823: Int, px1824: Array[Char], px1942: Array[Char]) extends ((Array[Char]) => ParseResultAnon6507737) {
   def apply(x0: Array[Char]): ParseResultAnon6507737 = {
-    var x6: scala.Function1[Int, ParseResultAnon6507737] = null
+    /*var x6: scala.Function1[Int, ParseResultAnon6507737] = null
     var x3257: scala.Function1[Int, ParseResultAnon6507737] = null
     var x3234: scala.Function1[Int, ParseResultAnon6507737] = null
     var x1819: scala.Function1[Int, ParseResultAnon6507737] = null
@@ -3978,7 +3978,8 @@ class JsonParse(px1820: Int, px1821: Array[Char], px1823: Int, px1824: Array[Cha
     val x3278 = x3
     val x3279 = x4
     val x3280 = new ParseResultAnon6507737(x3277, x3278, x3279)
-    x3280
+    x3280*/
+	null
   }
 }
 /**

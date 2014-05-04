@@ -48,9 +48,9 @@ trait FastParsersImpl extends TreeTools {
           /*case q"def $name[..$t](..$params): $d = $b" =>
             rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params,t)*///not supported yet
           case q"def $name(..$params): $d = $b" =>
-            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params, Nil)
+            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params, Nil, b)
           case q"def $name: $d = $b" =>
-            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, Nil, Nil)
+            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, Nil, Nil,b)
           case q"()" =>
           case x => c.abort(c.enclosingPosition, "body must only contain rule definition with the following form : def ruleName = body : " + x)
         }

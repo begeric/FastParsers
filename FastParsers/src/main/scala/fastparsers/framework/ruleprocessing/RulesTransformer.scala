@@ -43,7 +43,7 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
                        typeArgs: List[c.Type],
                        args: List[c.Tree]): Option[RuleInfo] =
     rulesMap.get(ruleName.toString).collect[RuleInfo]{
-      case rule @ RuleInfo(_, _, params, _) if (params.size == args.size) => rule
+      case rule @ RuleInfo(_, _, params, _,_) if (params.size == args.size) => rule
       case _ => c.abort(c.enclosingPosition,"incorrect call for rule " + ruleName)
     }
 
@@ -68,7 +68,7 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
            setSymbol(p, NoSymbol) */
          case _ => //then need to create another anonymous rule
            val newCode = transformRuleCalls(p,enclosingRule, rulesMap, expandedRules, rulesPath)
-           val newRule = RuleInfo(innerType,newCode,enclosingRule.params, enclosingRule.typeParams)
+           val newRule = RuleInfo(innerType,newCode,enclosingRule.params, enclosingRule.typeParams,newCode)
            val name = getAnonymousName
            expandedRules += name -> newRule
            setSymbol(q"${TermName(name)}", NoSymbol)
@@ -79,13 +79,13 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
 
    def expandRuleCall(ruleName: TermName, typeArgs: List[c.Type], args: List[c.Tree]): Option[c.Tree] =
      getValidRuleInfo(ruleName,rulesMap, typeArgs, args).collect[c.Tree] {
-       case RuleInfo(typ, _, _, _) => q"call[${typ}](${ruleName.toString}, ..${convertParsersArgs(args)})"
+       case RuleInfo(typ, _, _, _,_) => q"call[${typ}](${ruleName.toString}, ..${convertParsersArgs(args)})"
    }
 
    def expandParamCall(paramName: TermName, typeArgs: List[c.Type], args: List[c.Tree]) : Option[c.Tree] =
      getParserParams(enclosingRule.params).find(_._1 == paramName) match {
      case Some((_, tpe)) =>
-       Some(q"call[${tpe}](${paramName.toString}, ..$args)")//TODO check for param errors
+       Some(q"callParam[${tpe}](${paramName.toString}, ..$args)")//TODO check for param errors
      case None =>  None
    }
 
@@ -112,9 +112,12 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
             //same logic as in normal rule call
             if (!rulesPath.contains(concatName)) { //never supposed to be false... for now
               //we have to substitute parameters AND other rule calls
-              val code = annot.tree.children(1)
-              val substituedParams = subsituteParams2(ruleParams.map(_.name.toTermName), args, code)
-              val substitued = substituteCallByForeignCall(obj, substituedParams)
+              val code = callToTermName(annot.tree.children(1))//transformRuleCalls(annot.tree.children(1),enclosingRule,rulesMap, expandedRules,concatName::rulesPath)
+              val substituedParams = subsituteParams2(ruleParams.map(_.name.toTermName),args, code)
+              val tmp = transformRuleCalls(substituedParams, enclosingRule, rulesMap, expandedRules, rulesPath)
+              val substitued = substituteCallByForeignCall(obj, tmp)
+              //c.abort(c.enclosingPosition,show(substitued))
+              //c.abort(c.enclosingPosition, show(code))
               q"compound[${codetyp.head}]($substitued)" //this suppose that the code is already expanded, maybe everything would be easier if it wasn't...
             }
             else

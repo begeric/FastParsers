@@ -42,8 +42,7 @@ trait ParseRules extends MapRules {
         super.transform(newStuff)
       case _ => super.transform(tree)
     }
-  }.transform(c.typecheck(tree)) //typecheck or not typecheck ?
-
+  }.transform(c.typecheck(callToString(tree)))
 
   private def createRuleDef(name: String, rule: RuleInfo): c.Tree = {
    val ruleName = TermName(name)
@@ -67,15 +66,15 @@ trait ParseRules extends MapRules {
 
    val rewriteParams = convertParsersParams(rule.params)
 
-   val replacedTree = removeCompileTimeAnnotation(c.untypecheck(rule.code))// @saveAST(${replacedTree})
+   val replacedTree = removeCompileTimeAnnotation(rule.code)// @saveAST(${replacedTree})
     //c.abort(c.enclosingPosition, show(replacedTree))
    val allParams = q"input: $inputType" :: (rewriteParams :+ q"val $startPosition: Int = 0")
    val rulecode = c.untypecheck(
-     q" def $ruleName[..${rule.typeParams}](..$allParams):fastparsers.framework.parseresult.ParseResult[${rule.typ}, $errorType] = $code" )match {
+     q" def $ruleName[..${rule.typeParams}](..$allParams):fastparsers.framework.parseresult.ParseResult[${rule.typ}, $errorType] = $code" ) match {
      case q"def $a[$t](..$b):$d = $e" => q"def $a[$t](..$b):$d  @fastparsers.framework.saveAST(${replacedTree}) = $e"
      case q"def $a(..$b):$d = $e" => q"def $a(..$b):$d @fastparsers.framework.saveAST(${replacedTree})  = $e"
    }   //TODO o/w typecheck error. explain. This is retarded  Proxy for x error
-   rulecode
+    rulecode
  }
 
 }

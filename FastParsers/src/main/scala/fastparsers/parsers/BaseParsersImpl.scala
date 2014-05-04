@@ -40,10 +40,14 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     case q"$a ^^^[$d] $v"                   => parseValue(a, v, d, rs)
     case q"$a filter[$d] $f"                => parseFilter(a, f, d, rs)
     case q"$a withFailureMessage $msg"      => parseWithFailureMessage(a, msg, rs)
-    case q"call[$d](${ruleCall: String},..$params)" => parseRuleCall(q"${TermName(ruleCall)}", params, d, rs)   //TODO needed?
+    case q"call[$d](${ruleCall: String},..$params)" => parseRuleCall(q"${TermName(ruleCall)}", params, d, rs)
+    case q"call[$d](${ruleCall: TermName},..$params)" => parseRuleCall(ruleCall, params, d, rs)
+    case q"callParam[$d](${ruleCall: String})" => parseRuleCall(q"${TermName(ruleCall)}", Nil, d, rs)
     case q"compound[$d]($a)"                => parseCompound(a, d, rs)      //TODO needed?
     case q"foreignCall[$d]($obj,${ruleCall: String},..$params)" => parseRuleCall(q"$obj.${TermName(ruleCall)}", params, d, rs)
     case q"$_.call[$d](${ruleCall: String},..$params)" => parseRuleCall(q"${TermName(ruleCall)}", params, d, rs)
+    case q"$_.call[$d](${ruleCall: TermName},..$params)" => parseRuleCall(q"$ruleCall", params, d, rs)
+    case q"$_.callParam[$d](${ruleCall: String})" => parseRuleCall(q"${TermName(ruleCall)}", Nil, d, rs)
     case q"$_.compound[$d]($a)"                => parseCompound(a, d, rs)
     case q"$_.foreignCall[$d]($obj,${ruleCall: String},..$params)" => parseRuleCall(q"$obj.${TermName(ruleCall)}", params, d, rs)
     case q"if ($cond) $a else $b"           =>
@@ -384,6 +388,27 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
         """
     c.untypecheck(tree)
   }
+
+  private def parseRuleCall(ruleCall: TermName, params: List[c.Tree], typ: c.Tree, rs: ResultsStruct) = {
+    val callResult = TermName(c.freshName)
+    val call = params match {
+      case Nil => q"$ruleCall(input,$pos)"
+      case p => q"$ruleCall(input,..$p,$pos)"
+    }
+
+    val tree = q"""
+        val $callResult = $call
+        success = $callResult.success
+        if (success){
+          ${setpos(q"$callResult.inputPos")}
+          ${rs.assignNew(q"$callResult.result",typ)}
+         }
+        else
+          error = $callResult.error
+        """
+    c.untypecheck(tree)
+  }
+
 
   private def parseCompound(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     var results_tmp = rs.temporary

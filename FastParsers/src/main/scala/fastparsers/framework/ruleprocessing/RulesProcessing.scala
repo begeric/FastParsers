@@ -11,5 +11,5 @@ trait RulesProcessing {
   type RuleCode = c.Tree
   type ParamInfo = (c.TermName, c.Type)
 
-  case class RuleInfo(typ: RuleType,code: RuleCode, params: List[c.Tree], typeParams: List[c.universe.TypeDef])
+  case class RuleInfo(typ: RuleType,code: RuleCode, params: List[c.Tree], typeParams: List[c.universe.TypeDef], oldCode: c.Tree)
 }

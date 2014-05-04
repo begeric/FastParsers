@@ -14,7 +14,7 @@ import fastparsers.error.{IgnoreParseError, DefaultParseError}
 class BaseImpl(val c: Context) extends FastParsersImpl with RulesTransformer with RulesInliner
             with ParseRules with BaseParsersImpl with RepParsersImpl
             with TokenParsersImpl with FlatMapImpl with RuleCombiner
-            with StringInput with IgnoreParseError{
+            with StringInput with DefaultParseError{
 
   override def FastParser(rules: c.Tree) = super.FastParser(rules) //why ??
 }
