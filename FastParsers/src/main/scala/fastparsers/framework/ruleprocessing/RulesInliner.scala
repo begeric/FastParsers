@@ -32,7 +32,7 @@ trait RulesInliner extends RulesTransformer {
     def inlineExpand(ruleName: TermName, typeArgs: List[c.Type], args: List[c.Tree]): Option[c.Tree] =
       if (!rulesPath.contains(ruleName.toString)) {
         getValidRuleInfo(ruleName,rulesMap, typeArgs, args).collect[c.Tree] {
-          case RuleInfo(typ, code, params, _) =>
+          case RuleInfo(typ, code, params, _,_) =>
             val substituted = subsituteParams(params.map(_.symbol), args, code)
             val newRulesPath = ruleName.toString :: rulesPath
             val transformedCode = transformRuleCalls(substituted, enclosingRule, rulesMap, expandedRules, newRulesPath)

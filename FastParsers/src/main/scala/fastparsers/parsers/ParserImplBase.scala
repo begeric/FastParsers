@@ -43,6 +43,8 @@ trait ParserImplBase { self: ParseInput with ParseError =>
      * @param typ The typ of the variable
      * @return The code representing the assignation
      */
+    def assignNew(code: c.Tree, typ: c.Type): c.Tree = assignNew(code, tq"$typ")
+
     def assignNew(code: c.Tree, typ: c.Tree): c.Tree = {
       val result = TermName(c.freshName)
       append(result,typ)

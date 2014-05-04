@@ -7,8 +7,7 @@ trait StringLikeInput extends ArrayLikeInput {
 
   import c.universe._
 
-  type Elem = Char
-  def inputElemType = tq"Char"
+  def inputElemType = c.typecheck(tq"Char",c.TYPEmode).tpe
 
   override def initInput(startpos: c.Tree, then: c.Tree) =
     super.initInput(startpos,

@@ -6,11 +6,11 @@ package fastparsers.input
  */
 trait ArrayInput extends ArrayLikeInput {
 
-  protected val typ:c.WeakTypeTag[Elem]// = implicitly[c.WeakTypeTag[Elem]]
+  //val typ: c.WeakTypeTag[_]// = implicitly[c.WeakTypeTag[Elem]]
 
   import c.universe._
 
-  def inputType = tq"Array[$typ]"
-  def inputElemType = tq"$typ"
+  //def inputElemType = c.typecheck(tq"$typ",c.TYPEmode).tpe
+  //def inputType     = c.typecheck(tq"Array[$typ]",c.TYPEmode).tpe
 
 }

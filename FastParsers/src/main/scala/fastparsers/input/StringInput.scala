@@ -6,9 +6,9 @@ package fastparsers.input
 trait StringInput extends StringLikeInput {
   import c.universe._
 
-  type Input = String
-  def inputType = tq"String"
-  override def inputWindowType: c.Tree = tq"fastparsers.input.InputWindow.StringStruct"
+  def inputType = c.typecheck(tq"String",c.TYPEmode).tpe
+
+  override def inputWindowType: c.Type = c.typecheck(tq"fastparsers.input.InputWindow.StringStruct", c.TYPEmode).tpe
 
   override def getInputWindow(start: c.Tree, end: c.Tree): c.Tree = q"new fastparsers.input.InputWindow.StringStruct(input, $start, $end)"
 }

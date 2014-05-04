@@ -16,14 +16,15 @@ import fastparsers.error.DefaultParseError
  */
 object ArrayParserImpl {
   def ArrayParserImpl[T: context.WeakTypeTag](context: Context)(rules: context.Tree): context.Tree =  {
-    new FastParsersImpl with RulesTransformer
+    new FastParsersImpl with RulesTransformer with RulesInliner
       with ParseRules with BaseParsersImpl with RepParsersImpl
       with FlatMapImpl with RuleCombiner with ArrayInput with DefaultParseError {
 
-      type Elem = T
-      type Input = Array[Elem]
       val c: context.type = context
-      val typ = implicitly[c.WeakTypeTag[T]]
+      import c.universe._
+      //val typ = implicitly[c.WeakTypeTag[T]]
+      def inputElemType = c.typecheck(tq"${implicitly[c.WeakTypeTag[T]]}",c.TYPEmode).tpe
+      def inputType     = c.typecheck(tq"Array[$inputElemType]",c.TYPEmode).tpe
 
     }.FastParser(rules)
   }

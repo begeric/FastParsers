@@ -13,6 +13,8 @@ object getAST {
     import c.universe._
 
     val tmp = q"$parser"
-    c.abort(c.enclosingPosition,show(tmp.tpe))
+    val elem: c.Type = c.typecheck(tq"Char",c.TYPEmode).tpe
+    val input: c.Type = tq"Array[$elem]".tpe
+    c.abort(c.enclosingPosition,show(input))
   }
 }

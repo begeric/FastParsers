@@ -7,14 +7,12 @@ import scala.reflect.macros.whitebox.Context
  */
 trait ParseInput {
   val c: Context
-  type Elem
-  type Input
 
   import c.universe._
 
-  def inputType: c.Tree
-  def inputElemType: c.Tree
-  def inputWindowType: c.Tree = tq"fastparsers.input.InputWindow.InputWindow[$inputElemType]"
+  def inputType: c.Type
+  def inputElemType: c.Type
+  def inputWindowType: c.Type = c.typecheck(tq"fastparsers.input.InputWindow.InputWindow[$inputElemType]",c.TYPEmode).tpe
 
   def initInput(startpos: c.Tree, then: c.Tree): c.Tree
 

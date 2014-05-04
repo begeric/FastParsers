@@ -217,7 +217,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
       val $beginpos = $pos
       ${expand(a,rs.temporary)}
       if (success) {
-        ${rs.assignNew(q"new fastparsers.input.InputWindow.InputWindow(input,$beginpos,$pos)", tq"fastparsers.input.InputWindow.InputWindow[$inputType]")}
+        ${rs.assignNew(q"new fastparsers.input.InputWindow.InputWindow(input,$beginpos,$pos)", inputWindowType)}
       }
       else {
         error = "raw(" + ${prettyPrint(a)} +  ") failure at " + $pos

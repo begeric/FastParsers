@@ -9,7 +9,7 @@
 //because warnings
 
 import fastparsers.framework.getAST
-import fastparsers.framework.implementations.FastParsers
+import fastparsers.framework.implementations.FastArrayParsers
 import fastparsers.framework.parseresult._
 import fastparsers.input.InputWindow
 import scala.collection.mutable.HashMap
@@ -21,12 +21,15 @@ import scala.reflect.ClassTag
 object Test {
 
  def main(args: Array[String])  {
-   import FastParsers._
+   //import FastParsers._
    import InputWindow._
    import scala.util.parsing.input._
    import fastparsers.parsers._
 
-   val parser = FastParser {
+   object CharArrayParser extends FastArrayParsers[Char]
+   import CharArrayParser._
+
+   val parser = CharArrayParser {
     /* def rule1(x: Parser[(Char,Char)]) = '(' ~> x <~ ')'
      def rule2 = rule1('a' ~ 'g')
      def rule3 = 'a' ~ 'b' */
@@ -36,17 +39,17 @@ object Test {
      def rule4 = 'a' ~ 'c'
    }
 
-   val parser2 = FastParser {
+   /*val parser2 = FastParser {
     /* def rule1 = parser.rule1(rule4)
      def rule4 = 'x' ~ 'y'*/
      def rule3 = parser.rule1(parser.rule4)
      def rule5 = 'a' ~ 'y'
-   }
-   //getAST.get(parser2)
+   }   */
+   //getAST.get(parser)
 
-   parser2.rule3("(ac)xy") match {
+   parser.rule4("ac".toCharArray) match {
      case Success(x) => println(x)
-     case Failure(msg) => println("failure : " + msg)
+     case Failure(msg) => println("failure: " + msg)
    }
  }
 }

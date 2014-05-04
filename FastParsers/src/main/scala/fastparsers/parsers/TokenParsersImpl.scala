@@ -154,7 +154,7 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
     val isNeg = TermName(c.freshName)
     val beginPos = TermName(c.freshName)
     val result = TermName(c.freshName)
-    rs.append(result, inputWindowType)
+    rs.append(result, tq"$inputWindowType")
     mark {  rollback =>
      q"""
       $skipWhiteSpace
