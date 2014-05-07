@@ -4,12 +4,11 @@ import java.io.{ BufferedReader, FileReader, Serializable }
 import scala.collection.mutable.ArrayBuffer
 
 object LMSJsonParser extends JsonParse(
-      "false".length, "false".toArray,
-      "true".length, "true".toArray,
-      "null".toArray //,
-    //print = false
-   )
-	
+  "false".length, "false".toArray,
+  "true".length, "true".toArray,
+  "null".toArray
+)
+
 /**
  * ***************************************
  * Emitting Generated Code
