@@ -21,10 +21,10 @@ object ArrayParserImpl {
       with FlatMapImpl with RuleCombiner with ArrayInput with DefaultParseError {
 
       val c: context.type = context
+
       import c.universe._
-      //val typ = implicitly[c.WeakTypeTag[T]]
+
       def inputElemType = c.typecheck(tq"${implicitly[c.WeakTypeTag[T]]}",c.TYPEmode).tpe
-      def inputType     = c.typecheck(tq"Array[$inputElemType]",c.TYPEmode).tpe
 
     }.FastParser(rules)
   }

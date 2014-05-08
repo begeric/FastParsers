@@ -34,9 +34,9 @@ object Test {
      def rule2 = rule1('a' ~ 'g')
      def rule3 = 'a' ~ 'b' */
      //def rule4(x: Int) = repN('x',x)
-     def rule1(y: Parser[(Char,Char)]) = '(' ~> y <~ ')'
-     def rule2 = rule1(rule4)
-     def rule4 = 'a' ~ 'c'
+     //def rule1(y: Parser[(Char,Char)]) = '(' ~> y <~ ')'
+     //def rule2 = rule1(rule4)
+     def rule = 'a' ~ 'b'
    }
 
    /*val parser2 = FastParser {
@@ -45,11 +45,11 @@ object Test {
      def rule3 = parser.rule1(parser.rule4)
      def rule5 = 'a' ~ 'y'
    }   */
-   //getAST.get(parser)
+   getAST.get(parser)
 
-   parser.rule4("ac".toCharArray) match {
+   /*parser.rule4("ac".toCharArray) match {
      case Success(x) => println(x)
      case Failure(msg) => println("failure: " + msg)
-   }
+   } */
  }
 }

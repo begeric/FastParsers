@@ -14,7 +14,7 @@ object getAST {
 
     val tmp = q"$parser"
     val elem: c.Type = c.typecheck(tq"Char",c.TYPEmode).tpe
-    val input: c.Type = tq"Array[$elem]".tpe
-    c.abort(c.enclosingPosition,show(input))
+    val input: c.Type = typeOf[Array[Char]]
+    c.abort(c.enclosingPosition,show(parser.tpe))
   }
 }

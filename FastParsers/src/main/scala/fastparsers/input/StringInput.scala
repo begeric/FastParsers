@@ -6,7 +6,7 @@ package fastparsers.input
 trait StringInput extends StringLikeInput {
   import c.universe._
 
-  def inputType = c.typecheck(tq"String",c.TYPEmode).tpe
+  def inputType = typeOf[String]
 
   override def inputWindowType: c.Type = c.typecheck(tq"fastparsers.input.InputWindow.StringStruct", c.TYPEmode).tpe
 
