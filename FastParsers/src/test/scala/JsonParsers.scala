@@ -26,7 +26,7 @@ object JsonParsers {
       def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null".toCharArray | "true".toCharArray | "false".toCharArray)
       def obj:Parser[Any] = '{' ~> repsep(member,",".toCharArray) <~ "}".toCharArray
       def arr:Parser[Any] = '[' ~> repsep(value,",".toCharArray) <~ "]".toCharArray
-      def member:Parser[Any] = stringLit ~> ":".toCharArray ~> value
+      def member:Parser[Any] = stringLit ~ (lit(":".toCharArray) ~> value)
     }
   }
 

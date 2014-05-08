@@ -75,7 +75,7 @@ object JsonParserBenchmark extends PerformanceTest {
     }
   }
 
-  performance of "JsonParser@LMS" in {
+ /* performance of "JsonParser@LMS" in {
     measure method "value" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
@@ -113,7 +113,7 @@ object JsonParserBenchmark extends PerformanceTest {
         //println("@("+j+")JsonParser:Big@Combinator:value")
       }
     }
-  }
+  }    */
 
   performance of "JsonParserGen2@LMS" in {
     measure method "value" in {
