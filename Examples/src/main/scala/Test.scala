@@ -45,7 +45,7 @@ object Test {
      def rule3 = parser.rule1(parser.rule4)
      def rule5 = 'a' ~ 'y'
    }   */
-   getAST.get(parser)
+   //getAST.get(parser)
 
    /*parser.rule4("ac".toCharArray) match {
      case Success(x) => println(x)
