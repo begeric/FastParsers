@@ -74,7 +74,7 @@ object JsonParserBenchmark extends PerformanceTest {
       }
     }
   }
-  
+
   performance of "JsonParser@LMS" in {
     measure method "value" in {
       using(range) in { j =>
@@ -94,6 +94,46 @@ object JsonParserBenchmark extends PerformanceTest {
       }
     }
   }
-  
-  
+
+  performance of "JsonParserGen@LMS" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j; m <- files)
+          LMSJsonParserGen.apply(m)
+        //println("@("+j+")JsonParser@Combinator:value")
+      }
+    }
+  }
+
+  performance of "JsonParserGen:Big@LMS" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          LMSJsonParserGen.apply(bigFileArray)
+        //println("@("+j+")JsonParser:Big@Combinator:value")
+      }
+    }
+  }
+
+  performance of "JsonParserGen2@LMS" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j; m <- files)
+          LMSJsonParserGen2.apply(m)
+        //println("@("+j+")JsonParser@Combinator:value")
+      }
+    }
+  }
+
+  performance of "JsonParserGen2:Big@LMS" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          LMSJsonParserGen2.apply(bigFileArray)
+        //println("@("+j+")JsonParser:Big@Combinator:value")
+      }
+    }
+  }
+
+
 }
