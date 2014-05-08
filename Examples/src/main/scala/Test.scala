@@ -12,6 +12,7 @@ import fastparsers.framework.getAST
 import fastparsers.framework.implementations.FastArrayParsers
 import fastparsers.framework.parseresult._
 import fastparsers.input.InputWindow
+import fastparsers.parsers.Parser
 import scala.collection.mutable.HashMap
 import scala.language.reflectiveCalls
 import scala.language.implicitConversions
@@ -21,35 +22,33 @@ import scala.reflect.ClassTag
 object Test {
 
  def main(args: Array[String])  {
-   //import FastParsers._
-   import InputWindow._
-   import scala.util.parsing.input._
-   import fastparsers.parsers._
-
-   object CharArrayParser extends FastArrayParsers[Char]
-   import CharArrayParser._
-
-   val parser = CharArrayParser {
-    /* def rule1(x: Parser[(Char,Char)]) = '(' ~> x <~ ')'
-     def rule2 = rule1('a' ~ 'g')
-     def rule3 = 'a' ~ 'b' */
-     //def rule4(x: Int) = repN('x',x)
-     //def rule1(y: Parser[(Char,Char)]) = '(' ~> y <~ ')'
-     //def rule2 = rule1(rule4)
-     def rule = 'a' ~ 'b'
+   object JSonImpl2 {
+     import fastparsers.framework.implementations.FastParsersCharArray._
+     val jsonparser = FastParsersCharArray{
+       def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null".toCharArray | "true".toCharArray | "false".toCharArray)
+       def obj:Parser[Any] = '{' ~> repsep(member,",".toCharArray) <~ "}".toCharArray
+       def arr:Parser[Any] = '[' ~> repsep(value,",".toCharArray) <~ "]".toCharArray
+       def member:Parser[Any] = stringLit ~ (lit(":".toCharArray) ~> value)
+     }
    }
 
-   /*val parser2 = FastParser {
-    /* def rule1 = parser.rule1(rule4)
-     def rule4 = 'x' ~ 'y'*/
-     def rule3 = parser.rule1(parser.rule4)
-     def rule5 = 'a' ~ 'y'
-   }   */
-   //getAST.get(parser)
+   def hey(x: Any): Unit = x match {
+     case y :: ys => hey(y)
+     case y : InputWindow.CharArrayStruct => println("hey")
+     case (a, b) => hey(a)
+     case _ =>
+   }
 
-   /*parser.rule4("ac".toCharArray) match {
-     case Success(x) => println(x)
+   val bigFileName = "FastParsers/src/test/resources/" + "json.big1"
+   val bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
+   val bigFileArray = bigFile.toCharArray
+   println("hey")
+   JSonImpl2.jsonparser.value(bigFileArray) match {
+     case Success(x) =>
+       println("hey2")
+       println(x)
+       hey(x)
      case Failure(msg) => println("failure: " + msg)
-   } */
+   }
  }
 }

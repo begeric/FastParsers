@@ -14,6 +14,6 @@ import fastparsers.error.{IgnoreParseError, DefaultParseError}
  */
 class CharArrayImpl(val c: Context) extends FastParsersImpl with RulesTransformer with RulesInliner
   with ParseRules with BaseParsersImpl with RepParsersImpl with FlatMapImpl with RuleCombiner
-  with TokenParsersImpl with CharArrayInput with DefaultParseError {
+  with TokenParsersImpl with CharArrayInput with IgnoreParseError {
   override def FastParser(rules: c.Tree) = super.FastParser(rules) //why ??
 }
