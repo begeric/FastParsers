@@ -4,7 +4,7 @@ import scala.language.experimental.macros
 import fastparsers.parsers.{FlatMapParsers, TokenParsers, RepParsers, BaseParsers}
 
 /**
- * Example of a parser working on string.
+ * Example of a code working on string.
  * Interface for BaseImpl
  */
 object FastParsers extends BaseParsers[Char, String] with RepParsers with TokenParsers[String] with FlatMapParsers {

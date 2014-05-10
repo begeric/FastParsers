@@ -11,7 +11,7 @@ object Calculator {
       case Some((op,y)) => op(x._1,y)
     }
 
-    val parser = FastParser{
+    val code = FastParser{
       def op1 = lit("+") ^^^ ((x:Int,y:Int) => x + y) |
                 lit("-") ^^^ ((x:Int,y:Int) => x - y)
 
@@ -23,7 +23,7 @@ object Calculator {
       def expr:fastparsers.parsers.Parser[Int] = term ~ opt(op1 ~ expr) ^^ exec
     }
 
-    parser.expr("21+(5+1 ) * 2 +2 *8") match {
+    code.expr("21+(5+1 ) * 2 +2 *8") match {
       case Success(x) => println(x)
       case Failure(error) => println("failure : " + error)
     }

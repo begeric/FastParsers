@@ -4,7 +4,7 @@ import scala.reflect.macros.whitebox.Context
 import scala.collection.mutable.HashMap
 
 /**
-* Create the final parser object
+* Create the final code object
 */
 trait RuleCombiner extends ReduceRules {
  val c: Context

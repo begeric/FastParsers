@@ -131,7 +131,7 @@ object HttpParsers {
       case hName ~ prop => collect(hName.toLowerCase, prop)
     }
 
-    /*TODO: the handwritten parser has an order for these which is not alphabetic
+    /*TODO: the handwritten code has an order for these which is not alphabetic
      * coincidence? */
 
     //TODO: make whiteSpace consuming explicit

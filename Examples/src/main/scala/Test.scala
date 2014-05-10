@@ -22,14 +22,25 @@ import scala.reflect.ClassTag
 object Test {
 
  def main(args: Array[String])  {
-   object JSonImpl2 {
+
+  /* {
      import fastparsers.framework.implementations.FastParsersCharArray._
-     val jsonparser = FastParsersCharArray{
+     getAST.get(FastParsersCharArray{
        def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null".toCharArray | "true".toCharArray | "false".toCharArray)
        def obj:Parser[Any] = '{' ~> repsep(member,",".toCharArray) <~ "}".toCharArray
        def arr:Parser[Any] = '[' ~> repsep(value,",".toCharArray) <~ "]".toCharArray
        def member:Parser[Any] = stringLit ~ (lit(":".toCharArray) ~> value)
-     }
+     } )
+   }*/
+
+   object JSonImpl2 {
+     import fastparsers.framework.implementations.FastParsersCharArray._
+     val jsonparser = getAST.get(FastParsersCharArray{
+       def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null".toCharArray | "true".toCharArray | "false".toCharArray)
+       def obj:Parser[Any] = '{' ~> repsep(member,",".toCharArray) <~ "}".toCharArray
+       def arr:Parser[Any] = '[' ~> repsep(value,",".toCharArray) <~ "]".toCharArray
+       def member:Parser[Any] = stringLit ~ (lit(":".toCharArray) ~> value)
+     } )
    }
 
    def hey(x: Any): Unit = x match {
@@ -42,12 +53,12 @@ object Test {
    val bigFileName = "FastParsers/src/test/resources/" + "json.big1"
    val bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
    val bigFileArray = bigFile.toCharArray
-   println("hey")
+   //println("hey")
    JSonImpl2.jsonparser.value(bigFileArray) match {
      case Success(x) =>
-       println("hey2")
+      // println("hey2")
        println(x)
-       hey(x)
+     //  hey(x)
      case Failure(msg) => println("failure: " + msg)
    }
  }
