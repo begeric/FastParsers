@@ -34,10 +34,10 @@ trait FastParsersImpl extends TreeTools {
   private def getBasicStructure(rules: c.Tree) = {
 
     def getReturnType(ruleCode: c.Tree): Type = c.typecheck(ruleCode).tpe match {
-      //case tq"$_.fastparsers.parsers.Parser[$d]" => c.abort(c.enclosingPosition, "correct code type")
+      //case tq"$_.fastparsers.parsers.Parser[$d]" => c.abort(c.enclosingPosition, "correct parser type")
       //HACK or not HACK ?
       case TypeRef(_, y, List(z)) if y.fullName == "fastparsers.parsers.Parser" => z //q"Any".tpe//q"var x:${d.tpe}" //check it is a code
-      case v => c.abort(c.enclosingPosition, "incorrect code type " + show(v))
+      case v => c.abort(c.enclosingPosition, "incorrect parser type " + show(v))
     }
 
 

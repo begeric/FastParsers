@@ -22,11 +22,18 @@ object JsonParsers {
 
   object JSonImpl2 {
     import fastparsers.framework.implementations.FastParsersCharArray._
+    val nullValue = "null".toCharArray
+    val trueValue = "true".toCharArray
+    val falseValue = "false".toCharArray
+    val closeBracket = "}".toCharArray
+    val closeSBracket = "]".toCharArray
+    val comma = ",".toCharArray
+    val points = ":".toCharArray
     val jsonparser = FastParsersCharArray{
-      def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | "null".toCharArray | "true".toCharArray | "false".toCharArray)
-      def obj:Parser[Any] = '{' ~> repsep(member,",".toCharArray) <~ "}".toCharArray
-      def arr:Parser[Any] = '[' ~> repsep(value,",".toCharArray) <~ "]".toCharArray
-      def member:Parser[Any] = stringLit ~ (lit(":".toCharArray) ~> value)
+      def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | nullValue | trueValue | falseValue)
+      def obj:Parser[Any] = '{' ~> repsep(member,comma) <~ closeBracket
+      def arr:Parser[Any] = '[' ~> repsep(value,comma) <~ closeSBracket
+      def member:Parser[Any] = stringLit ~ (lit(points) ~> value)
     }
   }
 

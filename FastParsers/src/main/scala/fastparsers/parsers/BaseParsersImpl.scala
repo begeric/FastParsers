@@ -299,7 +299,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
      """
   }
 
-  def parseOr(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
+  /*def parseOr(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     val result = TermName(c.freshName)
     var results_tmp1 = rs.temporary
     var results_tmp2 = rs.temporary
@@ -318,6 +318,33 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
           }
         """
     }
+  }   */
+  def parseOr(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
+    val result = TermName(c.freshName)
+    rs.append(result, typ)
+    mark {rollback =>parseOrRHS(a, b, result, rollback, rs)}
+  }
+
+  private def parseOrRHS(rhs : c.Tree, lhs: c.Tree, result: TermName, rollback: c.Tree, rs: ResultsStruct): c.Tree = {
+    var results_tmp1 = rs.temporary
+    var results_tmp2 = rs.temporary
+    val expandRHS = rhs match {
+      case q"$a | $b" => parseOrRHS(rhs, lhs, result, rollback, results_tmp1)
+      case q"$a || $b" => parseOrRHS(a, b, result, rollback, results_tmp1)
+      case x => q"${expand(x, results_tmp1)}"
+    }
+    q"""
+       $expandRHS
+        if (!success) {
+          $rollback
+          ${expand(lhs, results_tmp2)}
+          if (success)
+            $result = ${results_tmp2.combine}
+        }
+        else {
+          $result = ${results_tmp1.combine}
+        }
+    """
   }
 
   private def parseMap(a: c.Tree, f: c.Tree, typ: c.Tree, rs: ResultsStruct) = {

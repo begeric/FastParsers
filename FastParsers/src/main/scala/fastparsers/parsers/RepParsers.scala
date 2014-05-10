@@ -4,7 +4,7 @@ import scala.annotation.compileTimeOnly
 
 /**
  * Created by Eric on 22.04.14.
- * Interface for code representing repetition
+ * Interface for parsers representing repetition
  */
 trait RepParsers {
 
