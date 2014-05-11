@@ -257,15 +257,15 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   }
 
   private def parsePositioned(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val beginpos = TermName(c.freshName)
-    val result = TermName(c.freshName)
     val results_tmp = rs.temporary
-    rs.append(result, typ)
+    val beginpos = TermName(c.freshName)
+    val result = rs.newVar(typ)
+    //TODO not sure if it works well when the results gets ignored...
     q"""
      val $beginpos = $pos
      ${expand(a,results_tmp)}
      if (success) {
-        $result = ${results_tmp.combine}
+        ${rs.assignTo(result,results_tmp.combine)}
         $result setPos ${getPositionned(q"$beginpos")}
      }
      """
@@ -283,7 +283,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
 
   private def parseIgnoreLeft(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     q"""
-      ${expand(a, rs.temporary)}
+      ${expand(a, new ResultsStruct with IgnoreResult)}
       if (success) {
         ${expand(b, rs)}
       }
@@ -294,34 +294,13 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     q"""
       ${expand(a, rs)}
       if (success) {
-        ${expand(b, rs.temporary)}
+        ${expand(b, new ResultsStruct with IgnoreResult)}
       }
      """
   }
 
-  /*def parseOr(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    var results_tmp1 = rs.temporary
-    var results_tmp2 = rs.temporary
-    rs.append(result, typ)
-    mark { rollback =>
-        q"""
-          ${expand(a, results_tmp1)}
-          if (!success) {
-            $rollback
-            ${expand(b, results_tmp2)}
-            if (success)
-              $result = ${results_tmp2.combine}
-          }
-          else {
-            $result = ${results_tmp1.combine}
-          }
-        """
-    }
-  }   */
   def parseOr(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
-    rs.append(result, typ)
+    val result = rs.newVar(typ)
     mark {rollback =>parseOrRHS(a, b, result, rollback, rs)}
   }
 
@@ -329,8 +308,8 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     var results_tmp1 = rs.temporary
     var results_tmp2 = rs.temporary
     val expandRHS = rhs match {
-      case q"$a | $b" => parseOrRHS(rhs, lhs, result, rollback, results_tmp1)
-      case q"$a || $b" => parseOrRHS(a, b, result, rollback, results_tmp1)
+      case q"$a |[$_] $b" => parseOrRHS(rhs, lhs, result, rollback, results_tmp1)
+      case q"$a ||[$_] $b" => parseOrRHS(a, b, result, rollback, results_tmp1)
       case x => q"${expand(x, results_tmp1)}"
     }
     q"""
@@ -338,11 +317,12 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
         if (!success) {
           $rollback
           ${expand(lhs, results_tmp2)}
-          if (success)
-            $result = ${results_tmp2.combine}
+          if (success){
+            ${rs.assignTo(result, results_tmp2.combine)}
+          }
         }
         else {
-          $result = ${results_tmp1.combine}
+            ${rs.assignTo(result, results_tmp1.combine)}
         }
     """
   }
@@ -446,18 +426,17 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   }
 
   private def parseIfThnEls(cond: c.Tree,a: c.Tree,b: c.Tree,typ: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
+    val result = rs.newVar(typ)
     var results_tmp1 = rs.temporary
     var results_tmp2 = rs.temporary
-    rs.append(result, typ)
     q"""
     if ($cond){
       ${expand(a,results_tmp1)}
-      $result = ${results_tmp1.combine}
+      ${rs.assignTo(result, results_tmp1.combine)}
      }
     else {
       ${expand(b,results_tmp2)}
-      $result = ${results_tmp2.combine}
+      ${rs.assignTo(result, results_tmp2.combine)}
      }
     """
   }

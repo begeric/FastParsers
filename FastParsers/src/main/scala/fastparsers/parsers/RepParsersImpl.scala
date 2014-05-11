@@ -89,18 +89,17 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
   }
 
   private def parseOpt(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
-    val result = TermName(c.freshName)
     var results_tmp = rs.temporary
-    rs.append((result, tq"Option[$typ]", true))
+    val result = rs.newVar(tq"Option[$typ]")
     mark { rollback =>
         q"""
         ${expand(a, results_tmp)}
         if (success) {
-          $result = Some(${results_tmp.combine})
+          ${rs.assignTo(result, q"Some(${results_tmp.combine})")}
         }
         else {
           $rollback
-          $result = None
+          ${rs.assignTo(result, q"None")}
           success = true
         }
       """
@@ -112,8 +111,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
     var results_tmp2 = rs.temporary
     val cont = TermName(c.freshName)
     val tmp_result = TermName(c.freshName)
-    val result = TermName(c.freshName)
-    rs.append(result, tq"List[$typ]")
+    val result = rs.newVar(tq"List[$typ]")
 
     val innertree2 = mark {  rollback =>
         q"""
@@ -148,16 +146,16 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
             success = false
           }
           else {
-            $result = $tmp_result.toList
+            ${rs.assignTo(result, q"$tmp_result.toList")}
             success = true
            }
         """
         }
       else {
         q"""
-        $result = $tmp_result.toList
-        success = true
-      """
+          ${rs.assignTo(result, q"$tmp_result.toList")}
+          success = true
+        """
       }
 
     q"""
@@ -213,17 +211,17 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
 
   private def parseFoldLeft(a: c.Tree, init: c.Tree, f: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     var results_tmp = rs.temporary
-    val result = TermName(c.freshName)
     val cont = TermName(c.freshName)
     val tmp_f = TermName(c.freshName)
-    rs.append(result, typ)
+    val result = rs.newVar(typ)
 
     val inner = mark {
       rollback =>
         q"""
         ${expand(a, results_tmp)}
-         if (success)
-           $result = $tmp_f($result,${results_tmp.combine})
+         if (success){
+           ${rs.assignTo(result, q"$tmp_f($result,${results_tmp.combine})")}
+          }
          else {
           $cont = false
           $rollback
@@ -233,7 +231,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
     q"""
       val $tmp_f = $f
       var $cont = true
-      $result = $init
+      ${rs.assignTo(result, init)}
       while($cont){
         $inner
       }

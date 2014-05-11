@@ -66,9 +66,8 @@ trait FlatMapImpl extends RulesTransformer with ParserImplBase {
   private def parseFlatMap(a: c.Tree, f: c.Tree, typ: c.Tree, rs: ResultsStruct) = f match {
     case q"(..$params => $body)" =>
       var results_tmp = rs.temporary
-      val result = TermName(c.freshName)
+      val result = rs.newVar(typ)
       val fm = TermName(c.freshName)
-      rs.append(result, typ)
       c.untypecheck(mark {
         rollback =>
           q"""

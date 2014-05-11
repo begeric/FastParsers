@@ -211,7 +211,7 @@ object HttpParsers {
     upgrade = x._2.getOrElse("upgrade", false).asInstanceOf[Boolean]
   )
 
-  val httpparser = FastParser{
+  val httpparser = FastParser  {
     def restOfLine = takeWhile(_ != '\n')
     def headerName = takeWhile(x => (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || x == '-')
     def header = (headerName <~ ':' ~ whitespaces) ~ restOfLine

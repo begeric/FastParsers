@@ -19,7 +19,6 @@ object JsonParsers {
     }
   }
 
-
   object JSonImpl2 {
     import fastparsers.framework.implementations.FastParsersCharArray._
     val nullValue = "null".toCharArray
