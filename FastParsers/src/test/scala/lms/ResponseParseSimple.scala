@@ -29,7 +29,7 @@ class ResponseParseSimple(
     px1024: Array[Char],
     px1055: Array[Char]) extends ((Array[Char]) => (Unit)) with Serializable {
   def apply(x0: Array[Char]): Unit = {
-    var x2: Anon1323431030 = null
+    /*var x2: Anon1323431030 = null
     var x3: Boolean = true
     var x4: Int = -1
     val x7 = x0.length
@@ -1546,7 +1546,8 @@ class ResponseParseSimple(
     val x1280 = new ParseResultAnon1323431030(x1277, x1278, x1279)
     //val x1281 = println(x1280)
     //x1281
-    ()
+    ()*/
+	  null
   }
 }
 /**

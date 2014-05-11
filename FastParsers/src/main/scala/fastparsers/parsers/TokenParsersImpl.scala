@@ -40,19 +40,19 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
 
   private def parseLit(str: c.Tree, rs: ResultsStruct) = {
     val tmpstr = TermName(c.freshName)
-    val inputsize = TermName(c.freshName)
+    val litsize = TermName(c.freshName)
     val i = TermName(c.freshName)
     //error = "`" + $str + "' expected but " + (if ($isEOI) "EOF" else $currentInput) + " found at " + $pos
     mark { rollback =>
      q"""
       var $i = 0
-      val $inputsize = $str.length
+      val $litsize = $str.length
       $skipWhiteSpace
-      while ($isNEOI && $i < $inputsize && $currentInput == $str.charAt($i)){
+      while ($isNEOI && $i < $litsize && $currentInput == $str.charAt($i)){
         $i = $i + 1
         $advance
       }
-      if ($i == $inputsize){
+      if ($i == $litsize){
         success = true
         ${rs.assignNew(str, inputType)}
       }

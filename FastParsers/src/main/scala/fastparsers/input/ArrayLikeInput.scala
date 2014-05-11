@@ -9,35 +9,37 @@ trait ArrayLikeInput extends ParseInput {
 
   import c.universe._
 
+  private val inputpos = TermName(c.freshName("inputpos"))
+  private val inputlength = TermName(c.freshName("inputsize"))
+
   def initInput(startpos: c.Tree, then: c.Tree) =
     q"""
-      var inputpos = $startpos
-      val inputsize = input.size
+      var $inputpos = $startpos
+      val $inputlength = input.size
       $then
     """
 
-  def currentInput = q"input(inputpos)"
+  def currentInput = q"input($inputpos)"
 
-  def advance = q"inputpos = inputpos + 1"
+  def advance = q"$inputpos = $inputpos + 1"
 
-  def setpos(pos: c.Tree): c.Tree = q"inputpos = $pos"
+  def setpos(pos: c.Tree): c.Tree = q"$inputpos = $pos"
 
   def mark(code: c.Tree => c.Tree) = {
     val input_tmp = TermName(c.freshName)
     q"""
-      val $input_tmp = inputpos
-      ${code(q"inputpos = $input_tmp")}
+      val $input_tmp = $inputpos
+      ${code(q"$inputpos = $input_tmp")}
      """
   }
 
-  def isEOI = q"inputpos >= inputsize"
+  def isEOI = q"$inputpos >= $inputlength"
 
-  def isNEOI = q"inputpos < inputsize"
+  def isNEOI = q"$inputpos < $inputlength"
 
-  def pos = q"inputpos"
+  def pos = q"$inputpos"
 
-
-  def inputsize = q"inputsize"
+  def inputsize = q"$inputlength"
 
   def slice(begin: c.Tree, end: c.Tree) = {
     q"input.slice($begin,$end)"

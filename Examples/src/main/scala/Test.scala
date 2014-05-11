@@ -54,7 +54,7 @@ object Test {
   println("hey")
   JSonImpl2.jsonparser.value(bigFileArray) match {
     case Success(x) =>
-      println("hey2")
+      println("hey")
       println(x)
     //  hey(x)
     case Failure(msg) => println("failure: " + msg)
