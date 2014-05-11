@@ -30,11 +30,24 @@ trait ParserImplBase { self: ParseInput with ParseError =>
     def this() = this(new ListBuffer[Result]())
 
     @deprecated("will be removed")
-    def setNoUse = results = results.map(x => (x._1, x._2, false))
-    def append(r: Result): Unit = results.append(r)
-    def append(t: TermName, typ: c.Tree): Unit = append((t, typ, true))
+    protected def setNoUse = results = results.map(x => (x._1, x._2, false))
+    protected def append(t: TermName, typ: c.Tree): Unit = append((t, typ, true))
     @deprecated("will be removed")
-    def append(rs: ResultsStruct): Unit = rs.results.foreach(append(_))
+    protected def append(rs: ResultsStruct): Unit = rs.results.foreach(append(_))
+
+    //TODO modifier !!
+    def append(r: Result): Unit = results.append(r)
+
+
+    def newVar(typ: c.Tree): TermName = {
+      val t = c.freshName
+      append(t, typ)
+      t
+    }
+    def assignTo(result: TermName, value: c.Tree): c.Tree = {
+      assert(results.exists(_._1 == result))
+      q"$result = $value"
+    }
 
     /**
      * Automatically create a variable, assign it with code and register it
@@ -85,8 +98,9 @@ trait ParserImplBase { self: ParseInput with ParseError =>
   }
 
   trait IgnoreResult { self : ResultsStruct =>
-    override def assignNew(code: c.Tree, typ: c.Tree) = q""
-    override def combine = c.abort(c.enclosingPosition, "cannot combine results while ignoring them")
+    override def assignNew(code: c.Tree, typ: c.Tree) = q"()"
+    override def combine = q"()"//c.abort(c.enclosingPosition, "cannot combine results while ignoring them")
+    override def assignTo(result: TermName, value: c.Tree): c.Tree = q"()"
     override def temporary = new TemporaryResults(this) with IgnoreResult
   }
 

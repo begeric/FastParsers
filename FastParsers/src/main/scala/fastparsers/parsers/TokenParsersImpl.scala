@@ -89,7 +89,6 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
 
   private def parseStringLit(rs: ResultsStruct) = {
     val beginpos = TermName(c.freshName)
-    val result = TermName(c.freshName)
     mark { rollback =>
      q"""
       $skipWhiteSpace
@@ -153,8 +152,7 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
   private def parseDecimalNumber(rs: ResultsStruct) = {
     val isNeg = TermName(c.freshName)
     val beginPos = TermName(c.freshName)
-    val result = TermName(c.freshName)
-    rs.append(result, tq"$inputWindowType")
+    val result = rs.newVar(tq"$inputWindowType")
     mark {  rollback =>
      q"""
       $skipWhiteSpace
@@ -174,7 +172,7 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
               $advance
          }
          success = true
-         $result = ${getInputWindow(q"$beginPos", q"$pos")}
+         ${rs.assignTo(result, getInputWindow(q"$beginPos", q"$pos"))}
       }
       else if ($isNEOI && $currentInput == '.')  {
         $advance
@@ -183,7 +181,7 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
           while ($isNEOI && $currentInput >= '0' && $currentInput <= '9')
             $advance
           success = true
-          $result = ${getInputWindow(q"$beginPos", q"$pos")}
+         ${rs.assignTo(result, getInputWindow(q"$beginPos", q"$pos"))}
         }
       }
 
