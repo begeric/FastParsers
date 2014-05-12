@@ -51,7 +51,7 @@ object Test {
      val closeSBracket = "]".toCharArray
      val comma = ",".toCharArray
      val points = ":".toCharArray
-     val jsonparser = getAST.get(FastParsersCharArray  {
+     val jsonparser = /*getAST.get(*/FastParsersCharArray  {
        def value:Parser[JSValue] = whitespaces ~>
         (
           obj |
@@ -66,7 +66,7 @@ object Test {
        def obj:Parser[JSValue] = ('{' ~> repsep(member,comma) <~ closeBracket) ^^ {x => JSObject(x)}
        def arr:Parser[JSValue] = ('[' ~> repsep(value,comma) <~ closeSBracket) ^^ {x => JSArray(x)}
        def member:Parser[(InputWindow[Array[Char]], JSValue)] = stringLit ~ (lit(points) ~> value)
-     })
+     }//)
    }
 
   def hey(x: Any): Unit = x match {
