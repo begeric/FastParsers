@@ -7,15 +7,17 @@ trait StringLikeInput extends ArrayLikeInput {
 
   import c.universe._
 
-  def inputElemType = typeOf[Char]//c.typecheck(tq"Char",c.TYPEmode).tpe
+  private val inputpositioned = TermName(c.freshName("inputpositioned"))
+
+  def inputElemType = typeOf[Char]
 
   override def initInput(startpos: c.Tree, then: c.Tree) =
     super.initInput(startpos,
       q"""
-        val inputpositioned = new fastparsers.tools.ToPosition.IndexedCharSeqToPosition(input)
+        val $inputpositioned = new fastparsers.tools.ToPosition.IndexedCharSeqToPosition($inputValue)
         $then
       """
     )
 
-  override def getPositionned(offset: c.Tree): c.Tree = q"inputpositioned.get($offset)"
+  override def getPositionned(offset: c.Tree): c.Tree = q"$inputpositioned.get($offset)"
 }

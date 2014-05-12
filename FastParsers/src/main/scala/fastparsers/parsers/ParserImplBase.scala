@@ -5,6 +5,7 @@ import fastparsers.input.ParseInput
 import scala.reflect.macros.whitebox.Context
 import scala.collection.mutable.ListBuffer
 
+
 /**
  * Provide the interface and the basics method needed to implement the transformation on parsers
  */
@@ -12,7 +13,6 @@ trait ParserImplBase { self: ParseInput with ParseError =>
   val c: Context
 
   import c.universe._
-
 
   /**
    * Represent a result variable
@@ -105,7 +105,6 @@ trait ParserImplBase { self: ParseInput with ParseError =>
   }
 
 
-
   /**
    * Get the "zero" value of a certain type
    * @todo not make it work on strings
@@ -156,3 +155,16 @@ trait ParserImplBase { self: ParseInput with ParseError =>
    */
   def prettyPrint(tree: c.Tree): String = "?" //TODO change ?
 }
+
+trait IgnoreResultsPolicy extends ParserImplBase { self: ParseInput with ParseError =>
+  def ignoreResult(rs: ResultsStruct): ResultsStruct
+}
+
+trait DontIgnoreResults extends IgnoreResultsPolicy { self: ParseInput with ParseError =>
+  override def ignoreResult(rs: ResultsStruct): ResultsStruct = rs.temporary
+}
+
+trait IgnoreResults extends IgnoreResultsPolicy { self: ParseInput with ParseError =>
+  override def ignoreResult(rs: ResultsStruct): ResultsStruct = new ResultsStruct with IgnoreResult
+}
+

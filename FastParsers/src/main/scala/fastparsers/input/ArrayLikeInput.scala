@@ -12,14 +12,15 @@ trait ArrayLikeInput extends ParseInput {
   private val inputpos = TermName(c.freshName("inputpos"))
   private val inputlength = TermName(c.freshName("inputsize"))
 
+
   def initInput(startpos: c.Tree, then: c.Tree) =
     q"""
       var $inputpos = $startpos
-      val $inputlength = input.size
+      val $inputlength = $inputValue.size
       $then
     """
 
-  def currentInput = q"input($inputpos)"
+  def currentInput = q"$inputValue($inputpos)"
 
   def advance = q"$inputpos = $inputpos + 1"
 
@@ -42,6 +43,6 @@ trait ArrayLikeInput extends ParseInput {
   def inputsize = q"$inputlength"
 
   def slice(begin: c.Tree, end: c.Tree) = {
-    q"input.slice($begin,$end)"
+    q"$inputValue.slice($begin,$end)"
   }
 }

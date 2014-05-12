@@ -14,6 +14,8 @@ trait ParseInput {
   def inputElemType: c.Type
   def inputWindowType: c.Type = c.typecheck(tq"fastparsers.input.InputWindow.InputWindow[$inputElemType]",c.TYPEmode).tpe
 
+  val inputValue = TermName(c.freshName("input"))
+
   def initInput(startpos: c.Tree, then: c.Tree): c.Tree
 
   def currentInput: c.Tree
@@ -34,7 +36,7 @@ trait ParseInput {
 
   def inputsize: c.Tree
 
-  def getPositionned(offset: c.Tree): c.Tree = q"NoPosition"
+  def getPositionned(offset: c.Tree): c.Tree = q"scala.util.parsing.input.NoPosition"
 
-  def getInputWindow(start: c.Tree, end: c.Tree): c.Tree = q"new fastparsers.input.InputWindow.InputWindow[$inputElemType](input, $start, $end)"
+  def getInputWindow(start: c.Tree, end: c.Tree): c.Tree = q"new fastparsers.input.InputWindow.InputWindow[$inputElemType]($inputValue, $start, $end)"
 }

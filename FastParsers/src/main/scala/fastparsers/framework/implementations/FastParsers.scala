@@ -23,7 +23,7 @@ class FastParsersImpl(val c: Context) extends BaseImpl
   with RulesTransformer with RulesInliner
   with ParseRules with BaseParsersImpl with RepParsersImpl
   with TokenParsersImpl with FlatMapImpl with RuleCombiner
-  with StringInput with IgnoreParseError{
+  with StringInput with IgnoreParseError  with DontIgnoreResults{
 
   override def FastParser(rules: c.Tree) = super.FastParser(rules) //why ??
 }

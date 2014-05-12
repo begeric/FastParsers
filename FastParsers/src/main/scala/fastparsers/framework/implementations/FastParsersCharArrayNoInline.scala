@@ -10,15 +10,15 @@ import fastparsers.error.IgnoreParseError
 /**
  * Interface for CharArrayImpl
  */
-object FastParsersCharArray extends BaseParsers[Char, Array[Char]] with RepParsers with TokenParsers[Array[Char]] with FlatMapParsers {
-  def FastParsersCharArray(rules: => Unit): Any = macro CharArrayImpl.FastParser
+object FastParsersCharArrayNoInline extends BaseParsers[Char, Array[Char]] with RepParsers with TokenParsers[Array[Char]] with FlatMapParsers {
+  def FastParsersCharArray(rules: => Unit): Any = macro CharArrayNoInlineImpl.FastParser
 }
 
 /**
  * Implementation of Parsers that deal with CharArray (different from ArrayParser[Char] in that it can deal with
  * TokenParsers
  */
-class CharArrayImpl(val c: Context) extends BaseImpl with RulesTransformer with RulesInliner
+class CharArrayNoInlineImpl(val c: Context) extends BaseImpl with RulesTransformer
   with ParseRules with BaseParsersImpl with RepParsersImpl with FlatMapImpl with RuleCombiner
   with TokenParsersImpl with CharArrayInput
   with IgnoreParseError  with DontIgnoreResults {

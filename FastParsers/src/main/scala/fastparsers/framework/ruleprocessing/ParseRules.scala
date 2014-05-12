@@ -68,7 +68,7 @@ trait ParseRules extends MapRules {
 
    val replacedTree = removeCompileTimeAnnotation(rule.code)// @saveAST(${replacedTree})
     //c.abort(c.enclosingPosition, show(replacedTree))
-   val allParams = q"input: $inputType" :: (rewriteParams :+ q"val $startPosition: Int = 0")
+   val allParams = q"$inputValue: $inputType" :: (rewriteParams :+ q"val $startPosition: Int = 0")
    val rulecode = c.untypecheck(
      q" def $ruleName[..${rule.typeParams}](..$allParams):fastparsers.framework.parseresult.ParseResult[${rule.typ}, $errorType] = $code" ) match {
      case q"def $a[$t](..$b):$d = $e" => q"def $a[$t](..$b):$d  @fastparsers.framework.saveAST(${replacedTree}) = $e"

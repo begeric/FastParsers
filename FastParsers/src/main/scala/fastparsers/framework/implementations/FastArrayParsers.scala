@@ -22,7 +22,8 @@ object ArrayParserImpl {
   def ArrayParserImpl[T: context.WeakTypeTag](context: Context)(rules: context.Tree): context.Tree =  {
     new BaseImpl with RulesTransformer with RulesInliner
       with ParseRules with BaseParsersImpl with RepParsersImpl
-      with FlatMapImpl with RuleCombiner with ArrayInput with DefaultParseError {
+      with FlatMapImpl with RuleCombiner
+      with ArrayInput with DefaultParseError with DontIgnoreResults {
 
       val c: context.type = context
 

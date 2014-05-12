@@ -7,7 +7,7 @@ import fastparsers.error.ParseError
 /**
  * Implementation of Basic combinators
  */
-trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError =>
+trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError with IgnoreResultsPolicy =>
 
   import c.universe._
 
@@ -217,7 +217,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
       val $beginpos = $pos
       ${expand(a,rs.temporary)}
       if (success) {
-        ${rs.assignNew(q"new fastparsers.input.InputWindow.InputWindow(input,$beginpos,$pos)", inputWindowType)}
+        ${rs.assignNew(q"new fastparsers.input.InputWindow.InputWindow($inputValue,$beginpos,$pos)", inputWindowType)}
       }
       else {
         error = "raw(" + ${prettyPrint(a)} +  ") failure at " + $pos
@@ -283,7 +283,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
 
   private def parseIgnoreLeft(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     q"""
-      ${expand(a, new ResultsStruct with IgnoreResult)}
+      ${expand(a, ignoreResult(rs))}
       if (success) {
         ${expand(b, rs)}
       }
@@ -294,7 +294,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     q"""
       ${expand(a, rs)}
       if (success) {
-        ${expand(b, new ResultsStruct with IgnoreResult)}
+        ${expand(b, ignoreResult(rs))}
       }
      """
   }
@@ -379,8 +379,8 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   private def parseRuleCall(ruleCall: c.Tree, params: List[c.Tree], typ: c.Tree, rs: ResultsStruct) = {
     val callResult = TermName(c.freshName)
     val call = params match {
-      case Nil => q"$ruleCall(input,$pos)"
-      case p => q"$ruleCall(input,..$p,$pos)"
+      case Nil => q"$ruleCall($inputValue,$pos)"
+      case p => q"$ruleCall($inputValue,..$p,$pos)"
     }
 
     val tree = q"""
@@ -399,8 +399,8 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   private def parseRuleCall(ruleCall: TermName, params: List[c.Tree], typ: c.Tree, rs: ResultsStruct) = {
     val callResult = TermName(c.freshName)
     val call = params match {
-      case Nil => q"$ruleCall(input,$pos)"
-      case p => q"$ruleCall(input,..$p,$pos)"
+      case Nil => q"$ruleCall($inputValue,$pos)"
+      case p => q"$ruleCall($inputValue,..$p,$pos)"
     }
 
     val tree = q"""
