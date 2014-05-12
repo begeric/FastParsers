@@ -18,10 +18,29 @@ import scala.language.reflectiveCalls
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
+//GROS HACK
+import fastparsers.input.InputWindow.InputWindow
+
+sealed abstract class JSValue
+case class JSObject(map: List[(InputWindow[Array[Char]], JSValue)]) extends JSValue
+case class JSArray(arr: List[JSValue]) extends JSValue {
+  override def equals(obj: Any) = obj match {
+    case tmp: JSArray => arr.toSet == tmp.arr.toSet
+    case _ => false
+  }
+}
+
+//case class JSInt(i: Int) extends JSValue
+case class JSDouble(d: InputWindow[Array[Char]]) extends JSValue
+case class JSString(s: InputWindow[Array[Char]]) extends JSValue
+case class JSBool(b: Boolean) extends JSValue
+case object JSNull extends JSValue
+
 
 object Test {
 
  def main(args: Array[String])  {
+
 
    object JSonImpl2 {
      import fastparsers.framework.implementations.FastParsersCharArray._
@@ -33,20 +52,29 @@ object Test {
      val comma = ",".toCharArray
      val points = ":".toCharArray
      val jsonparser = getAST.get(FastParsersCharArray  {
-       def value:Parser[Any] = whitespaces ~> (obj | arr | stringLit | decimalNumber | nullValue | trueValue | falseValue)
-       def obj:Parser[Any] = '{' ~> repsep(member,comma) <~ closeBracket
-       def arr:Parser[Any] = '[' ~> repsep(value,comma) <~ closeSBracket
-       def member:Parser[Any] = stringLit ~ (lit(points) ~> value)
+       def value:Parser[JSValue] = whitespaces ~>
+        (
+          obj |
+          arr |
+          stringLit ^^ {x => JSString(x)} |
+          decimalNumber ^^ {x => JSDouble(x)} |
+          lit(nullValue) ^^^ JSNull |
+          lit(trueValue) ^^^ JSBool(true) |
+          lit(falseValue) ^^^ JSBool(false)
+        )
+
+       def obj:Parser[JSValue] = ('{' ~> repsep(member,comma) <~ closeBracket) ^^ {x => JSObject(x)}
+       def arr:Parser[JSValue] = ('[' ~> repsep(value,comma) <~ closeSBracket) ^^ {x => JSArray(x)}
+       def member:Parser[(InputWindow[Array[Char]], JSValue)] = stringLit ~ (lit(points) ~> value)
      })
    }
 
   def hey(x: Any): Unit = x match {
     case y :: ys => hey(y)
-    case y : InputWindow.CharArrayStruct => println("heysd")
+    case y : InputWindow.CharArrayStruct => println("hey")
     case (a, b) => hey(a)
     case _ =>
   }
-
 
   val bigFileName = "FastParsers/src/test/resources/" + "json.big1"
   val bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
@@ -54,55 +82,10 @@ object Test {
   println("hey")
   JSonImpl2.jsonparser.value(bigFileArray) match {
     case Success(x) =>
-      println("hey")
+      println("hey2")
       println(x)
     //  hey(x)
     case Failure(msg) => println("failure: " + msg)
-  }  */
-   val nb = 50
-   val start = 20
-   val size = 10000
-
-   {
-     var average = 0.0
-     (0 to nb).foreach { i =>
-       var pos = 0
-       var x = 0
-       var lit = ""
-
-       val now = System.nanoTime
-       //val array = new Array[String](size)
-       while (pos < size){
-         x = ((y : Int) => y + 1)(x)
-         pos += 1
-         lit = pos.toString
-       }
-       val micros = (System.nanoTime - now) /1e6
-       if (i >= start)
-         average += micros
-     }
-     println(average / (nb - start))
-   }
-   {
-     var average = 0.0
-     (0 to nb).foreach { i =>
-       var pos = 0
-       var x = 0
-       var lit = ""
-
-       val now = System.nanoTime
-       //val array = new Array[String](size)
-      val tmp = ((y : Int) => y + 1)
-       while (pos < size){
-         x = tmp(x)
-         pos += 1
-         lit = pos.toString
-       }
-       val micros = (System.nanoTime - now) /1e6
-       if (i >= start)
-         average += micros
-     }
-     println(average / (nb - start))
-   }
+  }
  }
 }
