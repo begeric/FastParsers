@@ -36,6 +36,46 @@ object JsonParsers {
     }
   }
 
+  object JSonImplBoxed {
+    import fastparsers.framework.implementations.FastParsersCharArray._
+    //GROS HACK
+    import fastparsers.input.InputWindow.InputWindow
+
+    sealed abstract class JSValue
+    case class JSObject(map: List[(InputWindow[Array[Char]], JSValue)]) extends JSValue
+    case class JSArray(arr: List[JSValue]) extends JSValue
+    case class JSDouble(d: InputWindow[Array[Char]]) extends JSValue
+    case class JSString(s: InputWindow[Array[Char]]) extends JSValue
+    case class JSBool(b: Boolean) extends JSValue
+    case object JSNull extends JSValue
+
+    val nullValue = "null".toCharArray
+    val trueValue = "true".toCharArray
+    val falseValue = "false".toCharArray
+    val closeBracket = "}".toCharArray
+    val closeSBracket = "]".toCharArray
+    val comma = ",".toCharArray
+    val points = ":".toCharArray
+
+    val jsonparser = FastParsersCharArray  {
+      def value:Parser[JSValue] = whitespaces ~>
+       (
+         obj |
+         arr |
+         stringLit ^^ {x => JSString(x)} |
+         decimalNumber ^^ {x => JSDouble(x)} |
+         lit(nullValue) ^^^ JSNull |
+         lit(trueValue) ^^^ JSBool(true) |
+         lit(falseValue) ^^^ JSBool(false)
+       )
+
+      def obj:Parser[JSValue] = ('{' ~> repsep(member,comma) <~ closeBracket) ^^ {x => JSObject(x)}
+      def arr:Parser[JSValue] = ('[' ~> repsep(value,comma) <~ closeSBracket) ^^ {x => JSArray(x)}
+      def member:Parser[(InputWindow[Array[Char]], JSValue)] = stringLit ~ (lit(points) ~> value)
+    }
+
+  }
+
   object JSON extends JavaTokenParsers {
     def value: Parser[Any] = obj | arr | stringLiteral |
       floatingPointNumber |
