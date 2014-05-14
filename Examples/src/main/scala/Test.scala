@@ -51,7 +51,7 @@ object Test {
      val closeSBracket = "]".toCharArray
      val comma = ",".toCharArray
      val points = ":".toCharArray
-     val jsonparser = getAST.get(FastParsersCharArray  {
+     val jsonparser = /*getAST.get(*/FastParsersCharArray  {
        def value:Parser[JSValue] = whitespaces ~>
         (
           obj |
@@ -66,7 +66,7 @@ object Test {
        def obj:Parser[JSValue] = ('{' ~> repsep(member,comma) <~ closeBracket) ^^ {x => JSObject(x)}
        def arr:Parser[JSValue] = ('[' ~> repsep(value,comma) <~ closeSBracket) ^^ {x => JSArray(x)}
        def member:Parser[(InputWindow[Array[Char]], JSValue)] = stringLit ~ (lit(points) ~> value)
-     })
+     }//)
    }
 
   def hey(x: Any): Unit = x match {
@@ -76,16 +76,22 @@ object Test {
     case _ =>
   }
 
-  val bigFileName = "FastParsers/src/test/resources/" + "json.big1"
+  val bigFileName = "FastParsers/src/test/resources/" + "json.vbig"
   val bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
   val bigFileArray = bigFile.toCharArray
-  println("hey")
-  JSonImpl2.jsonparser.value(bigFileArray) match {
+
+  println("hey, wait a bit")
+
+  Thread.sleep(5000)
+
+
+  JSonImpl2.jsonparser.value(bigFileArray)/* match {
     case Success(x) =>
-      println("hey2")
-      println(x)
-    //  hey(x)
+    //  println("hey2")
+    //  println(x)
     case Failure(msg) => println("failure: " + msg)
-  }
+  }*/
+
+  //LMSJsonParserGen2.apply(bigFileArray)
  }
 }

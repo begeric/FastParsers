@@ -22,35 +22,34 @@ object HttpParserBenchmark extends PerformanceTest {
   val range = Gen.enumeration("size")(10)
 
 
-  val files = (1 to 10).foldLeft(new ListBuffer[(String, CharSequence)]){ (acc,i) =>
+  val files = (1 to 1).foldLeft(new ListBuffer[(Array[Char], String)]){ (acc,i) =>
     val fileName = "FastParsers/src/test/resources/tweet" + i
     val data = scala.io.Source.fromFile(fileName).getLines mkString "\n"
-    val charSeq = new FastCharSequence(data.toCharArray)
-    acc.append((data,charSeq))
+    acc.append((data.toCharArray,data))
     acc
   }.toList
 
 
   /* tests */
     performance of "HttpParser@FastParsers" in {
-      measure method "respAndMessage" in {
+      /*measure method "respAndMessage" in {
         using(range) in { j =>
           for (i <- 1 to j; m <- files)
             httpparser.respAndMessage(m._1)
           //println("@("+j+")HttpParser@FastParsers:respAndMessage")
         }
-      }
+      }*/
 
       measure method "response" in {
         using(range) in { j =>
           for (i <- 1 to j; m <- files)
-            httpparser.response(m._1)
+            httpparser.response(m._2)
           //println("@("+j+")HttpParser@FastParsers:response")
         }
       }
   }
 
-  performance of "HttpParser@Combinators" in {
+  /*performance of "HttpParser@Combinators" in {
     measure method "respAndMessage" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
@@ -65,13 +64,13 @@ object HttpParserBenchmark extends PerformanceTest {
         //println("@("+j+")HttpParser@Combinators:response")
       }
     }
-  }
-  
+  }*/
+
 	performance of "HttpParser@LMS" in {
     measure method "response" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
-          HttpResponseParser.apply(m._1.toCharArray)
+          HttpResponseParser.apply(m._1)
         //println("@("+j+")HttpParser@Combinators:respAndMessage")
       }
     }
