@@ -13,7 +13,7 @@ object HttpResponseParser extends ResponseParseSimple(
       "chunked".toArray, //"chunked".length,
       "upgrade".toArray //, "upgrade".length
     )
-	
+
 /**
  * ***************************************
  * Emitting Generated Code
@@ -27,8 +27,8 @@ class ResponseParseSimple(
     px947: Array[Char],
     px995: Array[Char],
     px1024: Array[Char],
-    px1055: Array[Char]) extends ((Array[Char]) => (Unit)) with Serializable {
-  def apply(x0: Array[Char]): Unit = {
+    px1055: Array[Char]) extends ((Array[Char]) => ParseResultAnon1323431030) with Serializable {
+  def apply(x0: Array[Char]): ParseResultAnon1323431030 = {
     var x2: Anon1323431030 = null
     var x3: Boolean = true
     var x4: Int = -1
@@ -1544,9 +1544,8 @@ class ResponseParseSimple(
     val x1278 = x3
     val x1279 = x4
     val x1280 = new ParseResultAnon1323431030(x1277, x1278, x1279)
-    //val x1281 = println(x1280)
-    //x1281
-    ()
+    //val x1281 =
+    x1280
   }
 }
 /**
