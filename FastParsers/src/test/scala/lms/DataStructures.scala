@@ -6,6 +6,7 @@ case class Tuple2StringAnon6507737(_1: java.lang.String, _2: Anon6507737)
 
 case class OptionChar(value: Char, defined: Boolean)
 
+
 case class ParseResultAnon6507737(res: Anon6507737, empty: Boolean, next: Int)
 
 case class Tuple2Anon6507737ListAnon6507737(_1: Anon6507737, _2: scala.collection.immutable.List[Anon6507737])
@@ -59,7 +60,9 @@ case class ParseResultTuple2StringString(res: Tuple2StringString, empty: Boolean
 case class ParseResultChar(res: Char, empty: Boolean, next: Int)
 
 case class ParseResultListDouble(res: scala.collection.immutable.List[Double], empty: Boolean, next: Int)
-
+ 
 case class Tuple2DoubleListDouble(_1: Double, _2: scala.collection.immutable.List[Double])
 
 case class ParseResultTuple2DoubleListDouble(res: Tuple2DoubleListDouble, empty: Boolean, next: Int)
+
+case class ParseResultTuple2Anon6507737ListAnon6507737(res: Tuple2Anon6507737ListAnon6507737, empty: Boolean, next: Int)

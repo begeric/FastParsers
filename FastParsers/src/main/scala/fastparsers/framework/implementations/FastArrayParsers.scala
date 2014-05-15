@@ -23,7 +23,7 @@ object ArrayParserImpl {
     new BaseImpl with RulesTransformer with RulesInliner
       with ParseRules with BaseParsersImpl with RepParsersImpl
       with FlatMapImpl with RuleCombiner
-      with ArrayInput with DefaultParseError with DontIgnoreResults {
+      with ArrayInput with DefaultParseError with IgnoreResults {
 
       val c: context.type = context
 

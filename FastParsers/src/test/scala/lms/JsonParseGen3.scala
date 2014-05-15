@@ -6,7 +6,6 @@ object LMSJsonParserGen3 extends JsonParseGen3(
   "null".toArray
 )
 
-case class ParseResultTuple2Anon6507737ListAnon6507737(res: Tuple2Anon6507737ListAnon6507737, empty: Boolean, next: Int)
 
 /*****************************************
   Emitting Generated Code

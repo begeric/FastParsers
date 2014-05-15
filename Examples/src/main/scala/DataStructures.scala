@@ -1,4 +1,3 @@
-//package lms
 
 case class Anon6507737(kind: Int, data: Any)
 
@@ -58,3 +57,11 @@ case class ParseResultString(res: java.lang.String, empty: Boolean, next: Int)
 case class ParseResultTuple2StringString(res: Tuple2StringString, empty: Boolean, next: Int)
 
 case class ParseResultChar(res: Char, empty: Boolean, next: Int)
+
+case class ParseResultListDouble(res: scala.collection.immutable.List[Double], empty: Boolean, next: Int)
+ 
+case class Tuple2DoubleListDouble(_1: Double, _2: scala.collection.immutable.List[Double])
+
+case class ParseResultTuple2DoubleListDouble(res: Tuple2DoubleListDouble, empty: Boolean, next: Int)
+
+case class ParseResultTuple2Anon6507737ListAnon6507737(res: Tuple2Anon6507737ListAnon6507737, empty: Boolean, next: Int)

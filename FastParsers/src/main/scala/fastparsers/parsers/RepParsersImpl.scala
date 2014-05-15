@@ -54,7 +54,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
         q"""
           ${expand(a, results_tmp)}
           if (success) {
-              $tmp_result.append(${results_tmp.combine})
+              $tmp_result += ${results_tmp.combine}
               if ($counter + 1 == $max) $cont = false
           }
           else {
@@ -127,7 +127,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
         q"""
           ${expand(a, results_tmp)}
           if (success) {
-             $tmp_result.append(${results_tmp.combine})
+             $tmp_result += ${results_tmp.combine}
              $innertree2
           }
           else {
@@ -188,7 +188,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
       q"""
         ${expand(a,results_tmp)}
         if (success) {
-          $tmp_result.append(${results_tmp.combine})
+          $tmp_result += ${results_tmp.combine}
           $innertree2
         }
         else {
@@ -248,7 +248,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
         q"""
         ${expand(a, results_tmp)}
         if (success)
-          $buffer.append(${results_tmp.combine})
+          $buffer += ${results_tmp.combine}
         else
           $cont = false
       """

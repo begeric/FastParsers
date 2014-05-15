@@ -32,9 +32,12 @@ case class JSArray(arr: List[JSValue]) extends JSValue {
 
 //case class JSInt(i: Int) extends JSValue
 case class JSDouble(d: InputWindow[Array[Char]]) extends JSValue
+case class JSDouble2(d: Double) extends JSValue
 case class JSString(s: InputWindow[Array[Char]]) extends JSValue
 case class JSBool(b: Boolean) extends JSValue
 case object JSNull extends JSValue
+object JTrue extends JSValue
+object JFalse extends JSValue
 
 
 object Test {
@@ -68,7 +71,22 @@ object Test {
        def member:Parser[(InputWindow[Array[Char]], JSValue)] = stringLit ~ (lit(points) ~> value)
      }//)
    }
-
+	
+	object CSV{
+		import fastparsers.framework.implementations.FastParsersCharArray._
+		//GROS HACK
+		import fastparsers.input.InputWindow.InputWindow
+		 val trueValue = "true".toCharArray
+		 val falseValue = "false".toCharArray
+		 val close = "]".toCharArray
+		 val comma = ",".toCharArray
+		 
+		val cvsParser = (FastParsersCharArray  {
+			def primBools = ('t' ~ 'r' ~ 'u' ~ 'e' ~> success(JTrue)) | ('f' ~ 'a' ~ 'l' ~'s' ~ 'e' ~> success(JFalse)) 
+			def bools = '[' ~> repsep(primBools, ',') <~ close// ^^ (x => JSArray(x))
+		})
+	}
+	
   def hey(x: Any): Unit = x match {
     case y :: ys => hey(y)
     case y : InputWindow.CharArrayStruct => println("hey")
@@ -76,21 +94,23 @@ object Test {
     case _ =>
   }
 
-  val bigFileName = "FastParsers/src/test/resources/" + "json.vbig"
+  val bigFileName = "FastParsers/src/test/resources/" + "csvBooleans.txt"
   val bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
   val bigFileArray = bigFile.toCharArray
 
-  println("hey, wait a bit")
+  /*println("hey, wait a bit")
 
-  Thread.sleep(5000)
+  Thread.sleep(5000)*/
+	
+	//println(LMSCSVBooleanParseGen.apply(bigFileArray))
+	//println(CSVBoolHandWritten.apply(bigFileArray))
 
-
-  JSonImpl2.jsonparser.value(bigFileArray)/* match {
+  CSV.cvsParser.bools(bigFileArray) match {
     case Success(x) =>
-    //  println("hey2")
-    //  println(x)
+      println("hey2")
+      println(x)
     case Failure(msg) => println("failure: " + msg)
-  }*/
+  }
 
   //LMSJsonParserGen2.apply(bigFileArray)
  }

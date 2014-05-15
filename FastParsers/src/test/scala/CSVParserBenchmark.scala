@@ -4,7 +4,7 @@
 
 import fastparsers.input.InputWindow
 import org.scalameter.api._
-import JsonParsers._
+import CSVParsers._
 import scala.collection.mutable.ListBuffer
 
 import lms._
@@ -31,17 +31,14 @@ object CSVParserBenchmark extends PerformanceTest {
   val bigBoolFileArray = bigBoolFile.toCharArray
   val bigBoolFileSeq = new FastCharSequence(bigBoolFileArray)
 
-/*
-  performance of "JsonParser:VBig@FastParsersBoxed" in {
+  /*performance of "CSVDoublesParser:Double@FastParsers" in {
     measure method "value" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          JSonImplBoxed.jsonparser.value(vbigFileArray)
-        //println("@("+j+")JsonParser:Big@FastParsers:value")
+          cvsParser.doubles(bigDoubleFileArray)
       }
     }
   }
-*/
 
   performance of "CSVDoublesParser:Double@LMS" in {
     measure method "value" in {
@@ -51,14 +48,28 @@ object CSVParserBenchmark extends PerformanceTest {
       }
     }
   }
-
-  performance of "CSVBooleanParser:Boolean@LMS" in {
-    measure method "value" in {
+  */
+  performance of "CSVBooleanParser:Boolean" in {
+    measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          LMSCSVBooleanParseGen.apply(bigDoubleFileArray)
+          cvsParser.bools(bigBoolFileArray)
+      }
+    }
+	
+	measure method "LMS" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          LMSCSVBooleanParseGen.apply(bigBoolFileArray)
+      }
+    }
+	
+	measure method "Handwritten" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          CSVBoolHandWritten.apply(bigBoolFileArray)
       }
     }
   }
-
+  
 }

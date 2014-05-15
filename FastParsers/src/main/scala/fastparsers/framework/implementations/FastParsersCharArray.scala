@@ -21,6 +21,6 @@ object FastParsersCharArray extends BaseParsers[Char, Array[Char]] with RepParse
 class CharArrayImpl(val c: Context) extends BaseImpl with RulesTransformer with RulesInliner
   with ParseRules with BaseParsersImpl with RepParsersImpl with FlatMapImpl with RuleCombiner
   with TokenParsersImpl with CharArrayInput
-  with IgnoreParseError  with DontIgnoreResults {
+  with IgnoreParseError  with IgnoreResults {
   override def FastParser(rules: c.Tree) = super.FastParser(rules) //why ??
 }
