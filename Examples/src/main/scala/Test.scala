@@ -76,16 +76,22 @@ object Test {
     case _ =>
   }
 
-  val bigFileName = "FastParsers/src/test/resources/" + "json.big1"
+  val bigFileName = "FastParsers/src/test/resources/" + "json.vbig"
   val bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
   val bigFileArray = bigFile.toCharArray
-  println("hey")
-  JSonImpl2.jsonparser.value(bigFileArray) match {
+
+  println("hey, wait a bit")
+
+  Thread.sleep(5000)
+
+
+  JSonImpl2.jsonparser.value(bigFileArray)/* match {
     case Success(x) =>
-      println("hey2")
-      println(x)
-    //  hey(x)
+    //  println("hey2")
+    //  println(x)
     case Failure(msg) => println("failure: " + msg)
-  }
+  }*/
+
+  //LMSJsonParserGen2.apply(bigFileArray)
  }
 }

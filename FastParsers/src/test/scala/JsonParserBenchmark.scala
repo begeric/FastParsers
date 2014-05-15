@@ -33,9 +33,14 @@ object JsonParserBenchmark extends PerformanceTest {
   val bigFileArray = bigFile.toCharArray
   val bigFileSeq = new FastCharSequence(bigFileArray)
 
+  val vbigFileName = "FastParsers/src/test/resources/" + "json.vbig"
+  val vbigFile = scala.io.Source.fromFile(vbigFileName).getLines mkString "\n"
+  val vbigFileArray = vbigFile.toCharArray
+  val vbigFileSeq = new FastCharSequence(vbigFileArray)
+
 
   /* tests */
-  performance of "JsonParser@FastParsers" in {
+/*  performance of "JsonParser@FastParsers" in {
     measure method "value" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
@@ -54,7 +59,17 @@ object JsonParserBenchmark extends PerformanceTest {
       }
     }
   }
-
+*/
+  performance of "JsonParser:VBig@FastParsers" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          JSonImpl2.jsonparser.value(vbigFileArray)
+        //println("@("+j+")JsonParser:Big@FastParsers:value")
+      }
+    }
+  }
+/*
   performance of "JsonParser@FastParsersBoxed" in {
     measure method "value" in {
       using(range) in { j =>
@@ -70,6 +85,16 @@ object JsonParserBenchmark extends PerformanceTest {
       using(range) in { j =>
         for (i <- 1 to j)
           JSonImplBoxed.jsonparser.value(bigFileArray)
+        //println("@("+j+")JsonParser:Big@FastParsers:value")
+      }
+    }
+  }
+*/
+  performance of "JsonParser:VBig@FastParsersBoxed" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          JSonImplBoxed.jsonparser.value(vbigFileArray)
         //println("@("+j+")JsonParser:Big@FastParsers:value")
       }
     }
@@ -135,7 +160,7 @@ object JsonParserBenchmark extends PerformanceTest {
       }
     }
   }    */
-
+/*
   performance of "JsonParserGen2@LMS" in {
     measure method "value" in {
       using(range) in { j =>
@@ -155,7 +180,17 @@ object JsonParserBenchmark extends PerformanceTest {
       }
     }
   }
-
+*/
+  performance of "JsonParserGen2:VBig@LMS" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          LMSJsonParserGen2.apply(vbigFileArray)
+        //println("@("+j+")JsonParser:Big@Combinator:value")
+      }
+    }
+  }
+/*
   performance of "JsonParserGen3@LMS" in {
     measure method "value" in {
       using(range) in { j =>
@@ -176,5 +211,15 @@ object JsonParserBenchmark extends PerformanceTest {
     }
   }
 
+  performance of "JsonParserGen3:VBig@LMS" in {
+    measure method "value" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          LMSJsonParserGen3.apply(vbigFileArray)
+        //println("@("+j+")JsonParser:Big@Combinator:value")
+      }
+    }
+  }
+*/
 
 }

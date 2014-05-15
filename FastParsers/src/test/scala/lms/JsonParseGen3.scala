@@ -13,7 +13,7 @@ case class ParseResultTuple2Anon6507737ListAnon6507737(res: Tuple2Anon6507737Lis
 *******************************************/
 case class JsonParseGen3(px1482:Int,px1483:Array[Char],px1485:Int,px1486:Array[Char],px1604:Array[Char]) extends ((Array[Char])=> ParseResultAnon6507737) {
 def apply(x0:Array[Char]): ParseResultAnon6507737 = {
-var x6: scala.Function1[Int, ParseResultAnon6507737] = null
+/*var x6: scala.Function1[Int, ParseResultAnon6507737] = null
 var x2743: scala.Function1[Int, ParseResultAnon6507737] = null
 var x2720: scala.Function1[Int, ParseResultAnon6507737] = null
 var x1481: scala.Function1[Int, ParseResultAnon6507737] = null
@@ -3092,7 +3092,8 @@ val x2764 = x3
 val x2765 = x4
 val x2766 = new ParseResultAnon6507737(x2763,x2764,x2765)
 
-x2766
+x2766*/
+null
 }
 }
 /*****************************************
