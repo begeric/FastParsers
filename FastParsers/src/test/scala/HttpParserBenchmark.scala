@@ -76,15 +76,5 @@ object HttpParserBenchmark extends PerformanceTest {
     }
   }
 
-    performance of "HttpParser@LMS2" in {
-      measure method "response" in {
-        using(range) in { j =>
-          for (i <- 1 to j; m <- files)
-            HttpResponseParser2.apply(m._1)
-          //println("@("+j+")HttpParser@Combinators:respAndMessage")
-        }
-      }
-    }
-
 
 }
