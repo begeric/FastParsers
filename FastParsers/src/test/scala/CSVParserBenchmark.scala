@@ -31,24 +31,33 @@ object CSVParserBenchmark extends PerformanceTest {
   val bigBoolFileArray = bigBoolFile.toCharArray
   val bigBoolFileSeq = new FastCharSequence(bigBoolFileArray)
 
-  /*performance of "CSVDoublesParser:Double@FastParsers" in {
-    measure method "value" in {
+  
+  performance of "CSV Double Parser" in {
+    measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
           cvsParser.doubles(bigDoubleFileArray)
       }
     }
-  }
+  
+    measure method "LMS" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            LMSCSVDoubleParserGen.apply(bigDoubleFileArray)
+        }
+    }
 
-  performance of "CSVDoublesParser:Double@LMS" in {
-    measure method "value" in {
+   /* //too slow
+    measure method "Combinators" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          LMSCSVDoubleParserGen.apply(bigDoubleFileArray)
+          CSV.parse(CSV.doubles, bigDoubleFileSeq)
       }
-    }
+    }*/
   }
-  */
+
+
+
   performance of "CSVBooleanParser:Boolean" in {
     measure method "FastParsers" in {
       using(range) in { j =>
@@ -56,20 +65,24 @@ object CSVParserBenchmark extends PerformanceTest {
           cvsParser.bools(bigBoolFileArray)
       }
     }
-	
-	measure method "LMS" in {
+    measure method "LMS" in {
       using(range) in { j =>
         for (i <- 1 to j)
           LMSCSVBooleanParseGen.apply(bigBoolFileArray)
       }
     }
-	
-	measure method "Handwritten" in {
+    measure method "Handwritten" in {
       using(range) in { j =>
         for (i <- 1 to j)
           CSVBoolHandWritten.apply(bigBoolFileArray)
       }
     }
+
+    measure method "Combinators" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          CSV.parse(CSV.bools, bigBoolFileSeq)
+      }
+    }
   }
-  
 }

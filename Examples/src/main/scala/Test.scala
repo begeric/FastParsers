@@ -85,6 +85,12 @@ object Test {
 			def primBools = ('t' ~ 'r' ~ 'u' ~ 'e' ~> success(JTrue)) | ('f' ~ 'a' ~ 'l' ~'s' ~ 'e' ~> success(JFalse)) 
 			def bools = '[' ~> repsep(primBools, ',') <~ close// ^^ (x => JSArray(x))
 		})
+
+  val cvsParser2 = FastParsersCharArray  {
+    def cvs(p: Parser[JSValue]) = '[' ~> repsep(p, comma) <~ close ^^ (x => JSArray(x))
+    def doubles = cvs(decimalNumber ^^ (y => JSDouble2(y.toString.toDouble)))
+    def bools = cvs((lit(trueValue) ~> success(JTrue)) | (lit(falseValue) ~> success(JFalse))) 
+  }
 	}
 	
   def hey(x: Any): Unit = x match {
@@ -94,7 +100,7 @@ object Test {
     case _ =>
   }
 
-  val bigFileName = "FastParsers/src/test/resources/" + "csvBooleans.txt"
+  val bigFileName = "FastParsers/src/test/resources/" + "csvDoubles.txt"
   val bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
   val bigFileArray = bigFile.toCharArray
 
@@ -105,7 +111,7 @@ object Test {
 	//println(LMSCSVBooleanParseGen.apply(bigFileArray))
 	//println(CSVBoolHandWritten.apply(bigFileArray))
 
-  CSV.cvsParser.bools(bigFileArray) match {
+  CSV.cvsParser2.doubles(bigFileArray) match {
     case Success(x) =>
       println("hey2")
       println(x)

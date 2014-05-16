@@ -39,187 +39,94 @@ object JsonParserBenchmark extends PerformanceTest {
   val vbigFileSeq = new FastCharSequence(vbigFileArray)
 
 
-  /* tests */
-/*  performance of "JsonParser@FastParsers" in {
-    measure method "value" in {
+  /*performance of "JsonParser on small inputs" in {
+    measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
           JSonImpl2.jsonparser.value(m)
-        //println("@("+j+")JsonParser:Big@FastParsers:value")
       }
     }
-  }
 
-  performance of "JsonParser:Big@FastParsers" in {
-    measure method "value" in {
-      using(range) in { j =>
-        for (i <- 1 to j)
-          JSonImpl2.jsonparser.value(bigFileArray)
-        //println("@("+j+")JsonParser:Big@FastParsers:value")
-      }
-    }
-  }
-*/
-  performance of "JsonParser:VBig@FastParsers" in {
-    measure method "value" in {
-      using(range) in { j =>
-        for (i <- 1 to j)
-          JSonImpl2.jsonparser.value(vbigFileArray)
-        //println("@("+j+")JsonParser:Big@FastParsers:value")
-      }
-    }
-  }
-/*
-  performance of "JsonParser@FastParsersBoxed" in {
-    measure method "value" in {
-      using(range) in { j =>
-        for (i <- 1 to j; m <- files)
-          JSonImplBoxed.jsonparser.value(m)
-        //println("@("+j+")JsonParser:Big@FastParsers:value")
-      }
-    }
-  }
-
-  performance of "JsonParser:Big@FastParsersBoxed" in {
-    measure method "value" in {
-      using(range) in { j =>
-        for (i <- 1 to j)
-          JSonImplBoxed.jsonparser.value(bigFileArray)
-        //println("@("+j+")JsonParser:Big@FastParsers:value")
-      }
-    }
-  }
-*/
-  performance of "JsonParser:VBig@FastParsersBoxed" in {
-    measure method "value" in {
-      using(range) in { j =>
-        for (i <- 1 to j)
-          JSonImplBoxed.jsonparser.value(vbigFileArray)
-        //println("@("+j+")JsonParser:Big@FastParsers:value")
-      }
-    }
-  }
-
-/*
-  performance of "JsonParser@Combinator" in {
-    measure method "value" in {
+    measure method "Combinators" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
           JSON.parse(JSON.value,new FastCharSequence(m))
-        //println("@("+j+")JsonParser@Combinator:value")
       }
     }
-  }
-
-  performance of "JsonParser:Big@Combinator" in {
-    measure method "value" in {
-      using(range) in { j =>
-        for (i <- 1 to j)
-          JSON.parse(JSON.value,bigFileSeq)
-        //println("@("+j+")JsonParser:Big@Combinator:value")
-      }
-    }
-  }
-*/
- /* performance of "JsonParser@LMS" in {
-    measure method "value" in {
-      using(range) in { j =>
-        for (i <- 1 to j; m <- files)
-          LMSJsonParser.apply(m)
-        //println("@("+j+")JsonParser@Combinator:value")
-      }
-    }
-  }
-
-  performance of "JsonParser:Big@LMS" in {
-    measure method "value" in {
-      using(range) in { j =>
-        for (i <- 1 to j)
-          LMSJsonParser.apply(bigFileArray)
-        //println("@("+j+")JsonParser:Big@Combinator:value")
-      }
-    }
-  }
-
-  performance of "JsonParserGen@LMS" in {
-    measure method "value" in {
-      using(range) in { j =>
-        for (i <- 1 to j; m <- files)
-          LMSJsonParserGen.apply(m)
-        //println("@("+j+")JsonParser@Combinator:value")
-      }
-    }
-  }
-
-  performance of "JsonParserGen:Big@LMS" in {
-    measure method "value" in {
-      using(range) in { j =>
-        for (i <- 1 to j)
-          LMSJsonParserGen.apply(bigFileArray)
-        //println("@("+j+")JsonParser:Big@Combinator:value")
-      }
-    }
-  }    */
-/*
-  performance of "JsonParserGen2@LMS" in {
-    measure method "value" in {
+    measure method "LMS (gen2)" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
           LMSJsonParserGen2.apply(m)
-        //println("@("+j+")JsonParser@Combinator:value")
       }
     }
   }
 
-  performance of "JsonParserGen2:Big@LMS" in {
-    measure method "value" in {
+
+  performance of "JsonParser on a big input" in {
+    measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          LMSJsonParserGen2.apply(bigFileArray)
-        //println("@("+j+")JsonParser:Big@Combinator:value")
+          JSonImpl2.jsonparser.value(vbigFileArray)
       }
     }
-  }
-*/
-  performance of "JsonParserGen2:VBig@LMS" in {
-    measure method "value" in {
+
+    measure method "Combinators" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          LMSJsonParserGen2.apply(vbigFileArray)
-        //println("@("+j+")JsonParser:Big@Combinator:value")
+          JSON.parse(JSON.value,vbigFileArray)
       }
     }
-  }
-/*
-  performance of "JsonParserGen3@LMS" in {
-    measure method "value" in {
+
+    measure method "LMS (gen2)" in {
       using(range) in { j =>
-        for (i <- 1 to j; m <- files)
-          LMSJsonParserGen3.apply(m)
-        //println("@("+j+")JsonParser@Combinator:value")
+        for (i <- 1 to j)
+          LMSJsonParserGen2.apply(vbigFileSeq)
       }
     }
   }
 
-  performance of "JsonParserGen3:Big@LMS" in {
-    measure method "value" in {
-      using(range) in { j =>
-        for (i <- 1 to j)
-          LMSJsonParserGen3.apply(bigFileArray)
-        //println("@("+j+")JsonParser:Big@Combinator:value")
-      }
-    }
-  }
 
-  performance of "JsonParserGen3:VBig@LMS" in {
-    measure method "value" in {
+  performance of "Different JSonParser implementations" in {
+    measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          LMSJsonParserGen3.apply(vbigFileArray)
-        //println("@("+j+")JsonParser:Big@Combinator:value")
+          JSonImpl2.jsonparser.value(vbigFileArray)
       }
     }
-  }
-*/
+
+    measure method "FastParsers Boxed" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          JSonImplBoxed.jsonparser.value(vbigFileArray)
+      }
+    }
+
+    measure method "FastParsers no inline" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          JSonImpl3.jsonparser.value(vbigFileArray)
+      }
+    
+    measure method "FastParsers no inline with errors reporting" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          JSonImpl4.jsonparser.value(vbigFileArray)
+      }
+    }
+
+    measure method "FastParsers no inline with errors reporting and ignore results" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          JSonImpl5.jsonparser.value(vbigFileArray)
+      }
+    }
+
+    measure method "FastParsers on string input" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          JSonImpl1.jsonparser.value(vbigFile)
+      }
+    }
+  }*/
 
 }

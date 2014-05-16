@@ -31,42 +31,50 @@ object HttpParserBenchmark extends PerformanceTest {
 
 
   /* tests */
-    performance of "HttpParser@FastParsers" in {
-      /*measure method "respAndMessage" in {
+    performance of "HttpParser response and message" in {
+      /*measure method "FastParsers" in {
         using(range) in { j =>
           for (i <- 1 to j; m <- files)
             httpparser.respAndMessage(m._1)
-          //println("@("+j+")HttpParser@FastParsers:respAndMessage")
+        }
+      }
+
+      measure method "Combinators" in {
+        using(range) in { j =>
+          for (i <- 1 to j; m <- files)
+            HTTP.parse(HTTP.respAndMessage, m._2)
         }
       }*/
 
-      measure method "response" in {
-        using(range) in { j =>
-          for (i <- 1 to j; m <- files)
-            httpparser.response(m._2)
-          //println("@("+j+")HttpParser@FastParsers:response")
-        }
-      }
   }
 
-  /*performance of "HttpParser@Combinators" in {
-    measure method "respAndMessage" in {
-      using(range) in { j =>
-        for (i <- 1 to j; m <- files)
-          HTTP.parse(HTTP.respAndMessage, m._2)
-        //println("@("+j+")HttpParser@Combinators:respAndMessage")
+  performance of "HttpParser response only" in {
+      /*measure method "FastParsers" in {
+        using(range) in { j =>
+          for (i <- 1 to j; m <- files)
+            httpparser.response(m._1)
+        }
       }
-    }
-    measure method "response" in {
-      using(range) in { j =>
-        for (i <- 1 to j; m <- files)
-          HTTP.parse(HTTP.response, m._2)
-        //println("@("+j+")HttpParser@Combinators:response")
-      }
-    }
-  }*/
 
-	performance of "HttpParser@LMS" in {
+      measure method "Combinators" in {
+        using(range) in { j =>
+          for (i <- 1 to j; m <- files)
+          HTTP.parse(HTTP.response, m._2)
+        }
+      }
+
+      measure method "LMS" in {
+        using(range) in { j =>
+          for (i <- 1 to j; m <- files)
+            HttpResponseParser.apply(m._1)
+          //println("@("+j+")HttpParser@Combinators:respAndMessage")
+        }
+      }
+      */
+
+  }
+
+	/*performance of "HttpParser@LMS" in {
     measure method "response" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
@@ -74,7 +82,14 @@ object HttpParserBenchmark extends PerformanceTest {
         //println("@("+j+")HttpParser@Combinators:respAndMessage")
       }
     }
-  }
+    measure method "response" in {
+        using(range) in { j =>
+          for (i <- 1 to j; m <- files)
+            httpparser.response(m._2)
+          //println("@("+j+")HttpParser@FastParsers:response")
+        }
+      }
+  }*/
 
 
 }

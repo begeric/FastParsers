@@ -41,8 +41,15 @@ object CSVParsers {
 	
 	val cvsParser = FastParsersCharArray  {
 		def cvs(p: Parser[JSValue]) = '[' ~> repsep(p, comma) <~ close ^^ (x => JSArray(x))
-		def primDouble = cvs(decimalNumber ^^ (y => JSDouble(y.toString.toDouble)))
+		def doubles = cvs(decimalNumber ^^ (y => JSDouble(y.toString.toDouble)))
 		def bools = cvs((lit(trueValue) ~> success(JTrue)) | (lit(falseValue) ~> success(JFalse))) 
 	}
+
+	object CSV extends JavaTokenParsers {
+		def cvs(p: Parser[JSValue]) = "[" ~> repsep(p, ",") <~ "]" ^^ (x => JSArray(x))
+		def doubles = cvs(floatingPointNumber ^^ (y => JSDouble(y.toDouble)))
+		def bools = cvs(("true" ~> success(JTrue)) | ("false" ~> success(JFalse))) 
+	}
+
 
 }
