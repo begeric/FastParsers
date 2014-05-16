@@ -6,8 +6,6 @@ object LMSJsonParserGen2 extends JsonParseGen2(
   "null".toArray
 )
 
-case class Tuple2Anon1680061013Anon6507737(_1: Anon1680061013, _2: Anon6507737)
-
 /*****************************************
   Emitting Generated Code
 *******************************************/
@@ -3122,7 +3120,6 @@ val x2752 = x3
 val x2753 = x4
 val x2754 = new ParseResultAnon6507737(x2751,x2752,x2753)
 x2754
-null
 }
 }
 /*****************************************

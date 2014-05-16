@@ -32,7 +32,12 @@ object CSVParserBenchmark extends PerformanceTest {
   val bigBoolFileArray = bigBoolFile.toCharArray
   val bigBoolFileSeq = new FastCharSequence(bigBoolFileArray)
 
-  
+  val bigStringLitFileName = "FastParsers/src/test/resources/" + "csvStringLits.txt"
+  val bigStringLitFile = scala.io.Source.fromFile(bigStringLitFileName).getLines mkString "\n"
+  val bigStringLitFileArray = bigStringLitFile.toCharArray
+  val bigStringLitFileSeq = new FastCharSequence(bigStringLitFileArray)
+
+
   performance of "CSV Double Parser" in {
     measure method "FastParsers" in {
       using(range) in { j =>
@@ -48,7 +53,7 @@ object CSVParserBenchmark extends PerformanceTest {
           //cvsParser.doubles(bigDoubleFileArray)
       }
     }
-  
+
     /*measure method "LMS" in {
         using(range) in { j =>
           for (i <- 1 to j)
@@ -94,4 +99,35 @@ object CSVParserBenchmark extends PerformanceTest {
       }
     }
   }*/
+
+  performance of "CSVStringLitParser:StringLit" in {
+    /*measure method "FastParsers" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          cvsParser.bools(bigBoolFileArray)
+      }
+    }*/
+    measure method "LMS" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          LMSCSVStringLitParseGen.apply(bigStringLitFileArray)
+      }
+    }
+
+    /*
+    measure method "Handwritten" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          CSVBoolHandWritten.apply(bigBoolFileArray)
+      }
+    }
+
+    measure method "Combinators" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          CSV.parse(CSV.bools, bigBoolFileSeq)
+      }
+    }
+    */
+  }
 }
