@@ -5,6 +5,7 @@
 import fastparsers.input.InputWindow
 import org.scalameter.api._
 import CSVParsers._
+import JsonParsers._
 import scala.collection.mutable.ListBuffer
 
 import lms._
@@ -39,13 +40,21 @@ object CSVParserBenchmark extends PerformanceTest {
           cvsParser.doubles(bigDoubleFileArray)
       }
     }
+
+    measure method "JSON FastParsers" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          JSonImpl2.jsonparser.value(bigDoubleFileArray)
+          //cvsParser.doubles(bigDoubleFileArray)
+      }
+    }
   
-    measure method "LMS" in {
+    /*measure method "LMS" in {
         using(range) in { j =>
           for (i <- 1 to j)
             LMSCSVDoubleParserGen.apply(bigDoubleFileArray)
         }
-    }
+    }*/
 
    /* //too slow
     measure method "Combinators" in {
@@ -58,7 +67,7 @@ object CSVParserBenchmark extends PerformanceTest {
 
 
 
-  performance of "CSVBooleanParser:Boolean" in {
+  /*performance of "CSVBooleanParser:Boolean" in {
     measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
@@ -84,5 +93,5 @@ object CSVParserBenchmark extends PerformanceTest {
           CSV.parse(CSV.bools, bigBoolFileSeq)
       }
     }
-  }
+  }*/
 }

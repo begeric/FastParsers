@@ -76,6 +76,7 @@ object JsonParsers {
     case class JSObject(map: List[(InputWindow[Array[Char]], JSValue)]) extends JSValue
     case class JSArray(arr: List[JSValue]) extends JSValue
     case class JSDouble(d: InputWindow[Array[Char]]) extends JSValue
+    case class JSDouble2(d: Double) extends JSValue
     case class JSString(s: InputWindow[Array[Char]]) extends JSValue
     case class JSBool(b: Boolean) extends JSValue
     case object JSNull extends JSValue
@@ -94,7 +95,8 @@ object JsonParsers {
          obj |
          arr |
          stringLit ^^ {x => JSString(x)} |
-         decimalNumber ^^ {x => JSDouble(x)} |
+         decimalNumber ^^ {x => JSDouble2(x.toString.toDouble)} |
+         //decimalNumber ^^ {x => JSDouble(x)} |
          lit(nullValue) ^^^ JSNull |
          lit(trueValue) ^^^ JSBool(true) |
          lit(falseValue) ^^^ JSBool(false)

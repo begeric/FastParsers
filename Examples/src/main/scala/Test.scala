@@ -60,7 +60,8 @@ object Test {
           obj |
           arr |
           stringLit ^^ {x => JSString(x)} |
-          decimalNumber ^^ {x => JSDouble(x)} |
+          //decimalNumber ^^ {x => JSDouble(x)} |
+          decimalNumber ^^ {x => JSDouble2(x.toString.toDouble)} |
           lit(nullValue) ^^^ JSNull |
           lit(trueValue) ^^^ JSBool(true) |
           lit(falseValue) ^^^ JSBool(false)
@@ -100,9 +101,13 @@ object Test {
     case _ =>
   }
 
-  val bigFileName = "FastParsers/src/test/resources/" + "csvDoubles.txt"
-  val bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
-  val bigFileArray = bigFile.toCharArray
+  val bigFileNameDouble = "FastParsers/src/test/resources/" + "csvDoubles.txt"
+  val bigFileDouble = scala.io.Source.fromFile(bigFileNameDouble).getLines mkString "\n"
+  val bigFileArrayDouble = bigFileDouble.toCharArray
+
+  val bigFileNameJson = "FastParsers/src/test/resources/" + "json.big1"
+  val bigFileJson = scala.io.Source.fromFile(bigFileNameJson).getLines mkString "\n"
+  val bigFileArrayJson = bigFileJson.toCharArray
 
   /*println("hey, wait a bit")
 
@@ -111,7 +116,7 @@ object Test {
 	//println(LMSCSVBooleanParseGen.apply(bigFileArray))
 	//println(CSVBoolHandWritten.apply(bigFileArray))
 
-  CSV.cvsParser2.doubles(bigFileArray) match {
+  JSonImpl2.jsonparser.value(bigFileArrayJson) match {
     case Success(x) =>
       println("hey2")
       println(x)
