@@ -41,33 +41,33 @@ object CSVParserBenchmark extends PerformanceTest {
   performance of "CSV Double Parser" in {
     measure method "FastParsers" in {
       using(range) in { j =>
-        for (i <- 1 to j)
+        //for (i <- 1 to j)
           cvsParser.doubles(bigDoubleFileArray)
       }
     }
 
-    measure method "JSON FastParsers" in {
+    /*measure method "JSON FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
           JSonImpl2.jsonparser.value(bigDoubleFileArray)
           //cvsParser.doubles(bigDoubleFileArray)
       }
+    }*/
+
+    measure method "LMS" in {
+        using(range) in { j =>
+         // for (i <- 1 to j)
+            LMSCSVDoubleParserGen2.apply(bigDoubleFileArray)
+        }
     }
 
-    /*measure method "LMS" in {
-        using(range) in { j =>
-          for (i <- 1 to j)
-            LMSCSVDoubleParserGen.apply(bigDoubleFileArray)
-        }
-    }*/
-
-   /* //too slow
+    //too slow
     measure method "Combinators" in {
       using(range) in { j =>
-        for (i <- 1 to j)
+        //for (i <- 1 to j)
           CSV.parse(CSV.doubles, bigDoubleFileSeq)
       }
-    }*/
+    }
   }
 
 
@@ -104,15 +104,15 @@ object CSVParserBenchmark extends PerformanceTest {
     /*measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          cvsParser.bools(bigBoolFileArray)
+          cvsParser.strings(bigStringLitFileArray)
       }
-    }*/
+    }
     measure method "LMS" in {
       using(range) in { j =>
         for (i <- 1 to j)
           LMSCSVStringLitParseGen.apply(bigStringLitFileArray)
       }
-    }
+    }*/
 
     /*
     measure method "Handwritten" in {

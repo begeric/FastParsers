@@ -18,6 +18,8 @@ object CSVParsers {
     case class JSArray(arr: List[JSValue]) extends JSValue
     case class JSDouble(d: Double) extends JSValue
 	case class JSDouble2(d: InputWindow[Array[Char]]) extends JSValue
+	case class JSString(d: InputWindow[Array[Char]]) extends JSValue
+	case class JSString2(d: String) extends JSValue
     case class JSBool(b: Boolean) extends JSValue
     object JTrue extends JSValue
     object JFalse extends JSValue
@@ -41,9 +43,11 @@ object CSVParsers {
 	})
 	
 	val cvsParser = FastParsersCharArray  {
-		def cvs(p: Parser[JSValue]) = '[' ~> repsep(p, comma) <~ close ^^ (x => JSArray(x))
-		def doubles = cvs(decimalNumber ^^ (y => JSDouble2(y)))
+		def cvs(p: Parser[JSValue]) = '[' ~> repsep(p, comma) <~ close ^^ JSArray
+		def doubles = cvs(decimalNumber ^^ JSDouble2)
 		def bools = cvs((lit(trueValue) ~> success(JTrue)) | (lit(falseValue) ~> success(JFalse))) 
+		//def strings = cvs(stringLit ^^ (x => JSString2(x.toString)))
+		def strings = cvs(stringLit ^^ JSString)
 	}
 
 	object CSV extends JavaTokenParsers {
