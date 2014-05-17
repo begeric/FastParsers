@@ -44,7 +44,7 @@ object CSVParsers {
 	
 	val cvsParser = FastParsersCharArray  {
 		def cvs(p: Parser[JSValue]) = '[' ~> repsep(p, comma) <~ close ^^ JSArray
-		def doubles = cvs(decimalNumber ^^ JSDouble2)
+		def doubles = cvs(decimalNumber ^^ (x => JSDouble(x.toString.toDouble)))
 		def bools = cvs((lit(trueValue) ~> success(JTrue)) | (lit(falseValue) ~> success(JFalse))) 
 		//def strings = cvs(stringLit ^^ (x => JSString2(x.toString)))
 		def strings = cvs(stringLit ^^ JSString)
