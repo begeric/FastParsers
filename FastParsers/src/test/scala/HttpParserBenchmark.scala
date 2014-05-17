@@ -21,18 +21,16 @@ object HttpParserBenchmark extends PerformanceTest {
 
   val range = Gen.enumeration("size")(10)
 
-
-  val files = (1 to 1).foldLeft(new ListBuffer[(Array[Char], String)]){ (acc,i) =>
-    val fileName = "FastParsers/src/test/resources/tweet" + i
+  val files = (1 to 100).foldLeft(new ListBuffer[(Array[Char], String, FastCharSequence)]){ (acc,i) =>
+    val fileName = "FastParsers/src/test/resources/tweet" + i + "ho"
     val data = scala.io.Source.fromFile(fileName).getLines mkString "\n"
-    acc.append((data.toCharArray,data))
+    acc += ((data.toCharArray,data, new FastCharSequence(data.toCharArray)))
     acc
   }.toList
 
-
   /* tests */
-    performance of "HttpParser response and message" in {
-      /*measure method "FastParsers" in {
+    /*performance of "HttpParser response and message" in {
+      measure method "FastParsers" in {
         using(range) in { j =>
           for (i <- 1 to j; m <- files)
             httpparser.respAndMessage(m._1)
@@ -44,22 +42,22 @@ object HttpParserBenchmark extends PerformanceTest {
           for (i <- 1 to j; m <- files)
             HTTP.parse(HTTP.respAndMessage, m._2)
         }
-      }*/
+      }
 
-  }
+  }*/
 
   performance of "HttpParser response only" in {
-      /*measure method "FastParsers" in {
+      measure method "FastParsers" in {
         using(range) in { j =>
           for (i <- 1 to j; m <- files)
-            httpparser.response(m._1)
+            HTTPImpl3.httpparser.response(m._1)
         }
       }
 
       measure method "Combinators" in {
         using(range) in { j =>
           for (i <- 1 to j; m <- files)
-          HTTP.parse(HTTP.response, m._2)
+          HTTP.parse(HTTP.response, m._3)
         }
       }
 
@@ -67,10 +65,9 @@ object HttpParserBenchmark extends PerformanceTest {
         using(range) in { j =>
           for (i <- 1 to j; m <- files)
             HttpResponseParser.apply(m._1)
-          //println("@("+j+")HttpParser@Combinators:respAndMessage")
         }
       }
-      */
+      
 
   }
 
@@ -79,14 +76,12 @@ object HttpParserBenchmark extends PerformanceTest {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
           HttpResponseParser.apply(m._1)
-        //println("@("+j+")HttpParser@Combinators:respAndMessage")
       }
     }
     measure method "response" in {
         using(range) in { j =>
           for (i <- 1 to j; m <- files)
             httpparser.response(m._2)
-          //println("@("+j+")HttpParser@FastParsers:response")
         }
       }
   }*/

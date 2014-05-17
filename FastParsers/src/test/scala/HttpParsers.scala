@@ -1,6 +1,4 @@
-import fastparsers.framework.implementations.FastParsers
-import FastParsers._
-import fastparsers.framework.implementations.FastParsers
+
 import scala.collection.mutable.HashMap
 import scala.util.parsing.combinator._
 import scala.util.parsing.input._
@@ -10,7 +8,7 @@ import fastparsers.input.InputWindow
  * Created by Eric on 05.04.14.
  */
 object HttpParsers {
-  case class Response(status: Int,contentLength: Int,connection: String, chunked: Boolean = false,upgrade: Boolean = false)
+  case class Response(status: Int = 200,contentLength: Int = 0,connection: String = "", chunked: Boolean = false,upgrade: Boolean = false)
 
   case class Request(requestType: String,url: Url,contentLength: Int,connection: String,chunked: Boolean = false,upgrade: Boolean = false)
 
@@ -211,14 +209,61 @@ object HttpParsers {
     upgrade = x._2.getOrElse("upgrade", false).asInstanceOf[Boolean]
   )
 
-  val httpparser = FastParser  {
-    def restOfLine = takeWhile(_ != '\n')
-    def headerName = takeWhile(x => (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || x == '-')
-    def header = (headerName <~ ':' ~ whitespaces) ~ restOfLine
-    def headers = (header <~ '\n').foldLeft[HashMap[String, String]](new HashMap[String, String](),(acc,c) => acc += (c._1 -> c._2))
-    def status = lit("HTTP/") ~ decimalNumber ~ whitespaces ~> (number ^^ (_.toString.toInt)) <~ restOfLine
-    def response = (status <~ '\n') ~ headers <~ '\n' ^^ processResp
-    def respAndMessage = response >> (r => (take(r.contentLength) ^^ (y => (r,y))))
+  object HTTPImpl1 {
+    import fastparsers.framework.implementations.FastParsers
+    import FastParsers._
+    val httpparser = FastParser  {
+      def restOfLine = takeWhile(_ != '\n')
+      def headerName = takeWhile(x => (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || x == '-')
+      def header = (headerName <~ ':' ~ whitespaces) ~ restOfLine
+      def headers = (header <~ '\n').foldLeft[HashMap[String, String]](new HashMap[String, String](),(acc,c) => acc += (c._1 -> c._2))
+      def status = lit("HTTP/") ~ decimalNumber ~ whitespaces ~> (number ^^ (_.toString.toInt)) <~ restOfLine
+      def response = (status <~ '\n') ~ headers <~ '\n' ^^ processResp
+      def respAndMessage = response >> (r => (take(r.contentLength) ^^ (y => (r,y))))
+    }
   }
 
+  object HTTPImpl2 {
+    val HTTP = "HTTP/".toCharArray
+    import fastparsers.framework.implementations.FastParsersCharArray._
+    val httpparser = FastParsersCharArray  {
+      def restOfLine = takeWhile(_ != '\n')
+      def headerName = takeWhile(x => (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || x == '-')
+      def header = (headerName <~ ':' ~ whitespaces) ~ restOfLine ^^ {case (a,b) => (a.mkString, b.mkString)}
+      def headers = (header <~ '\n').foldLeft[HashMap[String, String]](new HashMap[String, String](),(acc,c) => acc += (c._1 -> c._2))
+      def status = lit(HTTP) ~ decimalNumber ~ whitespaces ~> (number ^^ (_.toString.toInt)) <~ restOfLine
+      def response = (status <~ '\n') ~ headers <~ '\n' ^^ processResp
+      def respAndMessage = response >> (r => (take(r.contentLength) ^^ (y => (r,y))))
+    }
+  }
+
+
+  object HTTPImpl3 {
+    val HTTP = "HTTP/".toCharArray
+    import fastparsers.framework.implementations.FastParsersCharArray._
+    import fastparsers.input.InputWindow.InputWindow
+
+    def collect(r: Response, hName: InputWindow[_], prop: InputWindow[_]): Response = {
+      if((hName == "connection" || hName == "proxy-connection") && (prop == "keep-alive" || prop == "close")){
+        r.copy(connection = prop.toString)
+      }else if(hName == "content-length"){
+        r.copy(contentLength = prop.toString.toInt)
+      }else if(hName == "transfer-encoding" && prop == "chunked"){
+        r.copy(chunked = true)
+      }else if(hName == "upgrade"){
+        r.copy(upgrade = true)
+      }else {
+        r
+      }
+    }
+
+    val httpparser = FastParsersCharArray  {
+      def restOfLine = takeWhile2(_ != '\n')
+      def headerName = takeWhile2(x => (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z') || x == '-')
+      def header = (headerName <~ ':' ~ whitespaces) ~ restOfLine
+      def headers = (header <~ '\n').foldLeft(Response(),{(acc: Response, c: Tuple2[InputWindow[_],InputWindow[_]]) => collect(acc, c._1, c._2)})
+      def status = lit(HTTP) ~ decimalNumber ~ whitespaces ~> (number ^^ (_.toString.toInt)) <~ restOfLine
+      def response = (status <~ '\n') ~ headers <~ '\n'
+    }
+  }
 }

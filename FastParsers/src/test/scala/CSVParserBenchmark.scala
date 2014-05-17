@@ -41,7 +41,7 @@ object CSVParserBenchmark extends PerformanceTest {
   performance of "CSV Double Parser" in {
     measure method "FastParsers" in {
       using(range) in { j =>
-        //for (i <- 1 to j)
+        for (i <- 1 to j)
           cvsParser.doubles(bigDoubleFileArray)
       }
     }
@@ -56,18 +56,18 @@ object CSVParserBenchmark extends PerformanceTest {
 
     measure method "LMS" in {
         using(range) in { j =>
-         // for (i <- 1 to j)
+          for (i <- 1 to j)
             LMSCSVDoubleParserGen2.apply(bigDoubleFileArray)
         }
     }
 
     //too slow
-    measure method "Combinators" in {
+   /* measure method "Combinators" in {
       using(range) in { j =>
-        //for (i <- 1 to j)
+        for (i <- 1 to j)
           CSV.parse(CSV.doubles, bigDoubleFileSeq)
       }
-    }
+    }*/
   }
 
 
@@ -79,7 +79,14 @@ object CSVParserBenchmark extends PerformanceTest {
           cvsParser.bools(bigBoolFileArray)
       }
     }
-    measure method "LMS" in {
+
+    measure method "FastParsers" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          cvsParser.bools(bigBoolFileArray)
+      }
+    }
+    /*measure method "LMS" in {
       using(range) in { j =>
         for (i <- 1 to j)
           LMSCSVBooleanParseGen.apply(bigBoolFileArray)
@@ -97,11 +104,11 @@ object CSVParserBenchmark extends PerformanceTest {
         for (i <- 1 to j)
           CSV.parse(CSV.bools, bigBoolFileSeq)
       }
-    }
+    }*/
   }*/
 
-  performance of "CSVStringLitParser:StringLit" in {
-    /*measure method "FastParsers" in {
+  /*performance of "CSVStringLitParser:StringLit" in {
+    measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
           cvsParser.strings(bigStringLitFileArray)
@@ -112,9 +119,9 @@ object CSVParserBenchmark extends PerformanceTest {
         for (i <- 1 to j)
           LMSCSVStringLitParseGen.apply(bigStringLitFileArray)
       }
-    }*/
+    }
 
-    /*
+    
     measure method "Handwritten" in {
       using(range) in { j =>
         for (i <- 1 to j)
@@ -125,9 +132,9 @@ object CSVParserBenchmark extends PerformanceTest {
     measure method "Combinators" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          CSV.parse(CSV.bools, bigBoolFileSeq)
+          CSV.parse(CSV.strings, bigBoolFileSeq)
       }
     }
-    */
-  }
+    
+  }*/
 }

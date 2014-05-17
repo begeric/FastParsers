@@ -39,7 +39,7 @@ object JsonParserBenchmark extends PerformanceTest {
   val vbigFileSeq = new FastCharSequence(vbigFileArray)
 
 
-  performance of "JsonParser on small inputs" in {
+  /*performance of "JsonParser on small inputs" in {
     measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j; m <- files)
@@ -59,10 +59,10 @@ object JsonParserBenchmark extends PerformanceTest {
           JSON.parse(JSON.value,new FastCharSequence(m))
       }
     }*/
-  }
+  }*/
 
 
-  performance of "JsonParser on a big input" in {
+ /* performance of "JsonParser on a big input" in {
     measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
@@ -84,7 +84,7 @@ object JsonParserBenchmark extends PerformanceTest {
       }
     }*/
 
-  }
+  }*/
 
 
   /*performance of "JsonParser on a very big input" in {

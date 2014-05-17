@@ -1,5 +1,12 @@
 package lms
 
+object HttpResponseParser2 extends ResponseParseStatic2(
+      "content-length".toArray, //"content-length".length,
+      "transfer-encoding".toArray, //"transfer-encoding".length,
+      "chunked".toArray, //"chunked".length,
+      "upgrade".toArray //, "upgrade".length
+    )
+
 case class ResponseParseStatic2(px820:Array[Char],px851:Array[Char],px880:Array[Char],px911:Array[Char]) extends ((Array[Char])=>(Unit)) {
 def apply(x0:Array[Char]): Unit = {
 var x2: Anon1323431030 = null

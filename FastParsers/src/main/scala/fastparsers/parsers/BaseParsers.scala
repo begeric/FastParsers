@@ -64,6 +64,9 @@ trait BaseParsers[Elem, Input] {
   @compileTimeOnly("takeWhile can’t be used outside FastParser")
   def takeWhile(f: Elem => Boolean): Parser[Input] = ???
 
+  @compileTimeOnly("takeWhile can’t be used outside FastParser")
+  def takeWhile2(f: Elem => Boolean): Parser[InputWindow[Input]] = ???
+
   @compileTimeOnly("take can’t be used outside FastParser")
   def take(n: Int): Parser[Input] = ???
 

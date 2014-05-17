@@ -38,8 +38,26 @@ object InputWindow {
     def apply(n: Int) = in(n - start)
 
     override def toString = realString
+    
     override def equals(x: Any) = x match {
-      case s: Array[Char] => realValue == s
+      case s: Array[Char] if s.length == end - start => 
+        var i = 0
+        var cont = true
+        val sLength = end - start
+        while (cont && i < sLength){
+          cont = s(i) == in(start + i)
+          i += 1
+        }
+        cont
+      case s: String if s.length == end - start => 
+        var i = 0
+        var cont = true
+        val sLength = end - start
+        while (cont && i < sLength){
+          cont = s(i) == in(start + i)
+          i += 1
+        }
+        cont
       case _ => super.equals(x)
     }
   }

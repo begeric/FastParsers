@@ -23,6 +23,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     case q"$_.wildcard"            => parseWildcard(rs)
     case q"$_.guard[$d]($a)"       => parseGuard(a, d, rs)
     case q"$_.takeWhile($f)"       => parseTakeWhile(f, rs)
+    case q"$_.takeWhile2($f)"      => parseTakeWhile2(f, rs)
     case q"$_.take($n)"            => parseTake(n, rs)
     case q"$_.raw[$d]($a)"         => parseRaw(a,rs)
     case q"$_.phrase[$d]($a)"      => parsePhrase(a, rs)
@@ -198,6 +199,19 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     """
   }
 
+  private def parseTakeWhile2(f: c.Tree, rs: ResultsStruct) = {
+    val tmp_f = TermName(c.freshName)
+    val beginpos = TermName(c.freshName)
+    q"""
+      val $tmp_f = $f
+      val $beginpos = $pos
+      while ($isNEOI && $tmp_f($currentInput))
+        $advance
+      ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
+      success = true
+    """
+  }
+
   private def parseTake(n: c.Tree, rs: ResultsStruct) = {
     q"""
     if ($pos + $n <= $inputsize) {
@@ -217,7 +231,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
       val $beginpos = $pos
       ${expand(a,rs.temporary)}
       if (success) {
-        ${rs.assignNew(q"new fastparsers.input.InputWindow.InputWindow($inputValue,$beginpos,$pos)", inputWindowType)}
+        ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
       }
       else {
         error = "raw(" + ${prettyPrint(a)} +  ") failure at " + $pos

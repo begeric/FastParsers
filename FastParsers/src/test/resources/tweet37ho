@@ -1,0 +1,20 @@
+HTTP/1.1 200 OK
+cache-control: no-cache, no-store, must-revalidate, pre-check=0, post-check=0
+content-length: 87529
+content-type: application/json;charset=utf-8
+date: Wed, 04 Sep 2013 13:26:24 GMT
+expires: Tue, 31 Mar 1981 05:00:00 GMT
+last-modified: Wed, 04 Sep 2013 13:26:24 GMT
+pragma: no-cache
+server: tfe
+set-cookie: lang=en
+set-cookie: guest_id=v1%3A137830118419657735; Domain=.twitter.com; Path=/; Expires=Fri, 04-Sep-2015 13:26:24 UTC
+status: 200 OK
+x-access-level: read
+x-frame-options: SAMEORIGIN
+x-rate-limit-limit: 180
+x-rate-limit-remaining: 175
+x-rate-limit-reset: 1378301902
+x-transaction: f5502d44b7769092
+
+

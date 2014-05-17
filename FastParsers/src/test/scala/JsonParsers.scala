@@ -101,7 +101,6 @@ object JsonParsers {
          lit(trueValue) ^^^ JSBool(true) |
          lit(falseValue) ^^^ JSBool(false)
        )
-
       def obj:Parser[JSValue] = ('{' ~> repsep(member,comma) <~ closeBracket) ^^ {x => JSObject(x)}
       def arr:Parser[JSValue] = ('[' ~> repsep(value,comma) <~ closeSBracket) ^^ {x => JSArray(x)}
       def member:Parser[(InputWindow[Array[Char]], JSValue)] = stringLit ~ (lit(points) ~> value)
