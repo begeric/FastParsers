@@ -12,7 +12,7 @@ import fastparsers.error.IgnoreParseError
  * Interface for FastParsersImpl
  */
 object FastParsers extends BaseParsers[Char, String] with RepParsers with TokenParsers[String] with FlatMapParsers {
-  def FastParser(rules: => Unit): Any = macro FastParsersImpl.FastParser
+  def FastParser(rules: => Unit): FinalFastParserImpl = macro FastParsersImpl.FastParser
 }
 
 /**

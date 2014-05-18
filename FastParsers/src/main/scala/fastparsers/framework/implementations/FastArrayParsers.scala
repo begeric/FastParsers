@@ -12,7 +12,7 @@ import fastparsers.error.DefaultParseError
  * Interface for ArrayParserImpl
  */
 class FastArrayParsers[T] extends BaseParsers[T, Array[T]] with RepParsers with FlatMapParsers {
-  def apply(rules: => Unit): Any = macro ArrayParserImpl.ArrayParserImpl[T]
+  def apply(rules: => Unit): FinalFastParserImpl = macro ArrayParserImpl.ArrayParserImpl[T]
 }
 
 /**

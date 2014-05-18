@@ -111,7 +111,7 @@ object JsonParserBenchmark extends PerformanceTest {
   }*/
 
 
-  /*performance of "Different JSonParser implementations" in {
+  performance of "Different JSonParser implementations" in {
     measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
@@ -119,7 +119,7 @@ object JsonParserBenchmark extends PerformanceTest {
       }
     }
 
-    measure method "FastParsers Boxed" in {
+    /*measure method "FastParsers Boxed" in {
       using(range) in { j =>
         for (i <- 1 to j)
           JSonImplBoxed.jsonparser.value(vbigFileArray)
@@ -144,6 +144,13 @@ object JsonParserBenchmark extends PerformanceTest {
         for (i <- 1 to j)
           JSonImpl5.jsonparser.value(vbigFileArray)
       }
+    }*/
+
+    measure method "FastParsers InputWindow to String" in {
+      using(range) in { j =>
+        for (i <- 1 to j)
+          JSonImpl6.jsonparser.value(vbigFileArray)
+      }
     }
 
     measure method "FastParsers on string input" in {
@@ -153,6 +160,6 @@ object JsonParserBenchmark extends PerformanceTest {
       }
     }
 
-  }*/
+  }
 
 }

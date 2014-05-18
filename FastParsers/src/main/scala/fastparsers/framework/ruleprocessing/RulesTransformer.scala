@@ -6,6 +6,7 @@ import scala.collection.mutable.HashMap
 import fastparsers.parsers.Parser
 import fastparsers.framework._
 import fastparsers.framework.parseresult._
+import fastparsers.framework.implementations.FinalFastParserImpl
 
 /**
  * Trait used to Transform rules so that calls to other rules and foreign calls are correctly handled

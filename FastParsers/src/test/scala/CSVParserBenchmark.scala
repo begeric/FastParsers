@@ -41,7 +41,7 @@ object CSVParserBenchmark extends PerformanceTest {
   performance of "CSV Double Parser" in {
     measure method "FastParsers" in {
       using(range) in { j =>
-        for (i <- 1 to j)
+        //for (i <- 1 to j)
           cvsParser.doubles(bigDoubleFileArray)
       }
     }
@@ -56,7 +56,7 @@ object CSVParserBenchmark extends PerformanceTest {
 
     measure method "LMS" in {
         using(range) in { j =>
-          for (i <- 1 to j)
+          //for (i <- 1 to j)
             LMSCSVDoubleParserGen2.apply(bigDoubleFileArray)
         }
     }
@@ -64,7 +64,7 @@ object CSVParserBenchmark extends PerformanceTest {
     //too slow
     measure method "Combinators" in {
       using(range) in { j =>
-        for (i <- 1 to j)
+        //for (i <- 1 to j)
           CSV.parse(CSV.doubles, bigDoubleFileSeq)
       }
     }

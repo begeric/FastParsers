@@ -11,7 +11,7 @@ import fastparsers.error.IgnoreParseError
  * Interface for CharArrayImpl
  */
 object FastParsersCharArray extends BaseParsers[Char, Array[Char]] with RepParsers with TokenParsers[Array[Char]] with FlatMapParsers {
-  def FastParsersCharArray(rules: => Unit): Any = macro CharArrayImpl.FastParser
+  def FastParsersCharArray(rules: => Unit): FinalFastParserImpl = macro CharArrayImpl.FastParser
 }
 
 /**

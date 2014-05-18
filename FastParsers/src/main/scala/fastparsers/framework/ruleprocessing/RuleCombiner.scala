@@ -30,7 +30,7 @@ trait RuleCombiner extends ReduceRules {
    //
 
    val tree = q"""
-     class $anon extends fastparsers.framework.ruleprocessing.FinalFastParserImpl {
+     class $anon extends fastparsers.framework.implementations.FinalFastParserImpl {
          import scala.collection.mutable.ListBuffer
          import scala.reflect.runtime.universe._
          ..$methodsEmpty
