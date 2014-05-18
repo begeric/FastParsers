@@ -46,7 +46,7 @@ object HttpParserBenchmark extends PerformanceTest {
 
   }*/
 
-  performance of "HttpParser response only" in {
+  /*performance of "HttpParser response only" in {
       measure method "FastParsers" in {
         using(range) in { j =>
           for (i <- 1 to j; m <- files)
@@ -69,7 +69,7 @@ object HttpParserBenchmark extends PerformanceTest {
       }
       
 
-  }
+  }*/
 
 	/*performance of "HttpParser@LMS" in {
     measure method "response" in {

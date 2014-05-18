@@ -62,12 +62,12 @@ object CSVParserBenchmark extends PerformanceTest {
     }
 
     //too slow
-   /* measure method "Combinators" in {
+    measure method "Combinators" in {
       using(range) in { j =>
         for (i <- 1 to j)
           CSV.parse(CSV.doubles, bigDoubleFileSeq)
       }
-    }*/
+    }
   }
 
 

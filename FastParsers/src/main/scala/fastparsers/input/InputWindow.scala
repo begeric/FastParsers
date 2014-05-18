@@ -31,11 +31,20 @@ object InputWindow {
 
   class CharArrayStruct(in: Array[Char],start: Int, end: Int)  extends InputWindow[Array[Char]](in, start, end){
 
-    private lazy val realValue = in.slice(start, end)
-    private lazy val realString = realValue.mkString
+    lazy val size = end - start
 
-    def size = end - start
-    def apply(n: Int) = in(n - start)
+    private lazy val realValue = in.slice(start, end)
+    private lazy val realString = {
+      val lb = new StringBuilder(size)
+      var i = 0
+      while (i < size){
+        lb.append(in(i + start))
+        i += 1
+      }
+      lb.result
+    }
+
+    def apply(n: Int) = in(n + start)
 
     override def toString = realString
     
