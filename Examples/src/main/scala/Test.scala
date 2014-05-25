@@ -26,12 +26,12 @@ object Test {
   import FastParsers._
   val parser = FastParser {
     def rule = 'a' ~ 'c'
-    def rule2(p: Parser[(Char,Char)]) = 'a' ~ p
-    def rule3 = rule2('x' ~ 'y')
+    def rule2(p: Parser[List[Char]]) = 'a' ~ p
+    def rule3(y: Int) = rule2(repN('b', y))
   }
 
 
-  parser.rule3("axy") match {
+  parser.rule3("abbbbbbb",3) match {
     case Success(x) =>
       println(x)
     case Failure(msg) => println("failure: " + msg)

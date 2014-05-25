@@ -101,7 +101,7 @@ trait BaseParsers[Elem, Input] {
 
 
   @compileTimeOnly("positioned can’t be used outside FastParser")
-  def paramRule[T](p: Any): Parser[T] = ???
+  def paramRule[T](p: Any, params: Any*): Parser[T] = ???
 
   trait BaseParser[T] {
     @compileTimeOnly("~ can’t be used outside FastParser")

@@ -394,6 +394,10 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     val callResult = TermName(c.freshName)
     val call = params.map{
         case q"paramRule(${x: String})" => q"${TermName(x)}"
+        case q"paramRule(${x: String}, ..${args: List[String]})" => 
+          val in = TermName(c.freshName("input"))
+          val offs = TermName(c.freshName("offset"))
+          q"($in: $inputType, $offs: Int) => {${TermName(x)}($in, ..${args.map(TermName(_))}, $offs)}"
       } match {
       case Nil => q"$ruleCall($inputValue,$pos)"
       case p => q"$ruleCall($inputValue,..$p,$pos)"

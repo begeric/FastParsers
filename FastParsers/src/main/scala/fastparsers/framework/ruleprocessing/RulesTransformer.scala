@@ -71,9 +71,10 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
            val newCode = transformRuleCalls(p,enclosingRule, rulesMap, expandedRules, rulesPath)
            val newRule = RuleInfo(innerType,newCode,enclosingRule.params, enclosingRule.typeParams,newCode)
            val name = getAnonymousName
+           val paramNames = enclosingRule.params.map{case ValDef(_,name,_,_) => name.toString}
            expandedRules += name -> newRule
            //setSymbol(q"${TermName(name)}", NoSymbol)
-           q"paramRule($name)"
+           q"paramRule($name, ..$paramNames)"
        }
        case None => p
      }
