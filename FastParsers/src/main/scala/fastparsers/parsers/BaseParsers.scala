@@ -99,6 +99,10 @@ trait BaseParsers[Elem, Input] {
   def compound[T](p:Parser[T]): Parser[T] = ???
   def foreignCall[T](p: Any, ruleName: Any, params: Any*) = ???
 
+
+  @compileTimeOnly("positioned can’t be used outside FastParser")
+  def paramRule[T](p: Any): Parser[T] = ???
+
   trait BaseParser[T] {
     @compileTimeOnly("~ can’t be used outside FastParser")
     def ~[U](p2: Parser[U]): Parser[(T, U)] = ???

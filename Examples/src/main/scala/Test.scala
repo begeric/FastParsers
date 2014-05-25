@@ -18,111 +18,23 @@ import scala.language.reflectiveCalls
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-//GROS HACK
-import fastparsers.input.InputWindow.InputWindow
-
-sealed abstract class JSValue
-case class JSObject(map: List[(InputWindow[Array[Char]], JSValue)]) extends JSValue
-case class JSArray(arr: List[JSValue]) extends JSValue {
-  override def equals(obj: Any) = obj match {
-    case tmp: JSArray => arr.toSet == tmp.arr.toSet
-    case _ => false
-  }
-}
-
-//case class JSInt(i: Int) extends JSValue
-case class JSDouble(d: InputWindow[Array[Char]]) extends JSValue
-case class JSDouble2(d: Double) extends JSValue
-case class JSString(s: InputWindow[Array[Char]]) extends JSValue
-case class JSBool(b: Boolean) extends JSValue
-case object JSNull extends JSValue
-object JTrue extends JSValue
-object JFalse extends JSValue
-
 
 object Test {
 
  def main(args: Array[String])  {
 
-
-   object JSonImpl2 {
-     import fastparsers.framework.implementations.FastParsersCharArray._
-     val nullValue = "null".toCharArray
-     val trueValue = "true".toCharArray
-     val falseValue = "false".toCharArray
-     val closeBracket = "}".toCharArray
-     val closeSBracket = "]".toCharArray
-     val comma = ",".toCharArray
-     val points = ":".toCharArray
-     val jsonparser = /*getAST.get(*/FastParsersCharArray  {
-       def value:Parser[JSValue] = whitespaces ~>
-        (
-          obj |
-          arr |
-          stringLit ^^ {x => JSString(x)} |
-          //decimalNumber ^^ {x => JSDouble(x)} |
-          decimalNumber ^^ {x => JSDouble2(x.toString.toDouble)} |
-          lit(nullValue) ^^^ JSNull |
-          lit(trueValue) ^^^ JSBool(true) |
-          lit(falseValue) ^^^ JSBool(false)
-        )
-
-       def obj:Parser[JSValue] = ('{' ~> repsep(member,comma) <~ closeBracket) ^^ {x => JSObject(x)}
-       def arr:Parser[JSValue] = ('[' ~> repsep(value,comma) <~ closeSBracket) ^^ {x => JSArray(x)}
-       def member:Parser[(InputWindow[Array[Char]], JSValue)] = stringLit ~ (lit(points) ~> value)
-     }//)
-   }
-	
-	object CSV{
-		import fastparsers.framework.implementations.FastParsersCharArray._
-		//GROS HACK
-		import fastparsers.input.InputWindow.InputWindow
-		 val trueValue = "true".toCharArray
-		 val falseValue = "false".toCharArray
-		 val close = "]".toCharArray
-		 val comma = ",".toCharArray
-		 
-		val cvsParser = (FastParsersCharArray  {
-			def primBools = ('t' ~ 'r' ~ 'u' ~ 'e' ~> success(JTrue)) | ('f' ~ 'a' ~ 'l' ~'s' ~ 'e' ~> success(JFalse)) 
-			def bools = '[' ~> repsep(primBools, ',') <~ close// ^^ (x => JSArray(x))
-		})
-
-  val cvsParser2 = FastParsersCharArray  {
-    def cvs(p: Parser[JSValue]) = '[' ~> repsep(p, comma) <~ close ^^ (x => JSArray(x))
-    def doubles = cvs(decimalNumber ^^ (y => JSDouble2(y.toString.toDouble)))
-    def bools = cvs((lit(trueValue) ~> success(JTrue)) | (lit(falseValue) ~> success(JFalse))) 
-  }
-	}
-	
-  def hey(x: Any): Unit = x match {
-    case y :: ys => hey(y)
-    case y : InputWindow.CharArrayStruct => println("hey")
-    case (a, b) => hey(a)
-    case _ =>
+  import FastParsers._
+  val parser = FastParser {
+    def rule = 'a' ~ 'c'
+    def rule2(p: Parser[(Char,Char)]) = 'a' ~ p
+    def rule3 = rule2('x' ~ 'y')
   }
 
-  val bigFileNameDouble = "FastParsers/src/test/resources/" + "csvDoubles.txt"
-  val bigFileDouble = scala.io.Source.fromFile(bigFileNameDouble).getLines mkString "\n"
-  val bigFileArrayDouble = bigFileDouble.toCharArray
 
-  val bigFileNameJson = "FastParsers/src/test/resources/" + "json.big1"
-  val bigFileJson = scala.io.Source.fromFile(bigFileNameJson).getLines mkString "\n"
-  val bigFileArrayJson = bigFileJson.toCharArray
-
-  /*println("hey, wait a bit")
-
-  Thread.sleep(5000)*/
-	
-	//println(LMSCSVBooleanParseGen.apply(bigFileArray))
-	//println(CSVBoolHandWritten.apply(bigFileArray))
-
-  JSonImpl2.jsonparser.value(bigFileArrayJson) match {
+  parser.rule3("axy") match {
     case Success(x) =>
-      println("hey2")
       println(x)
     case Failure(msg) => println("failure: " + msg)
   }
-
-  //LMSJsonParserGen2.apply(bigFileArray)
  }
 }

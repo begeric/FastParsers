@@ -20,7 +20,7 @@ object FastParsers extends BaseParsers[Char, String] with RepParsers with TokenP
  */
 
 class FastParsersImpl(val c: Context) extends BaseImpl
-  with RulesTransformer with RulesInliner
+  with RulesTransformer //with RulesInliner
   with ParseRules with BaseParsersImpl with RepParsersImpl
   with TokenParsersImpl with FlatMapImpl with RuleCombiner
   with StringInput with IgnoreParseError  with DontIgnoreResults{

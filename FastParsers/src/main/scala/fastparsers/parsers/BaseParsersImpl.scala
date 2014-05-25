@@ -42,7 +42,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     case q"$a filter[$d] $f"                => parseFilter(a, f, d, rs)
     case q"$a withFailureMessage $msg"      => parseWithFailureMessage(a, msg, rs)
     case q"call[$d](${ruleCall: String},..$params)" => parseRuleCall(q"${TermName(ruleCall)}", params, d, rs)
-    case q"call[$d](${ruleCall: TermName},..$params)" => parseRuleCall(ruleCall, params, d, rs)
+    case q"call[$d](${ruleCall: TermName},..$params)" => parseRuleCall(q"$ruleCall", params, d, rs)
     case q"callParam[$d](${ruleCall: String})" => parseRuleCall(q"${TermName(ruleCall)}", Nil, d, rs)
     case q"compound[$d]($a)"                => parseCompound(a, d, rs)      //TODO needed?
     case q"foreignCall[$d]($obj,${ruleCall: String},..$params)" => parseRuleCall(q"$obj.${TermName(ruleCall)}", params, d, rs)
@@ -392,7 +392,9 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
 
   private def parseRuleCall(ruleCall: c.Tree, params: List[c.Tree], typ: c.Tree, rs: ResultsStruct) = {
     val callResult = TermName(c.freshName)
-    val call = params match {
+    val call = params.map{
+        case q"paramRule(${x: String})" => q"${TermName(x)}"
+      } match {
       case Nil => q"$ruleCall($inputValue,$pos)"
       case p => q"$ruleCall($inputValue,..$p,$pos)"
     }
@@ -410,9 +412,14 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     c.untypecheck(tree)
   }
 
-  private def parseRuleCall(ruleCall: TermName, params: List[c.Tree], typ: c.Tree, rs: ResultsStruct) = {
+  /*private def parseRuleCall(ruleCall: TermName, params: List[c.Tree], typ: c.Tree, rs: ResultsStruct) = {
     val callResult = TermName(c.freshName)
-    val call = params match {
+    val call = params.map{
+      case q"paramRule[$_](${x: String})" => q"${TermName(x)}"
+      case x => 
+      c.echo(c.enclosingPosition, show(x))
+      x
+      } match {
       case Nil => q"$ruleCall($inputValue,$pos)"
       case p => q"$ruleCall($inputValue,..$p,$pos)"
     }
@@ -428,7 +435,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
           error = $callResult.error
         """
     c.untypecheck(tree)
-  }
+  }*/
 
 
   private def parseCompound(a: c.Tree, typ: c.Tree, rs: ResultsStruct) = {

@@ -35,7 +35,6 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
 
     for (k <- rulesMap.keys)
       transformRule(k)
-
     expandedRulesMap
   }
 
@@ -63,16 +62,18 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
    def convertParsersArgs(params: List[c.Tree]) = params.map{ p =>
      getInnerTypeOf[Parser[_]](p.tpe) match {
        case Some(List(innerType)) => p match {
-         /*case q"${ruleName : TermName}" =>
+         case q"${ruleName : TermName}" =>
            /*c.abort(c.enclosingPosition,show(tq"($inputType,Int) => fastparsers.framework.parseresult.ParseResult[$innerType, $errorType]".tpe))
            c.untypecheck(setSymbol(p, NoSymbol)) */
-           setSymbol(p, NoSymbol) */
+           //c.untypecheck(setSymbol(p, NoSymbol))
+           q"paramRule(${ruleName.toString})"
          case _ => //then need to create another anonymous rule
            val newCode = transformRuleCalls(p,enclosingRule, rulesMap, expandedRules, rulesPath)
            val newRule = RuleInfo(innerType,newCode,enclosingRule.params, enclosingRule.typeParams,newCode)
            val name = getAnonymousName
            expandedRules += name -> newRule
-           setSymbol(q"${TermName(name)}", NoSymbol)
+           //setSymbol(q"${TermName(name)}", NoSymbol)
+           q"paramRule($name)"
        }
        case None => p
      }
@@ -80,7 +81,8 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
 
    def expandRuleCall(ruleName: TermName, typeArgs: List[c.Type], args: List[c.Tree]): Option[c.Tree] =
      getValidRuleInfo(ruleName,rulesMap, typeArgs, args).collect[c.Tree] {
-       case RuleInfo(typ, _, _, _,_) => q"call[${typ}](${ruleName.toString}, ..${convertParsersArgs(args)})"
+       case RuleInfo(typ, _, _, _,_) => 
+       q"call[${typ}](${ruleName.toString}, ..${convertParsersArgs(args)})"
    }
 
    def expandParamCall(paramName: TermName, typeArgs: List[c.Type], args: List[c.Tree]) : Option[c.Tree] =
