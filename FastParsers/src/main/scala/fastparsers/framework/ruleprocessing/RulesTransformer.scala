@@ -125,7 +125,7 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
               q"compound[${codetyp.head}]($substitued)" //this suppose that the code is already expanded, maybe everything would be easier if it wasn't...
             }
             else
-              q"foreignCall[$codetyp]($obj,${ruleName.toString},..$args)"
+              q"foreignCall[$codetyp]($obj,${ruleName.toString},..${convertParsersArgs(args)})"
           case _ => c.abort(c.enclosingPosition,"unexpected behaviour during foreign call expansion") //TODO
         }
         case typ => c.abort(c.enclosingPosition,"error : " + show(rule.typeSignature) + " should be an annotated type")

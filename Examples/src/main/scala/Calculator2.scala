@@ -9,7 +9,7 @@ import scala.collection.immutable.HashMap
  */
 object Calculator2 {
 
-  def main(args: Array[String])  {
+  /*def main(args: Array[String])  {
     import FastParsers._
 
     var values = new HashMap[String,Int]()
@@ -80,5 +80,5 @@ object Calculator2 {
           }
       }
     }
-  }
+  }*/
 }
