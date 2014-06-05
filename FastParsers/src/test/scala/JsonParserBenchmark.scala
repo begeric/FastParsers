@@ -115,7 +115,7 @@ object JsonParserBenchmark extends PerformanceTest {
     measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          JSonImpl2.jsonparser.value(vbigFileArray)
+          JSonImpl2.jsonparser.value(bigFileArray)
       }
     }
 
@@ -146,17 +146,17 @@ object JsonParserBenchmark extends PerformanceTest {
       }
     }*/
 
-    measure method "FastParsers InputWindow to String" in {
+    /*measure method "FastParsers InputWindow to String" in {
       using(range) in { j =>
         for (i <- 1 to j)
           JSonImpl6.jsonparser.value(vbigFileArray)
       }
-    }
+    }*/
 
     measure method "FastParsers on string input" in {
       using(range) in { j =>
         for (i <- 1 to j)
-          JSonImpl1.jsonparser.value(vbigFile)
+          JSonImpl1.jsonparser.value(bigFile)
       }
     }
 

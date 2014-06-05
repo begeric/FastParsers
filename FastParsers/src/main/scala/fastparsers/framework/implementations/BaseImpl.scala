@@ -6,6 +6,7 @@ import fastparsers.input.ParseInput
 import scala.reflect.macros.whitebox.Context
 import scala.collection.mutable.HashMap
 import fastparsers.framework.ruleprocessing.{RuleCombiner, MapRules}
+import fastparsers.parsers.Parser
 
 /**
  * General trait which create the basic needs of a FastParsers implementation.
@@ -34,23 +35,23 @@ trait BaseImpl extends TreeTools {
   private def getBasicStructure(rules: c.Tree) = {
 
     def getReturnType(ruleCode: c.Tree): Type = c.typecheck(ruleCode).tpe match {
-      //case tq"$_.fastparsers.parsers.Parser[$d]" => c.abort(c.enclosingPosition, "correct parser type")
-      //HACK or not HACK ?
+      //case TypeRef(_, y, List(z)) if y.typeSignature =:= typeOf[Parser[_]] => z
       case TypeRef(_, y, List(z)) if y.fullName == "fastparsers.parsers.Parser" => z //q"Any".tpe//q"var x:${d.tpe}" //check it is a code
       case v => c.abort(c.enclosingPosition, "incorrect parser type " + show(v))
     }
 
 
     val rulesMap = new HashMap[String, RuleInfo]()
-    rules match {
+    c.typecheck(rules) match {
       case q"{..$body}" =>
         body.foreach {
           /*case q"def $name[..$t](..$params): $d = $b" =>
             rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params,t)*///not supported yet
+          //case q"def $name(..$params): $_.Parser[$d]" => c.abort(c.enclosingPosition, "yo")
           case q"def $name(..$params): $d = $b" =>
             rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params, Nil, b)
           case q"def $name: $d = $b" =>
-            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, Nil, Nil,b)
+            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, Nil, Nil, b)
           case q"()" =>
           case x => c.abort(c.enclosingPosition, "body must only contain rule definition with the following form : def ruleName = body : " + x)
         }

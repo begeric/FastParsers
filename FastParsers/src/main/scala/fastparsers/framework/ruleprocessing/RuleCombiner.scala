@@ -39,6 +39,7 @@ trait RuleCombiner extends ReduceRules {
      val $dmmy = 0
      new $anon
    """
+   //c.abort(c.enclosingPosition,show(tree))
    tree
  }
 }
