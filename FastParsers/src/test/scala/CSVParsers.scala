@@ -56,5 +56,4 @@ object CSVParsers {
 		def bools = cvs(("true" ~> success(JTrue)) | ("false" ~> success(JFalse))) 
 	}
 
-
 }
