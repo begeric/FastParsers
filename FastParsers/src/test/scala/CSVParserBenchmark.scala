@@ -17,9 +17,14 @@ object CSVParserRun {
 
     val data = "[1.223, -123.243, 212143223.211]".toCharArray
 
-    println(cvsParser.doubles(data))
-    println(LMSCSVDoubleParserGen2.apply(data))
-    println(LMSCSVDoubleParserGen3.apply(data))
+    //println(cvsParser.doubles(data))
+    //println(LMSCSVDoubleParserGen2.apply(data))
+    //println(LMSCSVDoubleParserGen3.apply(data))
+
+    val strlits = "[\"higher\", \"natty\", \"jah jah\"]".toCharArray
+    println(cvsParser.strings(strlits))
+    println(LMSCSVStringLitParseGen.apply(strlits))
+    println(StringLitParseHandWritten.parseCSVStringLits(strlits, 0))
 
   }
 }
@@ -35,7 +40,7 @@ object CSVParserBenchmark extends PerformanceTest {
 
   val range = Gen.enumeration("size")(10)
 
-  benchDoubles
+  benchStringLits
 
   def benchDoubles = {
     val bigDoubleFileName = "FastParsers/src/test/resources/" + "csvDoubles.txt"
@@ -96,40 +101,34 @@ object CSVParserBenchmark extends PerformanceTest {
     val bigBoolFileArray = bigBoolFile.toCharArray
     val bigBoolFileSeq = new FastCharSequence(bigBoolFileArray)
 
-    /*
-      performance of "CSVBooleanParser:Boolean" in {
-        measure method "FastParsers" in {
-          using(range) in { j =>
-            for (i <- 1 to j)
-              cvsParser.bools(bigBoolFileArray)
-          }
+
+    performance of "CSVBooleanParser:Boolean" in {
+      measure method "FastParsers" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            cvsParser.bools(bigBoolFileArray)
         }
+      }
 
-        measure method "FastParsers" in {
-          using(range) in { j =>
-            for (i <- 1 to j)
-              cvsParser.bools(bigBoolFileArray)
-          }
+      measure method "LMS" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            LMSCSVBooleanParseGen.apply(bigBoolFileArray)
         }
-      */
-    measure method "LMS" in {
-      using(range) in { j =>
-        for (i <- 1 to j)
-          LMSCSVBooleanParseGen.apply(bigBoolFileArray)
       }
-    }
 
-    measure method "Handwritten" in {
-      using(range) in { j =>
-        for (i <- 1 to j)
-          CSVBoolHandWritten.apply(bigBoolFileArray)
+      measure method "Handwritten" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            CSVBoolHandWritten.apply(bigBoolFileArray)
+        }
       }
-    }
 
-    measure method "Combinators" in {
-      using(range) in { j =>
-        for (i <- 1 to j)
-          CSV.parse(CSV.bools, bigBoolFileSeq)
+      measure method "Combinators" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            CSV.parse(CSV.bools, bigBoolFileSeq)
+        }
       }
     }
   }
@@ -141,6 +140,58 @@ object CSVParserBenchmark extends PerformanceTest {
     val bigStringLitFileSeq = new FastCharSequence(bigStringLitFileArray)
 
     performance of "CSVStringLitParser:StringLit" in {
+
+      //separating stringLit parsing in a different function
+      measure method "Handwritten" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            StringLitParseHandWritten.parseCSVStringLits(bigStringLitFileArray, 0)
+        }
+      }
+
+      //inlining the parsing of string literal
+      // attention: inlining of functions isNEOI, currentInput, advance makes no difference
+      measure method "Handwritten2" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            StringLitParseHandWritten.parseCSVStringLits2(bigStringLitFileArray, 0)
+        }
+      }
+
+      //using CharArrayStructs: benchmarks now get interesting
+      measure method "Handwritten3" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            StringLitParseHandWritten.parseCSVStringLits3(bigStringLitFileArray, 0)
+        }
+      }
+
+      //an extra boxing layer around the result of a parse
+      measure method "Handwritten4" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            StringLitParseHandWritten.parseCSVStringLits4(bigStringLitFileArray, 0)
+        }
+      }
+
+      //code gen a la LMS for rep1 and stringlit, with extra layer of boxing for results
+      // a | b = lift(lift(a) or b)
+      // repsep(p,q) = p ~ rep(q ~ p) | success(Nil)
+      // stringlit = '\\ ~ anything | not('\"')
+      measure method "Handwritten4" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            StringLitParseHandWritten.parseCSVStringLits4(bigStringLitFileArray, 0)
+        }
+      }
+
+      measure method "Handwritten5" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            StringLitParseHandWritten.parseCSVStringLits4(bigStringLitFileArray, 0)
+        }
+      }
+
       measure method "FastParsers" in {
         using(range) in { j =>
           for (i <- 1 to j)
