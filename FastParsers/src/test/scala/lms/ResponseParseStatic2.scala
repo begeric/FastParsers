@@ -7,8 +7,8 @@ object HttpResponseParser2 extends ResponseParseStatic2(
       "upgrade".toArray //, "upgrade".length
     )
 
-case class ResponseParseStatic2(px820:Array[Char],px851:Array[Char],px880:Array[Char],px911:Array[Char]) extends ((Array[Char])=>(Unit)) {
-def apply(x0:Array[Char]): Unit = {
+case class ResponseParseStatic2(px820:Array[Char],px851:Array[Char],px880:Array[Char],px911:Array[Char]) extends ((Array[Char])=> ParseResultAnon1323431030) {
+def apply(x0:Array[Char]): ParseResultAnon1323431030 = {
 var x2: Anon1323431030 = null
 var x3: Boolean = true
 var x4: Int = -1
