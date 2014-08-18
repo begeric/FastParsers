@@ -11,7 +11,7 @@ import scala.collection.mutable.ListBuffer
 import lms._
 import InputWindow._
 
-object CSVParserRun {
+/*object CSVParserRun {
   def main(args: Array[String]) {
     println("cho tai!!")
 
@@ -27,7 +27,7 @@ object CSVParserRun {
     println(StringLitParseHandWritten.parseCSVStringLits(strlits, 0))
 
   }
-}
+}*/
 
 object CSVParserBenchmark extends PerformanceTest {
 
@@ -51,20 +51,20 @@ object CSVParserBenchmark extends PerformanceTest {
     performance of "CSV Double Parser" in {
       measure method "FastParsers" in {
         using(range) in { j =>
-          //for (i <- 1 to j)
-            cvsParser.doubles(bigDoubleFileArray)
+          for (i <- 1 to j)
+            CSVImpl1.cvsParser.doubles(bigDoubleFileArray)
         }
       }
 
-      measure method "JSON FastParsers" in {
+      /*measure method "JSON FastParsers" in {
         using(range) in { j =>
           for (i <- 1 to j)
             JSonImpl2.jsonparser.value(bigDoubleFileArray)
             //cvsParser.doubles(bigDoubleFileArray)
         }
-      }
+      }*/
 
-      measure method "LMS" in {
+      /*measure method "LMS" in {
           using(range) in { j =>
             //for (i <- 1 to j)
               LMSCSVDoubleParserGen.apply(bigDoubleFileArray)
@@ -76,22 +76,22 @@ object CSVParserBenchmark extends PerformanceTest {
             //for (i <- 1 to j)
               LMSCSVDoubleParserGen2.apply(bigDoubleFileArray)
           }
-      }
+      }*/
 
       measure method "LMS3" in {
           using(range) in { j =>
-            //for (i <- 1 to j)
+            for (i <- 1 to j)
               LMSCSVDoubleParserGen3.apply(bigDoubleFileArray)
           }
       }
 
       //too slow
-      //measure method "Combinators" in {
-      //  using(range) in { j =>
-      //    //for (i <- 1 to j)
-      //      CSV.parse(CSV.doubles, bigDoubleFileSeq)
-      //  }
-      //}
+      measure method "Combinators" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            CSV.parse(CSV.doubles, bigDoubleFileSeq)
+        }
+      }
     }
   }
 
@@ -106,7 +106,7 @@ object CSVParserBenchmark extends PerformanceTest {
       measure method "FastParsers" in {
         using(range) in { j =>
           for (i <- 1 to j)
-            cvsParser.bools(bigBoolFileArray)
+            CSVImpl1.cvsParser.bools(bigBoolFileArray)
         }
       }
 
@@ -117,12 +117,12 @@ object CSVParserBenchmark extends PerformanceTest {
         }
       }
 
-      measure method "Handwritten" in {
+      /*measure method "Handwritten" in {
         using(range) in { j =>
           for (i <- 1 to j)
             CSVBoolHandWritten.apply(bigBoolFileArray)
         }
-      }
+      }*/
 
       measure method "Combinators" in {
         using(range) in { j =>
@@ -142,7 +142,7 @@ object CSVParserBenchmark extends PerformanceTest {
     performance of "CSVStringLitParser:StringLit" in {
 
       //separating stringLit parsing in a different function
-      measure method "Handwritten" in {
+      /*measure method "Handwritten" in {
         using(range) in { j =>
           for (i <- 1 to j)
             StringLitParseHandWritten.parseCSVStringLits(bigStringLitFileArray, 0)
@@ -190,12 +190,12 @@ object CSVParserBenchmark extends PerformanceTest {
           for (i <- 1 to j)
             StringLitParseHandWritten.parseCSVStringLits4(bigStringLitFileArray, 0)
         }
-      }
+      }*/
 
       measure method "FastParsers" in {
         using(range) in { j =>
           for (i <- 1 to j)
-            cvsParser.strings(bigStringLitFileArray)
+            CSVImpl1.cvsParser.strings(bigStringLitFileArray)
         }
       }
 
@@ -203,6 +203,14 @@ object CSVParserBenchmark extends PerformanceTest {
         using(range) in { j =>
           for (i <- 1 to j)
             LMSCSVStringLitParseGen.apply(bigStringLitFileArray)
+        }
+      }
+
+
+      measure method "Combinators" in {
+        using(range) in { j =>
+          for (i <- 1 to j)
+            CSV.parse(CSV.strings, bigStringLitFileSeq)
         }
       }
     }

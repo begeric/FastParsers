@@ -72,10 +72,10 @@ trait FlatMapImpl extends RulesTransformer with ParserImplBase {
         rollback =>
           q"""
         ${expand(a, results_tmp)}
-        if (success) {
+        if ($success) {
           val $fm = (..$params => ${expandFunction(body, result, rs)})
           $fm.apply(${results_tmp.combine})
-          if (!success)
+          if (!$success)
             $rollback
         }
         else {

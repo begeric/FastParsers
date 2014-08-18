@@ -53,14 +53,14 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
       rollback =>
         q"""
           ${expand(a, results_tmp)}
-          if (success) {
+          if ($success) {
               $tmp_result += ${results_tmp.combine}
               if ($counter + 1 == $max) $cont = false
           }
           else {
-              success = $counter >= $min
+              $success = $counter >= $min
               $cont = false
-              if (!success)
+              if (!$success)
                 ${pushError("expected at least " + show(min) + " occurence(s) for rep(" + prettyPrint(a) + ", " + show(min) + ", " + show(max) + ")", pos)}
               else
                 $rollback
@@ -73,12 +73,12 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
           var $counter = 0
           var $cont = true
           val $tmp_result = new ListBuffer[$typ]()
-          success = $min == 0
+          $success = $min == 0
           while($cont){
             $innerWhileTree
             $counter = $counter + 1
           }
-          if (!success) {
+          if (!$success) {
             $rollback
           }
           else {
@@ -94,13 +94,13 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
     mark { rollback =>
         q"""
         ${expand(a, results_tmp)}
-        if (success) {
+        if ($success) {
           ${rs.assignTo(result, q"Some(${results_tmp.combine})")}
         }
         else {
           $rollback
           ${rs.assignTo(result, q"None")}
-          success = true
+          $success = true
         }
       """
     }
@@ -116,7 +116,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
     val innertree2 = mark {  rollback =>
         q"""
           ${expand(sep, results_tmp2)}
-           if (!success) {
+           if (!$success) {
             $cont = false
             $rollback
            }
@@ -126,7 +126,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
     val innertree1 = mark { rollback =>
         q"""
           ${expand(a, results_tmp)}
-          if (success) {
+          if ($success) {
              $tmp_result += ${results_tmp.combine}
              $innertree2
           }
@@ -143,18 +143,18 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
             q"""
           if ($tmp_result.size == 0) {
             $rollback
-            success = false
+            $success = false
           }
           else {
             ${rs.assignTo(result, q"$tmp_result.toList")}
-            success = true
+            $success = true
            }
         """
         }
       else {
         q"""
           ${rs.assignTo(result, q"$tmp_result.toList")}
-          success = true
+          $success = true
         """
       }
 
@@ -177,7 +177,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
     val innertree2 = mark { rollback =>
       q"""
         ${expand(end, rs.temporary)}
-        if (success)
+        if ($success)
           $cont = false
         else
           $rollback
@@ -187,7 +187,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
     val innertree = mark { rollback =>
       q"""
         ${expand(a,results_tmp)}
-        if (success) {
+        if ($success) {
           $tmp_result += ${results_tmp.combine}
           $innertree2
         }
@@ -205,7 +205,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
         $innertree
       }
       ${rs.assignNew(q"$tmp_result.toList", tq"List[$typ]")}
-      success = true
+      $success = true
     """
   }
 
@@ -219,7 +219,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
       rollback =>
         q"""
         ${expand(a, results_tmp)}
-         if (success){
+         if ($success){
            ${rs.assignTo(result, q"$tmp_f($result,${results_tmp.combine})")}
           }
          else {
@@ -235,7 +235,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
       while($cont){
         $inner
       }
-      success = true
+      $success = true
     """
   }
 
@@ -247,7 +247,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
     val buffering = mark { rollback =>
         q"""
         ${expand(a, results_tmp)}
-        if (success)
+        if ($success)
           $buffer += ${results_tmp.combine}
         else
           $cont = false
@@ -269,7 +269,7 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
     buffer(a, parserType, rs) { buffer =>
       q"""
        ${rs.assignNew(q"$buffer.foldRight[$typ]($init)($f)", typ)}
-       success = true
+       $success = true
       """
     }
   }
@@ -279,11 +279,11 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
     mark { rollback =>
       q"""
        ${expand(a, results_tmp)}
-       if (success){
+       if ($success){
           ${parseFoldLeft(a, results_tmp.combine, f, typ, rs)}
        }
        else {
-        success = false
+        $success = false
         ${pushError(prettyPrint(a) + " reduceLeft failed", pos)}
         $rollback
        }
@@ -296,11 +296,11 @@ trait RepParsersImpl extends ParserImplBase { self: ParseInput  with ParseError 
     buffer(a, typ, rs) { buffer =>
         q"""
         if ($buffer.size == 0){
-          success = false
+          $success = false
           ${pushError(prettyPrint(a) + " reduceRight failed", pos)}
         }
         else {
-         success = true
+         $success = true
          ${rs.assignNew(q"$buffer.reduceRight[$typ]($f)", typ)}
         }
       """

@@ -35,13 +35,14 @@ object InputWindow {
 
     private lazy val realValue = in.slice(start, end)
     private lazy val realString = {
-      val lb = new StringBuilder(size)
+      new String(in, start, end - start)
+      /*val lb = new StringBuilder(size)
       var i = 0
       while (i < size){
         lb.append(in(i + start))
         i += 1
       }
-      lb.result
+      lb.result*/
     }
 
     def apply(n: Int) = in(n + start)

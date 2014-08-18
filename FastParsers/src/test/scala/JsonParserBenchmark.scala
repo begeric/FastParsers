@@ -112,12 +112,12 @@ object JsonParserBenchmark extends PerformanceTest {
 
 
   performance of "Different JSonParser implementations" in {
-    measure method "FastParsers" in {
+    /*measure method "FastParsers" in {
       using(range) in { j =>
         for (i <- 1 to j)
           JSonImpl2.jsonparser.value(bigFileArray)
       }
-    }
+    }*/
 
     /*measure method "FastParsers Boxed" in {
       using(range) in { j =>
@@ -153,10 +153,24 @@ object JsonParserBenchmark extends PerformanceTest {
       }
     }*/
 
-    measure method "FastParsers on string input" in {
+    /*measure method "FastParsers on string input" in {
       using(range) in { j =>
         for (i <- 1 to j)
           JSonImpl1.jsonparser.value(bigFile)
+      }
+    }*/
+
+    measure method "FastParsers on bigFileSeq input" in {
+      using(range) in { j =>
+        //for (i <- 1 to j)
+          JSON.parse(JSON.value,bigFileSeq)
+      }
+    }
+
+    measure method "FastParsers on bigFile input" in {
+      using(range) in { j =>
+        //for (i <- 1 to j)
+          JSON.parse(JSON.value,bigFile)
       }
     }
 

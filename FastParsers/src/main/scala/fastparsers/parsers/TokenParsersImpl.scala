@@ -53,11 +53,11 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
         $advance
       }
       if ($i == $litsize){
-        success = true
+        $success = true
         ${rs.assignNew(str, inputType)}
       }
       else {
-        success = false
+        $success = false
         ${pushError("`" + show(str) + "' expected but ... found", pos)}
         $rollback
       }
@@ -77,11 +77,11 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
           $advance
         }
         ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
-        success = true
+        $success = true
       }
       else {
         $rollback
-        success = false
+        $success = false
       }
       """
     }
@@ -103,18 +103,18 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
         }
 
         if ($isNEOI) {
-          success = true
+          $success = true
           $advance
           ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
         }
         else {
-          success = false
+          $success = false
           ${pushError("expected '\"' got EOF", pos)}
           $rollback
         }
       }
       else {
-        success = false
+        $success = false
         ${pushError("expected '\"' got EOF", pos)}
         $rollback
       }
@@ -137,11 +137,11 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
         while ($isNEOI && $currentInput >= '0' && $currentInput <= '9'){
           $advance
         }
-        success = true
+        $success = true
         ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
       }
       else {
-        success = false
+        $success = false
         ${pushError("expected '\"' got EOF", pos)}
         $rollback
       }
@@ -158,7 +158,7 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
       $skipWhiteSpace
       var $isNeg = false
       val $beginPos = $pos
-      success = false
+      $success = false
       if ($isNEOI && $currentInput == '-'){
         $advance
       }
@@ -171,7 +171,7 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
             while ($isNEOI && $currentInput >= '0' && $currentInput <= '9')
               $advance
          }
-         success = true
+         $success = true
          ${rs.assignTo(result, getInputWindow(q"$beginPos", q"$pos"))}
       }
       else if ($isNEOI && $currentInput == '.')  {
@@ -180,7 +180,7 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
           $advance
           while ($isNEOI && $currentInput >= '0' && $currentInput <= '9')
             $advance
-          success = true
+          $success = true
          ${rs.assignTo(result, getInputWindow(q"$beginPos", q"$pos"))}
         }
       }
@@ -196,7 +196,7 @@ trait TokenParsersImpl extends ParserImplBase { self: StringLikeInput  with Pars
       val $beginpos = $pos
       $skipWhiteSpace
       ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
-      success = true
+      $success = true
     """
   }
 }

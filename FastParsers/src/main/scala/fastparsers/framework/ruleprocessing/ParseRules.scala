@@ -52,11 +52,11 @@ trait ParseRules extends MapRules {
    val initResults = rs.results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
    val tupledResults = rs.combine
 
-   val result = q"""fastparsers.framework.parseresult.ParseResult(success,error,if (success) $tupledResults else ${zeroValue(tq"${rule.typ}")},$pos)"""
+   val result = q"""fastparsers.framework.parseresult.ParseResult($success,error,if ($success) $tupledResults else ${zeroValue(tq"${rule.typ}")},$pos)"""
 
    val wrapCode =
      q"""
-     var success = false
+     var $success = false
        ..$initResults
        $ruleCode
        $result
@@ -67,7 +67,7 @@ trait ParseRules extends MapRules {
    val rewriteParams = convertParsersParams(rule.params)
 
    val replacedTree = removeCompileTimeAnnotation(rule.code)// @saveAST(${replacedTree})
-    //c.abort(c.enclosingPosition, show(replacedTree))
+   // c.abort(c.enclosingPosition, show(code))
    val allParams = q"$inputValue: $inputType" :: (rewriteParams :+ q"val $startPosition: Int = 0")
    val rulecode = c.untypecheck(
      q" def $ruleName[..${rule.typeParams}](..$allParams):fastparsers.framework.parseresult.ParseResult[${rule.typ}, $errorType] = $code" ) match {

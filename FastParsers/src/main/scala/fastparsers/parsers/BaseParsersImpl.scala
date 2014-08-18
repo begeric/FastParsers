@@ -101,10 +101,10 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
       if ($isNEOI && $currentInput == $a){
         ${rs.assignNew(a, inputElemType)}
         $advance
-        success = true
+        $success = true
        }
        else {
-          success = false
+          $success = false
           ${pushError("expected '" + show(a), pos)}
         }
      """
@@ -115,10 +115,10 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
      if ($isNEOI && $currentInput >= $a && $currentInput <= $b){
       ${rs.assignNew(currentInput, inputElemType)}
       $advance
-      success = true
+      $success = true
      }
      else {
-        success = false
+        $success = false
         ${pushError("expected in range ('" + show(a) + "', '" + show(b) + "')", pos)}
      }
     """
@@ -131,10 +131,10 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
       if ($isNEOI && $ranges){
         ${rs.assignNew(currentInput, inputElemType)}
         $advance
-        success = true
+        $success = true
        }
        else {
-          success = false
+          $success = false
           ${pushError("expected element in " + a.map(prettyPrint(_)).mkString, pos)}
         }
      """
@@ -153,10 +153,10 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
      if ($isNEOI && $f($currentInput)){
       ${rs.assignNew(currentInput, inputElemType)}
       $advance
-      success = true
+      $success = true
      }
      else {
-        success = false
+        $success = false
         ${pushError("acceptIf combinator failed", pos)}
      }
      """
@@ -167,10 +167,10 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
       if ($isNEOI){
         ${rs.assignNew(currentInput, inputElemType)}
         $advance
-        success = true
+        $success = true
       }
       else
-        success = false
+        $success = false
 
     """
   }
@@ -195,7 +195,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
       while ($isNEOI && $tmp_f($currentInput))
         $advance
       ${rs.assignNew(slice(q"$beginpos", q"$pos"), inputType)}
-      success = true
+      $success = true
     """
   }
 
@@ -208,18 +208,18 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
       while ($isNEOI && $tmp_f($currentInput))
         $advance
       ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
-      success = true
+      $success = true
     """
   }
 
   private def parseTake(n: c.Tree, rs: ResultsStruct) = {
     q"""
     if ($pos + $n <= $inputsize) {
-      success = true
+      $success = true
       ${rs.assignNew(slice(pos, q"$pos + $n"), inputType)}
     }
     else {
-      success = false
+      $success = false
       ${pushError("take(" + show(n) + ") cannot proceed, only " + show(q"$inputsize - $pos") + " elements left", pos)}
     }
     """
@@ -230,7 +230,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     q"""
       val $beginpos = $pos
       ${expand(a,rs.temporary)}
-      if (success) {
+      if ($success) {
         ${rs.assignNew(getInputWindow(q"$beginpos", q"$pos"), inputWindowType)}
       }
       else {
@@ -243,9 +243,9 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   private def parsePhrase(a: c.Tree, rs: ResultsStruct) = {
     q"""
     ${expand(a, rs)}
-    if (success) {
+    if ($success) {
       if (!$isEOI){
-        success = false
+        $success = false
         ${pushError("not all the input is consummed", pos)}
       }
     }
@@ -255,13 +255,13 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
 
   private def parseFailure(a: c.Tree, rs: ResultsStruct) = {
     q"""
-      success = false
+      $success = false
       ${pushError(show(a), pos)}
     """
   }
   private def  parseSuccess(a: c.Tree,typ: c.Tree, rs: ResultsStruct) = {
     q"""
-      success = true
+      $success = true
       ${rs.assignNew(a,typ)}
     """
   }
@@ -278,7 +278,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     q"""
      val $beginpos = $pos
      ${expand(a,results_tmp)}
-     if (success) {
+     if ($success) {
         ${rs.assignTo(result,results_tmp.combine)}
         $result setPos ${getPositionned(q"$beginpos")}
      }
@@ -289,7 +289,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   private def parseThen(a: c.Tree, b: c.Tree, rs: ResultsStruct) = {
     q"""
       ${expand(a, rs)}
-      if (success) {
+      if ($success) {
         ${expand(b, rs)}
       }
    """
@@ -298,7 +298,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   private def parseIgnoreLeft(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     q"""
       ${expand(a, ignoreResult(rs))}
-      if (success) {
+      if ($success) {
         ${expand(b, rs)}
       }
      """
@@ -307,7 +307,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   private def parseIgnoreRight(a: c.Tree, b: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     q"""
       ${expand(a, rs)}
-      if (success) {
+      if ($success) {
         ${expand(b, ignoreResult(rs))}
       }
      """
@@ -328,10 +328,10 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     }
     q"""
        $expandRHS
-        if (!success) {
+        if (!$success) {
           $rollback
           ${expand(lhs, results_tmp2)}
-          if (success){
+          if ($success){
             ${rs.assignTo(result, results_tmp2.combine)}
           }
         }
@@ -348,7 +348,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
       q"""
       val $tmp_f = $f
       ${expand(a, results_tmp)}
-       if (success)
+       if ($success)
          ${rs.assignNew(q"$tmp_f.apply(${results_tmp.combine})", typ)}
       """
     c.untypecheck(tree)
@@ -357,7 +357,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   private def parseValue(a: c.Tree, v: c.Tree, typ: c.Tree, rs: ResultsStruct) = {
     q"""
       ${expand(a, rs.temporary)}
-      if (success)
+      if ($success)
        ${rs.assignNew(v, typ)}
     """
   }
@@ -369,10 +369,10 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
     q"""
       val $tmp_f = $f
       ${expand(a, results_tmp)}
-       if (success && $tmp_f(${results_tmp.combine}))
+       if ($success && $tmp_f(${results_tmp.combine}))
          ${rs.assignNew(results_tmp.combine,typ)}
        else {
-        success = false
+        $success = false
         error = "incorrect result for " + ${prettyPrint(a)} + ".filter at " + $pos
         ${pushError("incorrect result for " + prettyPrint(a) + " filter", pos)}
         $rollback
@@ -385,7 +385,7 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
   private def parseWithFailureMessage(a: c.Tree, msg: c.Tree, rs: ResultsStruct) = {
     q"""
      ${expand(a, rs)}
-      if (!success)
+      if (!$success)
         ${pushError(show(msg), pos)}
     """
   }
@@ -406,8 +406,8 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
 
     val tree = q"""
         val $callResult = $call
-        success = $callResult.success
-        if (success){
+        $success = $callResult.success
+        if ($success){
           ${setpos(q"$callResult.inputPos")}
           ${rs.assignNew(q"$callResult.result",typ)}
          }

@@ -10,8 +10,11 @@ import scala.reflect.macros.whitebox.Context
  */
 trait ParseError {
   val c: Context
+  import c.universe._
 
   def errorType: c.Tree
+
+  val success = TermName(c.freshName("success"))
 
   /**
    * Initialize objects needed to deal with error and then run the code that follow

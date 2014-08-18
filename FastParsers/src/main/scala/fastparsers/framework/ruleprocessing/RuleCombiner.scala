@@ -22,8 +22,8 @@ trait RuleCombiner extends ReduceRules {
     val rule = rules(k)
     val ruleName = TermName(k)
     rule.params match {
-      case Nil =>      q"def $ruleName[..${rule.typeParams}]: fastparsers.parsers.Parser[${rule.typ}] = ???"
-      case params =>   q"def $ruleName[..${rule.typeParams}](..${rule.params}): fastparsers.parsers.Parser[${rule.typ}] = ???"
+      case Nil =>      q"""@scala.annotation.compileTimeOnly("can't be used outside of FastParser") def $ruleName[..${rule.typeParams}]: fastparsers.parsers.Parser[${rule.typ}] = ???"""
+      case params =>   q"""@scala.annotation.compileTimeOnly("can't be used outside of FastParser") def $ruleName[..${rule.typeParams}](..${rule.params}): fastparsers.parsers.Parser[${rule.typ}] = ???"""
     }
    }
 
