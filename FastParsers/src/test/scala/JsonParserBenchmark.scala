@@ -160,7 +160,7 @@ object JsonParserBenchmark extends PerformanceTest {
       }
     }*/
 
-    measure method "FastParsers on bigFileSeq input" in {
+    /*measure method "FastParsers on bigFileSeq input" in {
       using(range) in { j =>
         //for (i <- 1 to j)
           JSON.parse(JSON.value,bigFileSeq)
@@ -172,7 +172,7 @@ object JsonParserBenchmark extends PerformanceTest {
         //for (i <- 1 to j)
           JSON.parse(JSON.value,bigFile)
       }
-    }
+    }*/
 
   }
 

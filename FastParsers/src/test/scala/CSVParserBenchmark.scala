@@ -49,12 +49,12 @@ object CSVParserBenchmark extends PerformanceTest {
     val bigDoubleFileSeq = new FastCharSequence(bigDoubleFileArray)
 
     performance of "CSV Double Parser" in {
-      measure method "FastParsers" in {
+      /*measure method "FastParsers" in {
         using(range) in { j =>
           for (i <- 1 to j)
             CSVImpl1.cvsParser.doubles(bigDoubleFileArray)
         }
-      }
+      }*/
 
       /*measure method "JSON FastParsers" in {
         using(range) in { j =>
@@ -78,20 +78,20 @@ object CSVParserBenchmark extends PerformanceTest {
           }
       }*/
 
-      measure method "LMS3" in {
+     /* measure method "LMS3" in {
           using(range) in { j =>
             for (i <- 1 to j)
               LMSCSVDoubleParserGen3.apply(bigDoubleFileArray)
           }
-      }
+      }*/
 
       //too slow
-      measure method "Combinators" in {
+      /*measure method "Combinators" in {
         using(range) in { j =>
           for (i <- 1 to j)
             CSV.parse(CSV.doubles, bigDoubleFileSeq)
         }
-      }
+      }*/
     }
   }
 
@@ -103,7 +103,7 @@ object CSVParserBenchmark extends PerformanceTest {
 
 
     performance of "CSVBooleanParser:Boolean" in {
-      measure method "FastParsers" in {
+      /*measure method "FastParsers" in {
         using(range) in { j =>
           for (i <- 1 to j)
             CSVImpl1.cvsParser.bools(bigBoolFileArray)
@@ -115,7 +115,7 @@ object CSVParserBenchmark extends PerformanceTest {
           for (i <- 1 to j)
             LMSCSVBooleanParseGen.apply(bigBoolFileArray)
         }
-      }
+      }*/
 
       /*measure method "Handwritten" in {
         using(range) in { j =>
@@ -124,12 +124,12 @@ object CSVParserBenchmark extends PerformanceTest {
         }
       }*/
 
-      measure method "Combinators" in {
+      /*measure method "Combinators" in {
         using(range) in { j =>
           for (i <- 1 to j)
             CSV.parse(CSV.bools, bigBoolFileSeq)
         }
-      }
+      }*/
     }
   }
 
@@ -192,7 +192,7 @@ object CSVParserBenchmark extends PerformanceTest {
         }
       }*/
 
-      measure method "FastParsers" in {
+      /*measure method "FastParsers" in {
         using(range) in { j =>
           for (i <- 1 to j)
             CSVImpl1.cvsParser.strings(bigStringLitFileArray)
@@ -212,7 +212,7 @@ object CSVParserBenchmark extends PerformanceTest {
           for (i <- 1 to j)
             CSV.parse(CSV.strings, bigStringLitFileSeq)
         }
-      }
+      }*/
     }
   }
 }

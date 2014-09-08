@@ -23,7 +23,7 @@ object ParsersMixinBenchmark extends PerformanceTest {
   val bigFile = scala.io.Source.fromFile(bigFileName).getLines mkString "\n"
   val bigFileArray = bigFile.toCharArray
 
-  performance of "JsonParser:@FastParsers" in {
+  /*performance of "JsonParser:@FastParsers" in {
     measure method "value" in {
       using(range) in { j =>
         for (i <- 1 to j)
@@ -66,6 +66,6 @@ object ParsersMixinBenchmark extends PerformanceTest {
           JSonImpl5.jsonparser.value(bigFileArray)
       }
     }
-  }
+  }*/
 
 }
