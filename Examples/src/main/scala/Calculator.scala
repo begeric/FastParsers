@@ -1,9 +1,16 @@
 /**
  * Created by Eric on 07.04.14.
  */
+
+import fastparsers.framework.implementations.FastParsers
+import fastparsers.framework.parseresult._
+import fastparsers.parsers.Parser
+import scala.language.reflectiveCalls
+import scala.language.implicitConversions
+
 object Calculator {
 
-  /*def main(args: Array[String])  {
+  def main(args: Array[String])  {
     import FastParsers._
 
     def exec(x:(Int,Option[(Function2[Int,Int,Int],Int)])):Int = x._2 match {
@@ -18,9 +25,9 @@ object Calculator {
       def op2 = lit("*") ^^^ ((x:Int,y:Int) => x * y) |
                 lit("/") ^^^ ((x:Int,y:Int) => x / y)
 
-      def factor:fastparsers.parsers.Parser[Int] = number ^^(_.toString.toInt) | lit("(") ~> expr <~ ")"
-      def term:fastparsers.parsers.Parser[Int] = factor ~ opt(op2 ~ term) ^^ exec
-      def expr:fastparsers.parsers.Parser[Int] = term ~ opt(op1 ~ expr) ^^ exec
+      def factor: Parser[Int] = number ^^(_.toString.toInt) | lit("(") ~> expr <~ ")"
+      def term: Parser[Int] = factor ~ opt(op2 ~ term) ^^ exec
+      def expr: Parser[Int] = term ~ opt(op1 ~ expr) ^^ exec
     }
 
     code.expr("21+(5+1 ) * 2 +2 *8") match {
@@ -28,5 +35,5 @@ object Calculator {
       case Failure(error) => println("failure : " + error)
     }
 
-  } */
+  } 
 }

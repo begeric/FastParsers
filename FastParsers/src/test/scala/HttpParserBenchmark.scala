@@ -28,6 +28,8 @@ object HttpParserBenchmark extends PerformanceTest {
     acc
   }.toList
 
+  //println(files.mkString.size)
+
   /* tests */
     /*performance of "HttpParser response and message" in {
       measure method "FastParsers" in {
