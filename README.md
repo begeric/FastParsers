@@ -14,7 +14,7 @@ val jsonParser = FastParser {
  def member: Parser[Any] = stringLit ~ (lit(":") ~> value)
 }
 ```
-This generate a *Parser Object" which allow you to call any of the transformed rules.
+This generate a *Parser Object* which allow you to call any of the transformed rules.
 ```scala
 val cnt = "{\"firstName \": \"John\" , \"age\": 25}"
 jsonParser.value (cnt) match {
