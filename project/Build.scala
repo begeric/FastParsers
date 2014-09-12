@@ -5,7 +5,7 @@ object FastParsersBuild extends Build {
 
    def commonSettings = Defaults.coreDefaultSettings ++ Seq(
 	   scalaVersion := "2.11.2" ,
-       scalacOptions := Seq("-optimize"),
+       //scalacOptions := Seq("-optimize"),
 	   libraryDependencies ++=  Seq(
 		"org.scala-lang" % "scala-compiler"  % scalaVersion.value % "provided",
 		"org.scala-lang" % "scala-reflect" % scalaVersion.value 
