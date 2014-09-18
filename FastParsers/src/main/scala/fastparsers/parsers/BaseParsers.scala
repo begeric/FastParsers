@@ -43,15 +43,6 @@ trait BaseParsers[Elem, Input] {
   def accept(p1: ElemOrRange, p2: ElemOrRange*):Parser[Elem] = ???
 
 
-
-  /*@compileTimeOnly("can’t be used outside FastParser")
-  def acceptRec(p1: ElemOrRange, p2: ElemOrRange*):fastparsers.parsers.Parser[Nothing] = ???
-
-  @compileTimeOnly("can’t be used outside FastParser")
-  def notRec(p1: ElemOrRange, p2: ElemOrRange*):fastparsers.parsers.Parser[Nothing] = ??? */
-
-
-
   @compileTimeOnly("not can’t be used outside FastParser")
   def not(p1: ElemOrRange, p2: ElemOrRange*): Parser[Elem] = ???
 

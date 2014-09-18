@@ -4,7 +4,7 @@ import scala.reflect.macros.whitebox.Context
 import scala.collection.mutable.HashMap
 
 /**
-* Create the final code object
+* Create the final parser object
 */
 trait RuleCombiner extends ReduceRules {
  val c: Context
@@ -39,7 +39,6 @@ trait RuleCombiner extends ReduceRules {
      val $dmmy = 0
      new $anon
    """
-   //c.abort(c.enclosingPosition,show(tree))
    tree
  }
 }

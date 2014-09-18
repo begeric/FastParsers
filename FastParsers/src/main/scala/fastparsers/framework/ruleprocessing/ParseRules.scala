@@ -73,7 +73,7 @@ trait ParseRules extends MapRules {
      q" def $ruleName[..${rule.typeParams}](..$allParams):fastparsers.framework.parseresult.ParseResult[${rule.typ}, $errorType] = $code" ) match {
      case q"def $a[$t](..$b):$d = $e" => q"def $a[$t](..$b):$d  @fastparsers.framework.saveAST(${replacedTree}) = $e"
      case q"def $a(..$b):$d = $e" => q"def $a(..$b):$d @fastparsers.framework.saveAST(${replacedTree})  = $e"
-   }   //TODO o/w typecheck error. explain. This is retarded  Proxy for x error
+   }   //TODO o/w typecheck error. explain. Proxy for x error
     rulecode
  }
 
