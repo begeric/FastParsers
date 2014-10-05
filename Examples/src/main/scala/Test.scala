@@ -31,11 +31,15 @@ object Test {
 
     def rule1(p: Parser[List[Char]], y: Int): Parser[Any] = 'a' ~ p ~ rule2(y)
     def rule2(x: Int): Parser[Any]  = rule1(repN('c', x), x + 1) | 'b'*/
-    def rule1 = 'a' ~ 'b'
+    /*def parens[T](p: Parser[T]) = 'x' ~ p ~ 'x' 
+    def test = parens('a' ~ 'b')*/
+
+    def parens(p: Parser[(Char, Char)]) = 'x' ~ p ~ 'x'
+    def test = parens('a' ~ 'b') //TODO correct this bug
 
   }
 
-  parser.rule1("ab  cacccb") match {
+  parser.test("xabx  cacccb") match {
     case Success(x) =>
       println(x)
     case Failure(msg) => println("failure : " + msg)

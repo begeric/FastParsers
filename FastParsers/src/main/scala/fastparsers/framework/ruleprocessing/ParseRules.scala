@@ -67,13 +67,12 @@ trait ParseRules extends MapRules {
    val rewriteParams = convertParsersParams(rule.params)
 
    val replacedTree = removeCompileTimeAnnotation(rule.code)// @saveAST(${replacedTree})
-   // c.abort(c.enclosingPosition, show(code))
+
    val allParams = q"$inputValue: $inputType" :: (rewriteParams :+ q"val $startPosition: Int = 0")
-   val rulecode = c.untypecheck(
-     q" def $ruleName[..${rule.typeParams}](..$allParams):fastparsers.framework.parseresult.ParseResult[${rule.typ}, $errorType] = $code" ) match {
-     case q"def $a[$t](..$b):$d = $e" => q"def $a[$t](..$b):$d  @fastparsers.framework.saveAST(${replacedTree}) = $e"
-     case q"def $a(..$b):$d = $e" => q"def $a(..$b):$d @fastparsers.framework.saveAST(${replacedTree})  = $e"
-   }   //TODO o/w typecheck error. explain. Proxy for x error
+   
+   val rulecode = q"""def $ruleName[..${rule.typeParams}](..$allParams): 
+                     fastparsers.framework.parseresult.ParseResult[${rule.typ}, $errorType]   @fastparsers.framework.saveAST(${replacedTree}) = 
+                     ${c.untypecheck(code)}"""
     rulecode
  }
 

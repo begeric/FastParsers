@@ -32,11 +32,12 @@ trait RulesInliner extends RulesTransformer {
     def inlineExpand(ruleName: TermName, typeArgs: List[c.Type], args: List[c.Tree]): Option[c.Tree] =
       if (!rulesPath.contains(ruleName.toString)) {
         getValidRuleInfo(ruleName,rulesMap, typeArgs, args).collect[c.Tree] {
-          case RuleInfo(typ, code, params, _,_) =>
+          case RuleInfo(typ, code, params, typeParams,_) =>
             val substituted = subsituteParams(params.map(_.symbol), args, code)
             val newRulesPath = ruleName.toString :: rulesPath
             val transformedCode = transformRuleCalls(substituted, enclosingRule, rulesMap, expandedRules, newRulesPath)
-            q"compound[${typ}](${transformedCode})"
+            val substitutedType = typ.substituteTypes(typeParams.map(_.symbol), typeArgs)
+            q"compound[${substitutedType}](${transformedCode})"
         }
       }
       else None
@@ -44,8 +45,9 @@ trait RulesInliner extends RulesTransformer {
     def callParent = super.transformRuleCalls(tree, enclosingRule, rulesMap, expandedRules, rulesPath)
 
     tree match {
-      case q"${ruleName: TermName}[..$t](..$args)" =>
-        inlineExpand(ruleName, t.map(_.tpe), args) getOrElse callParent
+      //TODO correct bug with inlining when rule like that parens('a' ~ 'b') 
+      /*case q"${ruleName: TermName}[..$t](..$args)" =>
+        inlineExpand(ruleName, t.map(_.tpe), args) getOrElse callParent*/
       case q"${ruleName: TermName}(..$args)" =>
         inlineExpand(ruleName, Nil, args) getOrElse callParent
       case q"${ruleName: TermName}[..$t]" =>

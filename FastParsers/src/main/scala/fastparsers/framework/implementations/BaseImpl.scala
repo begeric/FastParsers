@@ -45,9 +45,8 @@ trait BaseImpl extends TreeTools {
     c.typecheck(rules) match {
       case q"{..$body}" =>
         body.foreach {
-          /*case q"def $name[..$t](..$params): $d = $b" =>
-            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params,t)*///not supported yet
-          //case q"def $name(..$params): $_.Parser[$d]" => c.abort(c.enclosingPosition, "yo")
+          case q"def $name[..$t](..$params): $d = $b" =>
+            rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params,t, b)///not supported yet
           case q"def $name(..$params): $d = $b" =>
             rulesMap += name.toString -> RuleInfo(getReturnType(d), b, params, Nil, b)
           case q"def $name: $d = $b" =>

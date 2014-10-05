@@ -78,8 +78,9 @@ trait RulesTransformer extends MapRules { self: TreeTools with ParseInput =>
 
    def expandRuleCall(ruleName: TermName, typeArgs: List[c.Type], args: List[c.Tree]): Option[c.Tree] =
      getValidRuleInfo(ruleName,rulesMap, typeArgs, args).collect[c.Tree] {
-     case RuleInfo(typ, _, _, _,_) => 
-        q"call[${typ}](${ruleName.toString}, ..${convertParsersArgs(args)})"
+     case RuleInfo(typ, _, _, typeParams,_) => 
+        val substituteType = typ.substituteTypes(typeParams.map(_.symbol), typeArgs)
+        q"call[${substituteType}](${ruleName.toString}, ..${convertParsersArgs(args)})"
    }
 
    def expandParamCall(paramName: TermName, typeArgs: List[c.Type], args: List[c.Tree]) : Option[c.Tree] =

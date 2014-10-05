@@ -116,16 +116,38 @@ trait ParserImplBase { self: ParseInput with ParseError =>
     def fromString(str: String) = str match {
       case "Char" => q"' '"
       case "Int" => q"0"
+      case "Long" => q"0L"
       case "Float" => q"0"
+      case "Boolean" => q"false"
+      case "Byte" => q"0"
       case "Double" => q"0.0D"
       case "String" => q""""""""
+      case "Unit"   => q"()"
       case x if x.startsWith("List") => q"Nil"
       case _ => q"null"
     }
-    typ match {
+    c.typecheck(typ, c.TYPEmode).tpe match {
       case Ident(TypeName(name)) => fromString(name)
-      case AppliedTypeTree(Ident(TypeName("List")), _) => q"Nil"
-      case x => fromString(x.toString)
+      case t if t =:= typeOf[Char]    => q"' '"
+      case t if t =:= typeOf[Int]     => q"0"
+      case t if t =:= typeOf[Long]     => q"0L"
+      case t if t =:= typeOf[Float]   => q"0"
+      case t if t =:= typeOf[Double]  => q"0.0D"
+      case t if t =:= typeOf[Boolean]  => q"false"
+      case t if t =:= typeOf[Unit]  => q"()"
+      case t if t =:= typeOf[String]  => q""""""""
+      case t if t =:= typeOf[List[_]] => q"Nil"
+      case t if t <:< typeOf[AnyRef] => q"null"
+      case t if t =:= typeOf[Any] => q"null"
+      case t => q"fastparsers.tools.Default.value[$t]" //NEED to find a better way !!!!
+      /*case x @ TypeRef(_, y, _)  => 
+        /*y match {
+          case y : TypeName => c.echo(c.enclosingPosition, "stuff")
+          case _ => c.echo(c.enclosingPosition, "nostuff")
+        }*/
+        c.echo(c.enclosingPosition, showRaw(y.tpe))
+        q"fastparsers.tools.Default.value[$x]"*/
+      //case x => fromString(x.toString)
     }
   }
 
