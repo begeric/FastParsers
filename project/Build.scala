@@ -3,8 +3,8 @@ import Keys._
 
 object FastParsersBuild extends Build {
 
-   def commonSettings = Defaults.coreDefaultSettings ++ Seq(
-	   scalaVersion := "2.11.2" ,
+   def commonSettings = Seq(
+	   scalaVersion := "2.11.5" ,
        //scalacOptions := Seq("-optimize"),
 	   libraryDependencies ++=  Seq(
 		"org.scala-lang" % "scala-compiler"  % scalaVersion.value % "provided",
