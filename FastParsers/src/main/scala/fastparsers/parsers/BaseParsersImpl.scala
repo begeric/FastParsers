@@ -287,10 +287,12 @@ trait BaseParsersImpl extends ParserImplBase { self: ParseInput with ParseError 
 
 
   private def parseThen(a: c.Tree, b: c.Tree, rs: ResultsStruct) = {
+    val results_tmp = rs.temporary
     q"""
-      ${expand(a, rs)}
+      ${expand(a, results_tmp)}
       if ($success) {
-        ${expand(b, rs)}
+        ${expand(b, results_tmp)}
+        ${rs.assignNew(results_tmp.combine, results_tmp.combineType)}
       }
    """
   }

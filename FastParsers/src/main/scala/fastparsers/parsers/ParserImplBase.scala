@@ -83,7 +83,22 @@ trait ParserImplBase { self: ParseInput with ParseError =>
       else
         q"Nil"
     }
+
+  def combineType: c.Tree = {
+      val usedResults = results.toList.filter(_._3)
+      if (usedResults.size > 1) {
+        val first = usedResults(0)
+        val sec = usedResults(1)
+        val rest = usedResults.drop(2)
+        rest.foldLeft(tq"(${first._2},${sec._2})")((acc, e) => tq"($acc,${e._2})")
+      }
+      else if (usedResults.size == 1)
+        tq"${usedResults(0)._2}"
+      else
+        tq"Unit"
+    }
   }
+
 
   /**
    * Class which automatically append its result to its parents as already used results

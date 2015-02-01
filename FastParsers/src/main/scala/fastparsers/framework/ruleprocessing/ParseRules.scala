@@ -52,6 +52,7 @@ trait ParseRules extends MapRules {
    val initResults = rs.results.map(x => q"var ${x._1}:${x._2} = ${zeroValue(x._2)}")
    val tupledResults = rs.combine
 
+
    val result = q"""fastparsers.framework.parseresult.ParseResult($success,error,if ($success) $tupledResults else ${zeroValue(tq"${rule.typ}")},$pos)"""
 
    val wrapCode =
