@@ -2,15 +2,17 @@ import sbt._
 import Keys._
 
 object FastParsersBuild extends Build {
+	import PublishSettings._
 
    def commonSettings = Seq(
-	   scalaVersion := "2.11.5" ,
-       //scalacOptions := Seq("-optimize"),
-	   libraryDependencies ++=  Seq(
+    	version := "0.1-SNAPSHOT",
+	   	scalaVersion := "2.11.5" ,
+       	//scalacOptions := Seq("-optimize"),
+	   	libraryDependencies ++=  Seq(
 		"org.scala-lang" % "scala-compiler"  % scalaVersion.value % "provided",
 		"org.scala-lang" % "scala-reflect" % scalaVersion.value 
 	)
-   )
+   ) ++ publishSettings
 
 
    lazy val Examples = Project(
@@ -28,7 +30,7 @@ object FastParsersBuild extends Build {
    lazy val FastParsers = Project(
 	id = "FastParsers",
 	base = file("FastParsers"),	
-	settings = commonSettings ++ Seq (
+	settings = commonSettings ++ publishableSettings ++ Seq (
 		resolvers ++= Seq(
 		  "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
 		),
@@ -43,6 +45,6 @@ object FastParsersBuild extends Build {
 		testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework"),
   
     	logBuffered := false
-	)
+	) 
    )
 }
