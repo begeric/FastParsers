@@ -1,7 +1,7 @@
-name := "FastParsers" 
- 
-version := "0.0.0" 
- 
-scalaVersion := "2.11.0-RC1" 
+name := "FastParsers"
 
-testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
+scalaVersion := "2.11.0-RC4"
+
+scalacOptions ++= Seq(
+  "-optimize"
+)
